@@ -38,6 +38,16 @@ class RULAWidget(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
+        # 제목
+        title_label = QLabel("RULA")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_font = QFont()
+        title_font.setPointSize(16)
+        title_font.setBold(True)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet("color: #2196F3;")
+        layout.addWidget(title_label)
+
         # 상단: 최종 점수
         score_frame = QFrame()
         score_frame.setFrameShape(QFrame.Shape.StyledPanel)

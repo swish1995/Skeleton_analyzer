@@ -68,13 +68,23 @@ class OWASWidget(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
+        # 제목
+        title_label = QLabel("OWAS")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_font = QFont()
+        title_font.setPointSize(16)
+        title_font.setBold(True)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet("color: #FF5722;")
+        layout.addWidget(title_label)
+
         # 상단: 자세 코드 및 AC
         code_frame = QFrame()
         code_frame.setFrameShape(QFrame.Shape.StyledPanel)
         code_layout = QVBoxLayout(code_frame)
 
         # 자세 코드
-        self._posture_code_label = QLabel("––––")
+        self._posture_code_label = QLabel("–,–,–,–")
         self._posture_code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         code_font = QFont()
         code_font.setPointSize(36)
@@ -153,8 +163,9 @@ class OWASWidget(QWidget):
 
         color = self.COLORS.get(result.risk_level, '#888888')
 
-        # 자세 코드
-        self._posture_code_label.setText(result.posture_code)
+        # 자세 코드 (콤마로 구분)
+        code_with_comma = ",".join(result.posture_code)
+        self._posture_code_label.setText(code_with_comma)
         self._posture_code_label.setStyleSheet(f"color: {color};")
 
         # AC
@@ -186,7 +197,7 @@ class OWASWidget(QWidget):
 
     def clear(self):
         """초기화"""
-        self._posture_code_label.setText("––––")
+        self._posture_code_label.setText("–,–,–,–")
         self._posture_code_label.setStyleSheet("")
         self._ac_label.setText("–")
         self._ac_label.setStyleSheet("")
