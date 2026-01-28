@@ -150,10 +150,16 @@ class MainWindow(QMainWindow):
         angle_visible = self._settings.value("panel_angle", True, type=bool)
         ergonomic_visible = self._settings.value("panel_ergonomic", True, type=bool)
         spreadsheet_visible = self._settings.value("panel_spreadsheet", True, type=bool)
+        rula_visible = self._settings.value("panel_rula", True, type=bool)
+        reba_visible = self._settings.value("panel_reba", True, type=bool)
+        owas_visible = self._settings.value("panel_owas", True, type=bool)
 
         self.status_widget.set_angle_visible(angle_visible)
         self.status_widget.set_ergonomic_visible(ergonomic_visible)
         self.status_widget.set_spreadsheet_visible(spreadsheet_visible)
+        self.status_widget.set_rula_visible(rula_visible)
+        self.status_widget.set_reba_visible(reba_visible)
+        self.status_widget.set_owas_visible(owas_visible)
 
         # 메뉴 체크 상태 동기화
         self._angle_action.setChecked(angle_visible)
@@ -170,6 +176,9 @@ class MainWindow(QMainWindow):
         self._settings.setValue("panel_angle", self.status_widget.is_angle_visible())
         self._settings.setValue("panel_ergonomic", self.status_widget.is_ergonomic_visible())
         self._settings.setValue("panel_spreadsheet", self.status_widget.is_spreadsheet_visible())
+        self._settings.setValue("panel_rula", self.status_widget.is_rula_visible())
+        self._settings.setValue("panel_reba", self.status_widget.is_reba_visible())
+        self._settings.setValue("panel_owas", self.status_widget.is_owas_visible())
 
     def _on_visibility_changed(self, panel: str, visible: bool):
         """패널 가시성 변경 시 메뉴 동기화"""

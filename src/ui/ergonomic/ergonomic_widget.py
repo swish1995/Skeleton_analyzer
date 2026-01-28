@@ -1,8 +1,7 @@
 """인체공학적 평가 통합 위젯"""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QCheckBox,
-    QSplitter, QFrame
+    QWidget, QVBoxLayout, QSplitter
 )
 from PyQt6.QtCore import Qt
 from typing import Dict, List
@@ -18,7 +17,7 @@ from .owas_widget import OWASWidget
 
 
 class ErgonomicWidget(QWidget):
-    """인체공학적 평가 통합 위젯 (체크박스 + 가로 3분할)"""
+    """인체공학적 평가 통합 위젯 (가로 3분할)"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -38,51 +37,10 @@ class ErgonomicWidget(QWidget):
     def _init_ui(self):
         """UI 초기화"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(5)
+        layout.setContentsMargins(5, 0, 5, 5)
+        layout.setSpacing(0)
 
-        # 상단: 체크박스 영역
-        checkbox_layout = QHBoxLayout()
-        checkbox_layout.setSpacing(15)
-
-        self._rula_checkbox = QCheckBox("RULA")
-        self._reba_checkbox = QCheckBox("REBA")
-        self._owas_checkbox = QCheckBox("OWAS")
-
-        # 기본: 모두 체크
-        self._rula_checkbox.setChecked(True)
-        self._reba_checkbox.setChecked(True)
-        self._owas_checkbox.setChecked(True)
-
-        # 체크박스 스타일
-        checkbox_style = """
-            QCheckBox {
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-        """
-        self._rula_checkbox.setStyleSheet(checkbox_style)
-        self._reba_checkbox.setStyleSheet(checkbox_style)
-        self._owas_checkbox.setStyleSheet(checkbox_style)
-
-        # 체크박스 연결
-        self._rula_checkbox.toggled.connect(self._update_visibility)
-        self._reba_checkbox.toggled.connect(self._update_visibility)
-        self._owas_checkbox.toggled.connect(self._update_visibility)
-
-        checkbox_layout.addWidget(self._rula_checkbox)
-        checkbox_layout.addWidget(self._reba_checkbox)
-        checkbox_layout.addWidget(self._owas_checkbox)
-        checkbox_layout.addStretch()
-
-        layout.addLayout(checkbox_layout)
-
-        # 하단: 가로 스플리터 (왼쪽 | 가운데 | 오른쪽)
+        # 가로 스플리터 (왼쪽 | 가운데 | 오른쪽)
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # 각 평가 위젯
@@ -99,11 +57,31 @@ class ErgonomicWidget(QWidget):
 
         layout.addWidget(self._splitter)
 
-    def _update_visibility(self):
-        """체크박스 상태에 따라 위젯 가시성 업데이트"""
-        self._rula_widget.setVisible(self._rula_checkbox.isChecked())
-        self._reba_widget.setVisible(self._reba_checkbox.isChecked())
-        self._owas_widget.setVisible(self._owas_checkbox.isChecked())
+    # === 외부에서 패널 가시성 제어 ===
+
+    def set_rula_visible(self, visible: bool):
+        """RULA 위젯 가시성 설정"""
+        self._rula_widget.setVisible(visible)
+
+    def set_reba_visible(self, visible: bool):
+        """REBA 위젯 가시성 설정"""
+        self._reba_widget.setVisible(visible)
+
+    def set_owas_visible(self, visible: bool):
+        """OWAS 위젯 가시성 설정"""
+        self._owas_widget.setVisible(visible)
+
+    def is_rula_visible(self) -> bool:
+        """RULA 위젯 가시성 반환"""
+        return self._rula_widget.isVisible()
+
+    def is_reba_visible(self) -> bool:
+        """REBA 위젯 가시성 반환"""
+        return self._reba_widget.isVisible()
+
+    def is_owas_visible(self) -> bool:
+        """OWAS 위젯 가시성 반환"""
+        return self._owas_widget.isVisible()
 
     def update_assessment(self, angles: Dict[str, float], landmarks: List[Dict]):
         """

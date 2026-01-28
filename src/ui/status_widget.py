@@ -1,8 +1,9 @@
 """스테이터스 위젯 모듈 (스켈레톤 + 각도 + 인체공학적 평가 + 캡처 스프레드시트)"""
 from PyQt6.QtWidgets import (
-    QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QCheckBox, QSizePolicy
+    QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, QMenu, QSizePolicy
 )
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QAction
 import numpy as np
 from datetime import datetime
 from typing import Optional
@@ -33,45 +34,121 @@ class StatusWidget(QWidget):
         self._init_ui()
         self._connect_signals()
 
+    # 버튼 스타일
+    MENU_BUTTON_STYLE = """
+        QPushButton {
+            background: transparent;
+            color: #cccccc;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        QPushButton:hover {
+            background: #4a4a4a;
+        }
+        QPushButton:checked {
+            background: #3a7a6a;
+            color: white;
+        }
+        QPushButton::menu-indicator {
+            width: 10px;
+            subcontrol-position: right center;
+        }
+    """
+
+    MENU_STYLE = """
+        QMenu {
+            background-color: #333333;
+            color: #cccccc;
+            font-size: 11px;
+            border: 1px solid #555555;
+            padding: 4px;
+        }
+        QMenu::item {
+            padding: 5px 25px 5px 20px;
+            border-radius: 3px;
+        }
+        QMenu::item:selected {
+            background: #4a4a4a;
+        }
+        QMenu::indicator {
+            width: 14px;
+            height: 14px;
+            margin-left: 5px;
+        }
+        QMenu::indicator:checked {
+            image: url(none);
+            background: #3a9a8a;
+            border-radius: 2px;
+        }
+    """
+
     def _init_ui(self):
         """UI 초기화"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        # 상단: 패널 표시 체크박스 바
-        checkbox_layout = QHBoxLayout()
-        checkbox_layout.setContentsMargins(5, 2, 5, 2)
-        checkbox_layout.setSpacing(15)
+        # 상단: 메뉴바 컨테이너
+        menubar_container = QWidget()
+        menubar_container.setStyleSheet("background-color: #333333; border-radius: 4px;")
+        menubar_container.setFixedHeight(28)
+        menubar_layout = QHBoxLayout(menubar_container)
+        menubar_layout.setContentsMargins(4, 2, 4, 0)
+        menubar_layout.setSpacing(2)
 
-        checkbox_style = """
-            QCheckBox {
-                color: #cccccc;
-                font-size: 11px;
-            }
-            QCheckBox::indicator {
-                width: 14px;
-                height: 14px;
-            }
-        """
+        # 상태 버튼 (토글) - 각도 패널
+        self._angle_btn = QPushButton("상태")
+        self._angle_btn.setCheckable(True)
+        self._angle_btn.setChecked(True)
+        self._angle_btn.setStyleSheet(self.MENU_BUTTON_STYLE)
+        menubar_layout.addWidget(self._angle_btn)
 
-        self._angle_checkbox = QCheckBox("각도")
-        self._angle_checkbox.setChecked(True)
-        self._angle_checkbox.setStyleSheet(checkbox_style)
-        checkbox_layout.addWidget(self._angle_checkbox)
+        # 데이터 버튼 (토글) - 스프레드시트
+        self._spreadsheet_btn = QPushButton("데이터")
+        self._spreadsheet_btn.setCheckable(True)
+        self._spreadsheet_btn.setChecked(True)
+        self._spreadsheet_btn.setStyleSheet(self.MENU_BUTTON_STYLE)
+        menubar_layout.addWidget(self._spreadsheet_btn)
 
-        self._ergonomic_checkbox = QCheckBox("안전지표")
-        self._ergonomic_checkbox.setChecked(True)
-        self._ergonomic_checkbox.setStyleSheet(checkbox_style)
-        checkbox_layout.addWidget(self._ergonomic_checkbox)
+        # 안전지표 버튼 (드롭다운 메뉴)
+        self._ergonomic_btn = QPushButton("안전지표 ▾")
+        self._ergonomic_btn.setCheckable(True)
+        self._ergonomic_btn.setChecked(True)
+        self._ergonomic_btn.setStyleSheet(self.MENU_BUTTON_STYLE)
 
-        self._spreadsheet_checkbox = QCheckBox("스프레드시트")
-        self._spreadsheet_checkbox.setChecked(True)
-        self._spreadsheet_checkbox.setStyleSheet(checkbox_style)
-        checkbox_layout.addWidget(self._spreadsheet_checkbox)
+        # 안전지표 서브메뉴
+        ergonomic_menu = QMenu(self)
+        ergonomic_menu.setStyleSheet(self.MENU_STYLE)
 
-        checkbox_layout.addStretch()
-        layout.addLayout(checkbox_layout)
+        self._ergonomic_action = QAction("전체 표시", self)
+        self._ergonomic_action.setCheckable(True)
+        self._ergonomic_action.setChecked(True)
+        ergonomic_menu.addAction(self._ergonomic_action)
+
+        ergonomic_menu.addSeparator()
+
+        self._rula_action = QAction("RULA", self)
+        self._rula_action.setCheckable(True)
+        self._rula_action.setChecked(True)
+        ergonomic_menu.addAction(self._rula_action)
+
+        self._reba_action = QAction("REBA", self)
+        self._reba_action.setCheckable(True)
+        self._reba_action.setChecked(True)
+        ergonomic_menu.addAction(self._reba_action)
+
+        self._owas_action = QAction("OWAS", self)
+        self._owas_action.setCheckable(True)
+        self._owas_action.setChecked(True)
+        ergonomic_menu.addAction(self._owas_action)
+
+        self._ergonomic_btn.setMenu(ergonomic_menu)
+        menubar_layout.addWidget(self._ergonomic_btn)
+
+        menubar_layout.addStretch()
+        layout.addWidget(menubar_container)
 
         # 메인 스플리터 (상/하 분할)
         self._main_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -107,9 +184,14 @@ class StatusWidget(QWidget):
 
     def _connect_signals(self):
         """시그널 연결"""
-        self._angle_checkbox.toggled.connect(self._on_angle_toggled)
-        self._ergonomic_checkbox.toggled.connect(self._on_ergonomic_toggled)
-        self._spreadsheet_checkbox.toggled.connect(self._on_spreadsheet_toggled)
+        self._angle_btn.toggled.connect(self._on_angle_toggled)
+        self._ergonomic_action.toggled.connect(self._on_ergonomic_toggled)
+        self._spreadsheet_btn.toggled.connect(self._on_spreadsheet_toggled)
+        self._rula_action.toggled.connect(self._on_rula_toggled)
+        self._reba_action.toggled.connect(self._on_reba_toggled)
+        self._owas_action.toggled.connect(self._on_owas_toggled)
+        # 안전지표 버튼 체크 상태 동기화
+        self._ergonomic_action.toggled.connect(self._sync_ergonomic_btn)
 
     def _on_angle_toggled(self, checked: bool):
         """각도 패널 토글"""
@@ -126,31 +208,72 @@ class StatusWidget(QWidget):
         self._spreadsheet_widget.setVisible(checked)
         self.visibility_changed.emit('spreadsheet', checked)
 
+    def _on_rula_toggled(self, checked: bool):
+        """RULA 패널 토글"""
+        self._ergonomic_widget.set_rula_visible(checked)
+
+    def _on_reba_toggled(self, checked: bool):
+        """REBA 패널 토글"""
+        self._ergonomic_widget.set_reba_visible(checked)
+
+    def _on_owas_toggled(self, checked: bool):
+        """OWAS 패널 토글"""
+        self._ergonomic_widget.set_owas_visible(checked)
+
+    def _sync_ergonomic_btn(self, checked: bool):
+        """안전지표 버튼 체크 상태 동기화"""
+        self._ergonomic_btn.setChecked(checked)
+
     # === 외부에서 패널 가시성 제어 ===
 
     def set_angle_visible(self, visible: bool):
         """각도 패널 가시성 설정"""
-        self._angle_checkbox.setChecked(visible)
+        self._angle_btn.setChecked(visible)
 
     def set_ergonomic_visible(self, visible: bool):
         """안전지표 패널 가시성 설정"""
-        self._ergonomic_checkbox.setChecked(visible)
+        self._ergonomic_action.setChecked(visible)
+        self._ergonomic_btn.setChecked(visible)
 
     def set_spreadsheet_visible(self, visible: bool):
         """스프레드시트 패널 가시성 설정"""
-        self._spreadsheet_checkbox.setChecked(visible)
+        self._spreadsheet_btn.setChecked(visible)
+
+    def set_rula_visible(self, visible: bool):
+        """RULA 패널 가시성 설정"""
+        self._rula_action.setChecked(visible)
+
+    def set_reba_visible(self, visible: bool):
+        """REBA 패널 가시성 설정"""
+        self._reba_action.setChecked(visible)
+
+    def set_owas_visible(self, visible: bool):
+        """OWAS 패널 가시성 설정"""
+        self._owas_action.setChecked(visible)
 
     def is_angle_visible(self) -> bool:
         """각도 패널 가시성 반환"""
-        return self._angle_checkbox.isChecked()
+        return self._angle_btn.isChecked()
 
     def is_ergonomic_visible(self) -> bool:
         """안전지표 패널 가시성 반환"""
-        return self._ergonomic_checkbox.isChecked()
+        return self._ergonomic_action.isChecked()
 
     def is_spreadsheet_visible(self) -> bool:
         """스프레드시트 패널 가시성 반환"""
-        return self._spreadsheet_checkbox.isChecked()
+        return self._spreadsheet_btn.isChecked()
+
+    def is_rula_visible(self) -> bool:
+        """RULA 패널 가시성 반환"""
+        return self._rula_action.isChecked()
+
+    def is_reba_visible(self) -> bool:
+        """REBA 패널 가시성 반환"""
+        return self._reba_action.isChecked()
+
+    def is_owas_visible(self) -> bool:
+        """OWAS 패널 가시성 반환"""
+        return self._owas_action.isChecked()
 
     def process_frame(self, frame: np.ndarray):
         """프레임 처리"""
