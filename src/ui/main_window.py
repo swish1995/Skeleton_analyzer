@@ -93,21 +93,11 @@ class MainWindow(QMainWindow):
         # 보기 메뉴
         view_menu = menubar.addMenu("보기(&V)")
 
-        # 스켈레톤 패널
-        self._skeleton_action = QAction("스켈레톤(&S)", self)
-        self._skeleton_action.setCheckable(True)
-        self._skeleton_action.setChecked(True)
-        self._skeleton_action.setShortcut("Ctrl+1")
-        self._skeleton_action.triggered.connect(
-            lambda checked: self.status_widget.set_skeleton_visible(checked)
-        )
-        view_menu.addAction(self._skeleton_action)
-
         # 각도 패널
         self._angle_action = QAction("각도(&A)", self)
         self._angle_action.setCheckable(True)
         self._angle_action.setChecked(True)
-        self._angle_action.setShortcut("Ctrl+2")
+        self._angle_action.setShortcut("Ctrl+1")
         self._angle_action.triggered.connect(
             lambda checked: self.status_widget.set_angle_visible(checked)
         )
@@ -117,7 +107,7 @@ class MainWindow(QMainWindow):
         self._ergonomic_action = QAction("안전지표(&E)", self)
         self._ergonomic_action.setCheckable(True)
         self._ergonomic_action.setChecked(True)
-        self._ergonomic_action.setShortcut("Ctrl+3")
+        self._ergonomic_action.setShortcut("Ctrl+2")
         self._ergonomic_action.triggered.connect(
             lambda checked: self.status_widget.set_ergonomic_visible(checked)
         )
@@ -127,7 +117,7 @@ class MainWindow(QMainWindow):
         self._spreadsheet_action = QAction("스프레드시트(&P)", self)
         self._spreadsheet_action.setCheckable(True)
         self._spreadsheet_action.setChecked(True)
-        self._spreadsheet_action.setShortcut("Ctrl+4")
+        self._spreadsheet_action.setShortcut("Ctrl+3")
         self._spreadsheet_action.triggered.connect(
             lambda checked: self.status_widget.set_spreadsheet_visible(checked)
         )
@@ -157,18 +147,15 @@ class MainWindow(QMainWindow):
             self._splitter.restoreState(splitter_state)
 
         # 패널 가시성 로드
-        skeleton_visible = self._settings.value("panel_skeleton", True, type=bool)
         angle_visible = self._settings.value("panel_angle", True, type=bool)
         ergonomic_visible = self._settings.value("panel_ergonomic", True, type=bool)
         spreadsheet_visible = self._settings.value("panel_spreadsheet", True, type=bool)
 
-        self.status_widget.set_skeleton_visible(skeleton_visible)
         self.status_widget.set_angle_visible(angle_visible)
         self.status_widget.set_ergonomic_visible(ergonomic_visible)
         self.status_widget.set_spreadsheet_visible(spreadsheet_visible)
 
         # 메뉴 체크 상태 동기화
-        self._skeleton_action.setChecked(skeleton_visible)
         self._angle_action.setChecked(angle_visible)
         self._ergonomic_action.setChecked(ergonomic_visible)
         self._spreadsheet_action.setChecked(spreadsheet_visible)
@@ -180,16 +167,13 @@ class MainWindow(QMainWindow):
         self._settings.setValue("splitter_state", self._splitter.saveState())
 
         # 패널 가시성 저장
-        self._settings.setValue("panel_skeleton", self.status_widget.is_skeleton_visible())
         self._settings.setValue("panel_angle", self.status_widget.is_angle_visible())
         self._settings.setValue("panel_ergonomic", self.status_widget.is_ergonomic_visible())
         self._settings.setValue("panel_spreadsheet", self.status_widget.is_spreadsheet_visible())
 
     def _on_visibility_changed(self, panel: str, visible: bool):
         """패널 가시성 변경 시 메뉴 동기화"""
-        if panel == 'skeleton':
-            self._skeleton_action.setChecked(visible)
-        elif panel == 'angle':
+        if panel == 'angle':
             self._angle_action.setChecked(visible)
         elif panel == 'ergonomic':
             self._ergonomic_action.setChecked(visible)

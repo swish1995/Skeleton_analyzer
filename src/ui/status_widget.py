@@ -55,11 +55,6 @@ class StatusWidget(QWidget):
             }
         """
 
-        self._skeleton_checkbox = QCheckBox("스켈레톤")
-        self._skeleton_checkbox.setChecked(True)
-        self._skeleton_checkbox.setStyleSheet(checkbox_style)
-        checkbox_layout.addWidget(self._skeleton_checkbox)
-
         self._angle_checkbox = QCheckBox("각도")
         self._angle_checkbox.setChecked(True)
         self._angle_checkbox.setStyleSheet(checkbox_style)
@@ -112,21 +107,13 @@ class StatusWidget(QWidget):
 
     def _connect_signals(self):
         """시그널 연결"""
-        self._skeleton_checkbox.toggled.connect(self._on_skeleton_toggled)
         self._angle_checkbox.toggled.connect(self._on_angle_toggled)
         self._ergonomic_checkbox.toggled.connect(self._on_ergonomic_toggled)
         self._spreadsheet_checkbox.toggled.connect(self._on_spreadsheet_toggled)
 
-    def _on_skeleton_toggled(self, checked: bool):
-        """스켈레톤 패널 토글"""
-        self._skeleton_widget.setVisible(checked)
-        self._update_top_splitter_visibility()
-        self.visibility_changed.emit('skeleton', checked)
-
     def _on_angle_toggled(self, checked: bool):
         """각도 패널 토글"""
         self._angle_widget.setVisible(checked)
-        self._update_top_splitter_visibility()
         self.visibility_changed.emit('angle', checked)
 
     def _on_ergonomic_toggled(self, checked: bool):
@@ -139,17 +126,7 @@ class StatusWidget(QWidget):
         self._spreadsheet_widget.setVisible(checked)
         self.visibility_changed.emit('spreadsheet', checked)
 
-    def _update_top_splitter_visibility(self):
-        """상단 스플리터 전체 가시성 업데이트"""
-        # 스켈레톤과 각도 모두 숨겨지면 상단 스플리터도 숨김
-        visible = self._skeleton_widget.isVisible() or self._angle_widget.isVisible()
-        self._top_splitter.setVisible(visible)
-
     # === 외부에서 패널 가시성 제어 ===
-
-    def set_skeleton_visible(self, visible: bool):
-        """스켈레톤 패널 가시성 설정"""
-        self._skeleton_checkbox.setChecked(visible)
 
     def set_angle_visible(self, visible: bool):
         """각도 패널 가시성 설정"""
@@ -162,10 +139,6 @@ class StatusWidget(QWidget):
     def set_spreadsheet_visible(self, visible: bool):
         """스프레드시트 패널 가시성 설정"""
         self._spreadsheet_checkbox.setChecked(visible)
-
-    def is_skeleton_visible(self) -> bool:
-        """스켈레톤 패널 가시성 반환"""
-        return self._skeleton_checkbox.isChecked()
 
     def is_angle_visible(self) -> bool:
         """각도 패널 가시성 반환"""
