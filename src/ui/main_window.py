@@ -168,8 +168,11 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         """키 입력 이벤트"""
-        if event.key() == Qt.Key.Key_Space:
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             self.player_widget.toggle_play()
+        elif event.key() == Qt.Key.Key_Space:
+            # 스페이스바 이벤트 무시 (기본 동작 방지)
+            event.accept()
         elif event.key() == Qt.Key.Key_Left:
             self.player_widget.seek_relative(-5)  # 5초 뒤로
         elif event.key() == Qt.Key.Key_Right:

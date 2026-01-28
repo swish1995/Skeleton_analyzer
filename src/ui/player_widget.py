@@ -112,8 +112,14 @@ class PlayerWidget(QWidget):
         self._open_btn = QPushButton("파일 열기")
         self._open_btn.setFixedHeight(28)
         self._open_btn.setStyleSheet(self.BUTTON_STYLES['open'])
+        self._open_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._open_btn.clicked.connect(self._open_file_dialog)
         menu_layout.addWidget(self._open_btn)
+
+        # 안내 메시지
+        help_label = QLabel("Enter: 재생/일시정지  |  Space: 캡처  |  ←/→: 5초 이동")
+        help_label.setStyleSheet("color: #888; font-size: 11px; background: transparent;")
+        menu_layout.addWidget(help_label)
 
         menu_layout.addStretch()
         layout.addWidget(menu_container)
@@ -141,6 +147,7 @@ class PlayerWidget(QWidget):
         self._play_toggle_btn = QPushButton("▶")
         self._play_toggle_btn.setFixedSize(40, 32)
         self._play_toggle_btn.setStyleSheet(self.BUTTON_STYLES['play'])
+        self._play_toggle_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._play_toggle_btn.clicked.connect(self.toggle_play)
         control_layout.addWidget(self._play_toggle_btn)
 
@@ -150,6 +157,7 @@ class PlayerWidget(QWidget):
         self._capture_btn.setIcon(self._create_capture_icon())
         self._capture_btn.setIconSize(self._capture_btn.size() * 0.6)
         self._capture_btn.setStyleSheet(self.BUTTON_STYLES['capture'])
+        self._capture_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._capture_btn.clicked.connect(self._on_capture_clicked)
         self._capture_btn.setEnabled(False)
         control_layout.addWidget(self._capture_btn)
