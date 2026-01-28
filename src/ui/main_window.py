@@ -63,6 +63,7 @@ class MainWindow(QMainWindow):
 
         # 시그널 연결
         self.player_widget.frame_changed.connect(self._on_frame_changed)
+        self.player_widget.capture_requested.connect(self._on_capture_requested)
 
     def _init_menu(self):
         """메뉴 초기화"""
@@ -165,6 +166,11 @@ class MainWindow(QMainWindow):
         if frame is not None:
             # 스테이터스 위젯에 프레임 전달
             self.status_widget.process_frame(frame)
+
+    def _on_capture_requested(self, timestamp: float, frame_number: int):
+        """캡처 요청 시 호출"""
+        # 플래시 효과
+        self.player_widget.flash_effect()
 
     def keyPressEvent(self, event):
         """키 입력 이벤트"""

@@ -1,9 +1,10 @@
 """동영상 플레이어 위젯 모듈"""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QSlider, QSizePolicy, QFileDialog
+    QPushButton, QSlider, QSizePolicy, QFileDialog,
+    QGraphicsOpacityEffect
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QBrush, QIcon
 import numpy as np
 from typing import Optional
@@ -124,16 +125,37 @@ class PlayerWidget(QWidget):
         menu_layout.addStretch()
         layout.addWidget(menu_container)
 
-        # 비디오 표시 영역
-        self._video_label = QLabel()
-        self._video_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._video_label.setStyleSheet("background-color: black;")
-        self._video_label.setSizePolicy(
+        # 비디오 컨테이너 (비디오 + 플래시 오버레이)
+        video_container = QWidget()
+        video_container.setStyleSheet("background-color: black;")
+        video_container.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Expanding
         )
-        self._video_label.setMinimumSize(320, 240)
-        layout.addWidget(self._video_label)
+        video_container.setMinimumSize(320, 240)
+
+        # 비디오 표시 영역
+        self._video_label = QLabel(video_container)
+        self._video_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._video_label.setStyleSheet("background-color: black;")
+
+        # 플래시 오버레이
+        self._flash_overlay = QLabel(video_container)
+        self._flash_overlay.setStyleSheet("background-color: white;")
+        self._flash_overlay.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._opacity_effect = QGraphicsOpacityEffect(self._flash_overlay)
+        self._opacity_effect.setOpacity(0)
+        self._flash_overlay.setGraphicsEffect(self._opacity_effect)
+        self._flash_overlay.hide()
+
+        # 플래시 애니메이션
+        self._flash_animation = QPropertyAnimation(self._opacity_effect, b"opacity")
+        self._flash_animation.setDuration(150)
+        self._flash_animation.finished.connect(self._on_flash_finished)
+        self._was_playing_before_capture = False
+
+        layout.addWidget(video_container)
+        self._video_container = video_container
 
         # 컨트롤바 컨테이너
         control_container = QWidget()
@@ -290,6 +312,36 @@ class PlayerWidget(QWidget):
             timestamp = self._video_player.current_time
             frame_number = self._video_player.current_frame
             self.capture_requested.emit(timestamp, frame_number)
+
+    def flash_effect(self):
+        """플래시 효과 실행"""
+        # 재생 중이었는지 저장 후 일시정지
+        self._was_playing_before_capture = self._video_player.is_playing
+        if self._was_playing_before_capture:
+            self.pause()
+
+        # 플래시 효과
+        self._flash_overlay.show()
+        self._flash_overlay.raise_()
+        self._flash_animation.setStartValue(0.7)
+        self._flash_animation.setEndValue(0)
+        self._flash_animation.setEasingCurve(QEasingCurve.Type.OutQuad)
+        self._flash_animation.start()
+
+    def _on_flash_finished(self):
+        """플래시 효과 완료 후"""
+        self._flash_overlay.hide()
+        # 이전에 재생 중이었으면 다시 재생
+        if self._was_playing_before_capture:
+            self.play()
+
+    def resizeEvent(self, event):
+        """크기 변경 시 오버레이 크기 조정"""
+        super().resizeEvent(event)
+        if hasattr(self, '_video_container'):
+            size = self._video_container.size()
+            self._video_label.setGeometry(0, 0, size.width(), size.height())
+            self._flash_overlay.setGeometry(0, 0, size.width(), size.height())
 
     def seek_relative(self, seconds: float):
         """상대적 시크 (초 단위)"""
