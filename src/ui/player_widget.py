@@ -28,9 +28,9 @@ class PlayerWidget(QWidget):
                     stop:0 #3a9a8a, stop:1 #2a8a7a);
                 color: white;
                 border: none;
-                padding: 6px 14px;
-                border-radius: 6px;
-                font-size: 12px;
+                padding: 5px 12px;
+                border-radius: 4px;
+                font-size: 11px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -104,14 +104,14 @@ class PlayerWidget(QWidget):
 
         # 상단 메뉴바 컨테이너
         menu_container = QWidget()
-        menu_container.setStyleSheet("background-color: #333333; border-radius: 6px;")
-        menu_container.setFixedHeight(42)
+        menu_container.setStyleSheet("background-color: #333333; border-radius: 4px;")
+        menu_container.setFixedHeight(32)
         menu_layout = QHBoxLayout(menu_container)
-        menu_layout.setContentsMargins(10, 6, 10, 6)
+        menu_layout.setContentsMargins(8, 2, 8, 0)
 
         # 파일 열기 버튼
         self._open_btn = QPushButton("파일 열기")
-        self._open_btn.setFixedHeight(28)
+        self._open_btn.setFixedHeight(26)
         self._open_btn.setStyleSheet(self.BUTTON_STYLES['open'])
         self._open_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._open_btn.clicked.connect(self._open_file_dialog)
