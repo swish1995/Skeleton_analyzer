@@ -109,17 +109,17 @@ class StatusWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        # 상단: 메뉴바 컨테이너 (왼쪽 메뉴바와 동일한 크기)
+        # 상단: 메뉴바 컨테이너 (왼쪽 메뉴바와 동일한 스타일)
         menubar_container = QWidget()
-        menubar_container.setStyleSheet("background-color: #333333; border-radius: 4px;")
-        menubar_container.setFixedHeight(32)
+        menubar_container.setStyleSheet("background-color: #333333; border-radius: 6px;")
+        menubar_container.setFixedHeight(45)
         menubar_layout = QHBoxLayout(menubar_container)
-        menubar_layout.setContentsMargins(8, 3, 8, 3)
+        menubar_layout.setContentsMargins(10, 8, 10, 10)
         menubar_layout.setSpacing(8)
 
         # 상태 버튼 (토글) - 각도 패널
         self._angle_btn = QPushButton("상태")
-        self._angle_btn.setFixedHeight(26)
+        self._angle_btn.setFixedHeight(28)
         self._angle_btn.setCheckable(True)
         self._angle_btn.setChecked(True)
         self._angle_btn.setStyleSheet(self._get_button_style("상태", True))
@@ -127,7 +127,7 @@ class StatusWidget(QWidget):
 
         # 데이터 버튼 (토글) - 스프레드시트
         self._spreadsheet_btn = QPushButton("데이터")
-        self._spreadsheet_btn.setFixedHeight(26)
+        self._spreadsheet_btn.setFixedHeight(28)
         self._spreadsheet_btn.setCheckable(True)
         self._spreadsheet_btn.setChecked(True)
         self._spreadsheet_btn.setStyleSheet(self._get_button_style("데이터", True))
@@ -138,7 +138,7 @@ class StatusWidget(QWidget):
 
         # 안전지표 버튼 (토글)
         self._ergonomic_btn = QPushButton("안전지표")
-        self._ergonomic_btn.setFixedHeight(26)
+        self._ergonomic_btn.setFixedHeight(28)
         self._ergonomic_btn.setCheckable(True)
         self._ergonomic_btn.setChecked(True)
         self._ergonomic_btn.setStyleSheet(self._get_button_style("안전지표", True))
@@ -146,7 +146,7 @@ class StatusWidget(QWidget):
 
         # RULA 버튼
         self._rula_btn = QPushButton("RULA")
-        self._rula_btn.setFixedHeight(26)
+        self._rula_btn.setFixedHeight(28)
         self._rula_btn.setCheckable(True)
         self._rula_btn.setChecked(True)
         self._rula_btn.setStyleSheet(self._get_button_style("RULA", True, True))
@@ -154,7 +154,7 @@ class StatusWidget(QWidget):
 
         # REBA 버튼
         self._reba_btn = QPushButton("REBA")
-        self._reba_btn.setFixedHeight(26)
+        self._reba_btn.setFixedHeight(28)
         self._reba_btn.setCheckable(True)
         self._reba_btn.setChecked(True)
         self._reba_btn.setStyleSheet(self._get_button_style("REBA", True, True))
@@ -162,7 +162,7 @@ class StatusWidget(QWidget):
 
         # OWAS 버튼
         self._owas_btn = QPushButton("OWAS")
-        self._owas_btn.setFixedHeight(26)
+        self._owas_btn.setFixedHeight(28)
         self._owas_btn.setCheckable(True)
         self._owas_btn.setChecked(True)
         self._owas_btn.setStyleSheet(self._get_button_style("OWAS", True, True))
