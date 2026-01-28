@@ -189,15 +189,14 @@ class StatusWidget(QWidget):
         """
         vertical_splitter_style = """
             QSplitter::handle:vertical {
-                height: 2px;
-                margin-top: 1px;
-                margin-bottom: 5px;
                 background: qlineargradient(
-                    x1: 0.25, y1: 0,
-                    x2: 0.75, y2: 0,
+                    x1: 0, y1: 0,
+                    x2: 1, y2: 0,
                     stop: 0 transparent,
-                    stop: 0.001 #888888,
-                    stop: 0.999 #888888,
+                    stop: 0.24 transparent,
+                    stop: 0.25 #888888,
+                    stop: 0.75 #888888,
+                    stop: 0.76 transparent,
                     stop: 1 transparent
                 );
             }
@@ -205,7 +204,7 @@ class StatusWidget(QWidget):
 
         # 메인 스플리터 (상/하 분할)
         self._main_splitter = QSplitter(Qt.Orientation.Vertical)
-        self._main_splitter.setHandleWidth(8)
+        self._main_splitter.setHandleWidth(2)
         self._main_splitter.setStyleSheet(vertical_splitter_style)
 
         # 상단: 스켈레톤 + 각도 (좌/우 분할)
