@@ -42,6 +42,23 @@ class MainWindow(QMainWindow):
 
         # 스플리터 (좌우 분할)
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._splitter.setObjectName("mainSplitter")
+        self._splitter.setHandleWidth(8)
+        self._splitter.setStyleSheet("""
+            QSplitter#mainSplitter::handle:horizontal {
+                width: 2px;
+                margin-left: 1px;
+                margin-right: 5px;
+                background: qlineargradient(
+                    x1: 0, y1: 0.25,
+                    x2: 0, y2: 0.75,
+                    stop: 0 transparent,
+                    stop: 0.001 #888888,
+                    stop: 0.999 #888888,
+                    stop: 1 transparent
+                );
+            }
+        """)
 
         # 왼쪽: 플레이어 위젯
         self.player_widget = PlayerWidget()
