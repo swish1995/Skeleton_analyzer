@@ -37,7 +37,7 @@ class ErgonomicWidget(QWidget):
     def _init_ui(self):
         """UI 초기화"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 0, 5, 5)
+        layout.setContentsMargins(5, 0, 5, 0)
         layout.setSpacing(0)
 
         # 가로 스플리터 (왼쪽 | 가운데 | 오른쪽)
