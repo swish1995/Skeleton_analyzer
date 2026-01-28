@@ -1,6 +1,6 @@
 """스테이터스 위젯 모듈 (스켈레톤 + 각도 + 인체공학적 평가 + 캡처 스프레드시트)"""
 from PyQt6.QtWidgets import (
-    QWidget, QSplitter, QVBoxLayout, QSizePolicy
+    QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QCheckBox, QSizePolicy
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 import numpy as np
@@ -21,6 +21,7 @@ class StatusWidget(QWidget):
 
     # 시그널
     capture_added = pyqtSignal(int)  # 캡처 추가 시 행 인덱스 전달
+    visibility_changed = pyqtSignal(str, bool)  # 패널 가시성 변경 (패널명, 상태)
 
     def __init__(self):
         super().__init__()
@@ -30,43 +31,153 @@ class StatusWidget(QWidget):
         self._current_frame_number = 0
 
         self._init_ui()
+        self._connect_signals()
 
     def _init_ui(self):
         """UI 초기화"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+
+        # 상단: 패널 표시 체크박스 바
+        checkbox_layout = QHBoxLayout()
+        checkbox_layout.setContentsMargins(5, 2, 5, 2)
+        checkbox_layout.setSpacing(15)
+
+        checkbox_style = """
+            QCheckBox {
+                color: #cccccc;
+                font-size: 11px;
+            }
+            QCheckBox::indicator {
+                width: 14px;
+                height: 14px;
+            }
+        """
+
+        self._skeleton_checkbox = QCheckBox("스켈레톤")
+        self._skeleton_checkbox.setChecked(True)
+        self._skeleton_checkbox.setStyleSheet(checkbox_style)
+        checkbox_layout.addWidget(self._skeleton_checkbox)
+
+        self._angle_checkbox = QCheckBox("각도")
+        self._angle_checkbox.setChecked(True)
+        self._angle_checkbox.setStyleSheet(checkbox_style)
+        checkbox_layout.addWidget(self._angle_checkbox)
+
+        self._ergonomic_checkbox = QCheckBox("안전지표")
+        self._ergonomic_checkbox.setChecked(True)
+        self._ergonomic_checkbox.setStyleSheet(checkbox_style)
+        checkbox_layout.addWidget(self._ergonomic_checkbox)
+
+        self._spreadsheet_checkbox = QCheckBox("스프레드시트")
+        self._spreadsheet_checkbox.setChecked(True)
+        self._spreadsheet_checkbox.setStyleSheet(checkbox_style)
+        checkbox_layout.addWidget(self._spreadsheet_checkbox)
+
+        checkbox_layout.addStretch()
+        layout.addLayout(checkbox_layout)
 
         # 메인 스플리터 (상/하 분할)
-        main_splitter = QSplitter(Qt.Orientation.Vertical)
+        self._main_splitter = QSplitter(Qt.Orientation.Vertical)
 
         # 상단: 스켈레톤 + 각도 (좌/우 분할)
-        top_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # 왼쪽: 스켈레톤 시각화
         self._skeleton_widget = SkeletonWidget()
-        top_splitter.addWidget(self._skeleton_widget)
+        self._top_splitter.addWidget(self._skeleton_widget)
 
         # 오른쪽: 각도 표시
         self._angle_widget = AngleWidget()
-        top_splitter.addWidget(self._angle_widget)
+        self._top_splitter.addWidget(self._angle_widget)
 
         # 50:50 비율
-        top_splitter.setSizes([400, 400])
+        self._top_splitter.setSizes([400, 400])
 
-        main_splitter.addWidget(top_splitter)
+        self._main_splitter.addWidget(self._top_splitter)
 
         # 중단: 인체공학적 평가 (RULA/REBA/OWAS)
         self._ergonomic_widget = ErgonomicWidget()
-        main_splitter.addWidget(self._ergonomic_widget)
+        self._main_splitter.addWidget(self._ergonomic_widget)
 
         # 하단: 캡처 스프레드시트
         self._spreadsheet_widget = CaptureSpreadsheetWidget()
-        main_splitter.addWidget(self._spreadsheet_widget)
+        self._main_splitter.addWidget(self._spreadsheet_widget)
 
         # 상단:중단:하단 = 35:35:30 비율
-        main_splitter.setSizes([350, 350, 300])
+        self._main_splitter.setSizes([350, 350, 300])
 
-        layout.addWidget(main_splitter)
+        layout.addWidget(self._main_splitter)
+
+    def _connect_signals(self):
+        """시그널 연결"""
+        self._skeleton_checkbox.toggled.connect(self._on_skeleton_toggled)
+        self._angle_checkbox.toggled.connect(self._on_angle_toggled)
+        self._ergonomic_checkbox.toggled.connect(self._on_ergonomic_toggled)
+        self._spreadsheet_checkbox.toggled.connect(self._on_spreadsheet_toggled)
+
+    def _on_skeleton_toggled(self, checked: bool):
+        """스켈레톤 패널 토글"""
+        self._skeleton_widget.setVisible(checked)
+        self._update_top_splitter_visibility()
+        self.visibility_changed.emit('skeleton', checked)
+
+    def _on_angle_toggled(self, checked: bool):
+        """각도 패널 토글"""
+        self._angle_widget.setVisible(checked)
+        self._update_top_splitter_visibility()
+        self.visibility_changed.emit('angle', checked)
+
+    def _on_ergonomic_toggled(self, checked: bool):
+        """안전지표 패널 토글"""
+        self._ergonomic_widget.setVisible(checked)
+        self.visibility_changed.emit('ergonomic', checked)
+
+    def _on_spreadsheet_toggled(self, checked: bool):
+        """스프레드시트 패널 토글"""
+        self._spreadsheet_widget.setVisible(checked)
+        self.visibility_changed.emit('spreadsheet', checked)
+
+    def _update_top_splitter_visibility(self):
+        """상단 스플리터 전체 가시성 업데이트"""
+        # 스켈레톤과 각도 모두 숨겨지면 상단 스플리터도 숨김
+        visible = self._skeleton_widget.isVisible() or self._angle_widget.isVisible()
+        self._top_splitter.setVisible(visible)
+
+    # === 외부에서 패널 가시성 제어 ===
+
+    def set_skeleton_visible(self, visible: bool):
+        """스켈레톤 패널 가시성 설정"""
+        self._skeleton_checkbox.setChecked(visible)
+
+    def set_angle_visible(self, visible: bool):
+        """각도 패널 가시성 설정"""
+        self._angle_checkbox.setChecked(visible)
+
+    def set_ergonomic_visible(self, visible: bool):
+        """안전지표 패널 가시성 설정"""
+        self._ergonomic_checkbox.setChecked(visible)
+
+    def set_spreadsheet_visible(self, visible: bool):
+        """스프레드시트 패널 가시성 설정"""
+        self._spreadsheet_checkbox.setChecked(visible)
+
+    def is_skeleton_visible(self) -> bool:
+        """스켈레톤 패널 가시성 반환"""
+        return self._skeleton_checkbox.isChecked()
+
+    def is_angle_visible(self) -> bool:
+        """각도 패널 가시성 반환"""
+        return self._angle_checkbox.isChecked()
+
+    def is_ergonomic_visible(self) -> bool:
+        """안전지표 패널 가시성 반환"""
+        return self._ergonomic_checkbox.isChecked()
+
+    def is_spreadsheet_visible(self) -> bool:
+        """스프레드시트 패널 가시성 반환"""
+        return self._spreadsheet_checkbox.isChecked()
 
     def process_frame(self, frame: np.ndarray):
         """프레임 처리"""
