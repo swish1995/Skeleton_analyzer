@@ -171,11 +171,47 @@ class StatusWidget(QWidget):
         menubar_layout.addStretch()
         layout.addWidget(menubar_container)
 
+        # 스플리터 스타일 정의
+        horizontal_splitter_style = """
+            QSplitter::handle:horizontal {
+                width: 2px;
+                margin-left: 1px;
+                margin-right: 5px;
+                background: qlineargradient(
+                    x1: 0, y1: 0.25,
+                    x2: 0, y2: 0.75,
+                    stop: 0 transparent,
+                    stop: 0.001 #888888,
+                    stop: 0.999 #888888,
+                    stop: 1 transparent
+                );
+            }
+        """
+        vertical_splitter_style = """
+            QSplitter::handle:vertical {
+                height: 2px;
+                margin-top: 1px;
+                margin-bottom: 5px;
+                background: qlineargradient(
+                    x1: 0.25, y1: 0,
+                    x2: 0.75, y2: 0,
+                    stop: 0 transparent,
+                    stop: 0.001 #888888,
+                    stop: 0.999 #888888,
+                    stop: 1 transparent
+                );
+            }
+        """
+
         # 메인 스플리터 (상/하 분할)
         self._main_splitter = QSplitter(Qt.Orientation.Vertical)
+        self._main_splitter.setHandleWidth(8)
+        self._main_splitter.setStyleSheet(vertical_splitter_style)
 
         # 상단: 스켈레톤 + 각도 (좌/우 분할)
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._top_splitter.setHandleWidth(8)
+        self._top_splitter.setStyleSheet(horizontal_splitter_style)
 
         # 왼쪽: 스켈레톤 시각화
         self._skeleton_widget = SkeletonWidget()

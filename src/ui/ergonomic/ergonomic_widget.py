@@ -42,6 +42,22 @@ class ErgonomicWidget(QWidget):
 
         # 가로 스플리터 (왼쪽 | 가운데 | 오른쪽)
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._splitter.setHandleWidth(8)
+        self._splitter.setStyleSheet("""
+            QSplitter::handle:horizontal {
+                width: 2px;
+                margin-left: 1px;
+                margin-right: 5px;
+                background: qlineargradient(
+                    x1: 0, y1: 0.25,
+                    x2: 0, y2: 0.75,
+                    stop: 0 transparent,
+                    stop: 0.001 #888888,
+                    stop: 0.999 #888888,
+                    stop: 1 transparent
+                );
+            }
+        """)
 
         # 각 평가 위젯
         self._rula_widget = RULAWidget()
