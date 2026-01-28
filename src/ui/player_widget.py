@@ -117,7 +117,7 @@ class PlayerWidget(QWidget):
         menu_layout.addWidget(self._open_btn)
 
         # 안내 메시지
-        help_label = QLabel("Enter: 재생/일시정지  |  Space: 캡처  |  ←/→: 5초 이동")
+        help_label = QLabel("Space: 재생/일시정지  |  Enter: 캡처  |  ←/→: 5초 이동")
         help_label.setStyleSheet("color: #888; font-size: 11px; background: transparent;")
         menu_layout.addWidget(help_label)
 
