@@ -119,6 +119,70 @@ RISK_COLORS = {
     'very_harmful': QColor(255, 99, 71),
 }
 
+# 버튼 스타일 (PlayerWidget과 동일)
+BUTTON_STYLES = {
+    'json': """
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #3a9a8a, stop:1 #2a8a7a);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #4aaa9a, stop:1 #3a9a8a);
+        }
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #2a8a7a, stop:1 #1a7a6a);
+        }
+    """,
+    'excel': """
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #5a7ab8, stop:1 #4a6aa8);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #6a8ac8, stop:1 #5a7ab8);
+        }
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #4a6aa8, stop:1 #3a5a98);
+        }
+    """,
+    'delete': """
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #c55a5a, stop:1 #b54a4a);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #d56a6a, stop:1 #c55a5a);
+        }
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #b54a4a, stop:1 #a53a3a);
+        }
+    """,
+}
+
 
 class SpinBoxDelegate(QStyledItemDelegate):
     """SpinBox 에디터를 제공하는 Delegate"""
@@ -196,16 +260,19 @@ class CaptureSpreadsheetWidget(QWidget):
         btn_layout = QHBoxLayout()
 
         self._json_btn = QPushButton("JSON 내보내기")
+        self._json_btn.setStyleSheet(BUTTON_STYLES['json'])
         self._json_btn.clicked.connect(self._export_json)
         btn_layout.addWidget(self._json_btn)
 
         self._excel_btn = QPushButton("Excel 내보내기")
+        self._excel_btn.setStyleSheet(BUTTON_STYLES['excel'])
         self._excel_btn.clicked.connect(self._export_excel)
         btn_layout.addWidget(self._excel_btn)
 
         btn_layout.addStretch()
 
         self._clear_btn = QPushButton("전체 삭제")
+        self._clear_btn.setStyleSheet(BUTTON_STYLES['delete'])
         self._clear_btn.clicked.connect(self._clear_all)
         btn_layout.addWidget(self._clear_btn)
 

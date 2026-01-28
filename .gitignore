@@ -47,3 +47,6 @@ Thumbs.db
 resources/test_video.mp4
 resources/test_person.jpg
 *.task
+
+dev/
+captures/
