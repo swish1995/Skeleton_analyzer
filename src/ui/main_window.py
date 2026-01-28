@@ -164,13 +164,22 @@ class MainWindow(QMainWindow):
     def _on_frame_changed(self, frame, frame_number: int):
         """프레임 변경 시 호출"""
         if frame is not None:
+            # 현재 위치 정보 업데이트
+            timestamp = self.player_widget.get_current_position()
+            self.status_widget.set_current_position(timestamp, frame_number)
+
             # 스테이터스 위젯에 프레임 전달
             self.status_widget.process_frame(frame)
 
     def _on_capture_requested(self, timestamp: float, frame_number: int):
         """캡처 요청 시 호출"""
-        # 플래시 효과
-        self.player_widget.flash_effect()
+        # 현재 상태를 스프레드시트에 캡처
+        row_idx = self.status_widget.capture_current_state()
+
+        if row_idx is not None:
+            self._status_bar.showMessage(f"캡처됨: {timestamp:.3f}초 (프레임 {frame_number})")
+        else:
+            self._status_bar.showMessage("캡처 실패: 평가 결과가 없습니다.")
 
     def keyPressEvent(self, event):
         """키 입력 이벤트"""

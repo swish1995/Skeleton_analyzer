@@ -28,6 +28,11 @@ class ErgonomicWidget(QWidget):
         self._reba_calculator = REBACalculator()
         self._owas_calculator = OWASCalculator()
 
+        # 현재 결과 저장
+        self._current_rula_result: RULAResult = None
+        self._current_reba_result: REBAResult = None
+        self._current_owas_result: OWASResult = None
+
         self._init_ui()
 
     def _init_ui(self):
@@ -113,22 +118,25 @@ class ErgonomicWidget(QWidget):
             return
 
         # RULA 계산 및 업데이트
-        rula_result = self._rula_calculator.calculate(angles, landmarks)
-        self._rula_widget.update_result(rula_result)
+        self._current_rula_result = self._rula_calculator.calculate(angles, landmarks)
+        self._rula_widget.update_result(self._current_rula_result)
 
         # REBA 계산 및 업데이트
-        reba_result = self._reba_calculator.calculate(angles, landmarks)
-        self._reba_widget.update_result(reba_result)
+        self._current_reba_result = self._reba_calculator.calculate(angles, landmarks)
+        self._reba_widget.update_result(self._current_reba_result)
 
         # OWAS 계산 및 업데이트
-        owas_result = self._owas_calculator.calculate(angles, landmarks)
-        self._owas_widget.update_result(owas_result)
+        self._current_owas_result = self._owas_calculator.calculate(angles, landmarks)
+        self._owas_widget.update_result(self._current_owas_result)
 
     def clear(self):
         """모든 위젯 초기화"""
         self._rula_widget.clear()
         self._reba_widget.clear()
         self._owas_widget.clear()
+        self._current_rula_result = None
+        self._current_reba_result = None
+        self._current_owas_result = None
 
     @property
     def rula_widget(self) -> RULAWidget:
@@ -144,3 +152,24 @@ class ErgonomicWidget(QWidget):
     def owas_widget(self) -> OWASWidget:
         """OWAS 위젯 반환"""
         return self._owas_widget
+
+    def get_current_results(self) -> Dict:
+        """
+        현재 평가 결과 반환
+
+        Returns:
+            dict with 'rula', 'reba', 'owas' keys containing result dicts
+        """
+        return {
+            'rula': self._current_rula_result,
+            'reba': self._current_reba_result,
+            'owas': self._current_owas_result,
+        }
+
+    def has_results(self) -> bool:
+        """현재 결과가 있는지 확인"""
+        return (
+            self._current_rula_result is not None or
+            self._current_reba_result is not None or
+            self._current_owas_result is not None
+        )

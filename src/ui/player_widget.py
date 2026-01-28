@@ -352,6 +352,14 @@ class PlayerWidget(QWidget):
             self._video_player.seek(target_frame)
             self._update_display()
 
+    def get_current_position(self) -> float:
+        """현재 재생 위치 (초 단위) 반환"""
+        return self._video_player.current_time if self._video_player.is_loaded else 0.0
+
+    def get_current_frame_number(self) -> int:
+        """현재 프레임 번호 반환"""
+        return self._video_player.current_frame if self._video_player.is_loaded else 0
+
     def release(self):
         """리소스 해제"""
         self._timer.stop()
