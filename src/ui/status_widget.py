@@ -34,97 +34,74 @@ class StatusWidget(QWidget):
         self._init_ui()
         self._connect_signals()
 
-    # 토글 버튼 스타일 (ai-generate 스타일 - On 상태)
-    TOGGLE_BUTTON_ON_STYLE = """
-        QPushButton {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #3a9a8a, stop:1 #2a8a7a);
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #4aaa9a, stop:1 #3a9a8a);
-        }
-        QPushButton:pressed {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #2a8a7a, stop:1 #1a7a6a);
-        }
-    """
+    # 버튼 색상 정의 (각 버튼별 다른 색상)
+    BUTTON_COLORS = {
+        '상태': ('#3a9a8a', '#2a8a7a', '#4aaa9a'),      # 틸색
+        '데이터': ('#5a7ab8', '#4a6aa8', '#6a8ac8'),    # 파란색
+        '안전지표': ('#8a5ab8', '#7a4aa8', '#9a6ac8'),  # 보라색
+        'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
+        'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
+        'OWAS': ('#b85a6a', '#a84a5a', '#c86a7a'),      # 빨간색
+    }
 
-    # 토글 버튼 스타일 (ai-generate 스타일 - Off 상태)
-    TOGGLE_BUTTON_OFF_STYLE = """
-        QPushButton {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #555555, stop:1 #444444);
-            color: #999999;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #666666, stop:1 #555555);
-        }
-        QPushButton:pressed {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #444444, stop:1 #333333);
-        }
-    """
+    @classmethod
+    def _get_button_style(cls, color_key: str, is_on: bool, is_sub: bool = False) -> str:
+        """버튼 스타일 생성"""
+        colors = cls.BUTTON_COLORS.get(color_key, cls.BUTTON_COLORS['상태'])
+        base, dark, light = colors
+        padding = "5px 8px" if is_sub else "5px 12px"
+        font_size = "10px" if is_sub else "11px"
 
-    # 안전지표 서브 버튼 스타일 (On 상태)
-    SUB_BUTTON_ON_STYLE = """
-        QPushButton {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #3a8a7a, stop:1 #2a7a6a);
-            color: white;
-            border: none;
-            padding: 5px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #4a9a8a, stop:1 #3a8a7a);
-        }
-        QPushButton:pressed {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #2a7a6a, stop:1 #1a6a5a);
-        }
-    """
-
-    # 안전지표 서브 버튼 스타일 (Off 상태)
-    SUB_BUTTON_OFF_STYLE = """
-        QPushButton {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #4a4a4a, stop:1 #3a3a3a);
-            color: #888888;
-            border: none;
-            padding: 5px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #5a5a5a, stop:1 #4a4a4a);
-        }
-        QPushButton:pressed {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #3a3a3a, stop:1 #2a2a2a);
-        }
-        QPushButton:disabled {
-            background: #333333;
-            color: #555555;
-        }
-    """
+        if is_on:
+            return f"""
+                QPushButton {{
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 {base}, stop:1 {dark});
+                    color: white;
+                    border: none;
+                    padding: {padding};
+                    border-radius: 4px;
+                    font-size: {font_size};
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 {light}, stop:1 {base});
+                }}
+                QPushButton:pressed {{
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 {dark}, stop:1 {base});
+                }}
+                QPushButton:disabled {{
+                    background: #444444;
+                    color: #666666;
+                }}
+            """
+        else:
+            return f"""
+                QPushButton {{
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 {base}, stop:1 {dark});
+                    color: #666666;
+                    border: none;
+                    padding: {padding};
+                    border-radius: 4px;
+                    font-size: {font_size};
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 {light}, stop:1 {base});
+                }}
+                QPushButton:pressed {{
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 {dark}, stop:1 {base});
+                }}
+                QPushButton:disabled {{
+                    background: #444444;
+                    color: #555555;
+                }}
+            """
 
     def _init_ui(self):
         """UI 초기화"""
@@ -141,30 +118,30 @@ class StatusWidget(QWidget):
         menubar_layout.setSpacing(4)
 
         # 상태 버튼 (토글) - 각도 패널
-        self._angle_btn = QPushButton("상태: On")
+        self._angle_btn = QPushButton("상태")
         self._angle_btn.setFixedHeight(26)
         self._angle_btn.setCheckable(True)
         self._angle_btn.setChecked(True)
-        self._update_toggle_style(self._angle_btn, True, "상태")
+        self._angle_btn.setStyleSheet(self._get_button_style("상태", True))
         menubar_layout.addWidget(self._angle_btn)
 
         # 데이터 버튼 (토글) - 스프레드시트
-        self._spreadsheet_btn = QPushButton("데이터: On")
+        self._spreadsheet_btn = QPushButton("데이터")
         self._spreadsheet_btn.setFixedHeight(26)
         self._spreadsheet_btn.setCheckable(True)
         self._spreadsheet_btn.setChecked(True)
-        self._update_toggle_style(self._spreadsheet_btn, True, "데이터")
+        self._spreadsheet_btn.setStyleSheet(self._get_button_style("데이터", True))
         menubar_layout.addWidget(self._spreadsheet_btn)
 
         # 구분선
         menubar_layout.addSpacing(8)
 
         # 안전지표 버튼 (토글)
-        self._ergonomic_btn = QPushButton("안전지표: On")
+        self._ergonomic_btn = QPushButton("안전지표")
         self._ergonomic_btn.setFixedHeight(26)
         self._ergonomic_btn.setCheckable(True)
         self._ergonomic_btn.setChecked(True)
-        self._update_toggle_style(self._ergonomic_btn, True, "안전지표")
+        self._ergonomic_btn.setStyleSheet(self._get_button_style("안전지표", True))
         menubar_layout.addWidget(self._ergonomic_btn)
 
         # RULA 버튼
@@ -172,7 +149,7 @@ class StatusWidget(QWidget):
         self._rula_btn.setFixedHeight(26)
         self._rula_btn.setCheckable(True)
         self._rula_btn.setChecked(True)
-        self._update_sub_toggle_style(self._rula_btn, True)
+        self._rula_btn.setStyleSheet(self._get_button_style("RULA", True, True))
         menubar_layout.addWidget(self._rula_btn)
 
         # REBA 버튼
@@ -180,7 +157,7 @@ class StatusWidget(QWidget):
         self._reba_btn.setFixedHeight(26)
         self._reba_btn.setCheckable(True)
         self._reba_btn.setChecked(True)
-        self._update_sub_toggle_style(self._reba_btn, True)
+        self._reba_btn.setStyleSheet(self._get_button_style("REBA", True, True))
         menubar_layout.addWidget(self._reba_btn)
 
         # OWAS 버튼
@@ -188,7 +165,7 @@ class StatusWidget(QWidget):
         self._owas_btn.setFixedHeight(26)
         self._owas_btn.setCheckable(True)
         self._owas_btn.setChecked(True)
-        self._update_sub_toggle_style(self._owas_btn, True)
+        self._owas_btn.setStyleSheet(self._get_button_style("OWAS", True, True))
         menubar_layout.addWidget(self._owas_btn)
 
         menubar_layout.addStretch()
@@ -227,20 +204,12 @@ class StatusWidget(QWidget):
         layout.addWidget(self._main_splitter)
 
     def _update_toggle_style(self, btn: QPushButton, checked: bool, label: str):
-        """토글 버튼 스타일 업데이트 (On/Off 텍스트)"""
-        if checked:
-            btn.setText(f"{label}: On")
-            btn.setStyleSheet(self.TOGGLE_BUTTON_ON_STYLE)
-        else:
-            btn.setText(f"{label}: Off")
-            btn.setStyleSheet(self.TOGGLE_BUTTON_OFF_STYLE)
+        """토글 버튼 스타일 업데이트 (텍스트 색상만 변경)"""
+        btn.setStyleSheet(self._get_button_style(label, checked))
 
-    def _update_sub_toggle_style(self, btn: QPushButton, checked: bool):
+    def _update_sub_toggle_style(self, btn: QPushButton, checked: bool, label: str):
         """서브 토글 버튼 스타일 업데이트"""
-        if checked:
-            btn.setStyleSheet(self.SUB_BUTTON_ON_STYLE)
-        else:
-            btn.setStyleSheet(self.SUB_BUTTON_OFF_STYLE)
+        btn.setStyleSheet(self._get_button_style(label, checked, True))
 
     def _connect_signals(self):
         """시그널 연결"""
@@ -276,17 +245,17 @@ class StatusWidget(QWidget):
     def _on_rula_toggled(self, checked: bool):
         """RULA 패널 토글"""
         self._ergonomic_widget.set_rula_visible(checked)
-        self._update_sub_toggle_style(self._rula_btn, checked)
+        self._update_sub_toggle_style(self._rula_btn, checked, "RULA")
 
     def _on_reba_toggled(self, checked: bool):
         """REBA 패널 토글"""
         self._ergonomic_widget.set_reba_visible(checked)
-        self._update_sub_toggle_style(self._reba_btn, checked)
+        self._update_sub_toggle_style(self._reba_btn, checked, "REBA")
 
     def _on_owas_toggled(self, checked: bool):
         """OWAS 패널 토글"""
         self._ergonomic_widget.set_owas_visible(checked)
-        self._update_sub_toggle_style(self._owas_btn, checked)
+        self._update_sub_toggle_style(self._owas_btn, checked, "OWAS")
 
     # === 외부에서 패널 가시성 제어 ===
 
