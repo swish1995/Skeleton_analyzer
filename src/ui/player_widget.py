@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QSlider, QSizePolicy, QFileDialog
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QBrush, QIcon
 import numpy as np
 from typing import Optional
 
@@ -16,6 +16,8 @@ class PlayerWidget(QWidget):
 
     # 시그널: (frame, frame_number)
     frame_changed = pyqtSignal(object, int)
+    # 캡처 요청 시그널: (timestamp, frame_number)
+    capture_requested = pyqtSignal(float, int)
 
     # 버튼 스타일 (ai-generate 스타일)
     BUTTON_STYLES = {
@@ -59,10 +61,10 @@ class PlayerWidget(QWidget):
                     stop:0 #2a8a5a, stop:1 #1a7a4a);
             }
         """,
-        'pause': """
+        'capture': """
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #b8863a, stop:1 #a8762a);
+                    stop:0 #5a7ab8, stop:1 #4a6aa8);
                 color: white;
                 border: none;
                 padding: 5px;
@@ -72,31 +74,15 @@ class PlayerWidget(QWidget):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #c8964a, stop:1 #b8863a);
+                    stop:0 #6a8ac8, stop:1 #5a7ab8);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #a8762a, stop:1 #98661a);
+                    stop:0 #4a6aa8, stop:1 #3a5a98);
             }
-        """,
-        'stop': """
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #a85a5a, stop:1 #984a4a);
-                color: white;
-                border: none;
-                padding: 5px;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #b86a6a, stop:1 #a85a5a);
-            }
-            QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #984a4a, stop:1 #883a3a);
+            QPushButton:disabled {
+                background: #555555;
+                color: #888888;
             }
         """,
     }
@@ -151,26 +137,22 @@ class PlayerWidget(QWidget):
         control_layout.setContentsMargins(10, 5, 10, 5)
         control_layout.setSpacing(8)
 
-        # 재생 버튼
-        self._play_btn = QPushButton("▶")
-        self._play_btn.setFixedSize(40, 32)
-        self._play_btn.setStyleSheet(self.BUTTON_STYLES['play'])
-        self._play_btn.clicked.connect(self.play)
-        control_layout.addWidget(self._play_btn)
+        # 재생/일시정지 토글 버튼
+        self._play_toggle_btn = QPushButton("▶")
+        self._play_toggle_btn.setFixedSize(40, 32)
+        self._play_toggle_btn.setStyleSheet(self.BUTTON_STYLES['play'])
+        self._play_toggle_btn.clicked.connect(self.toggle_play)
+        control_layout.addWidget(self._play_toggle_btn)
 
-        # 일시정지 버튼
-        self._pause_btn = QPushButton("⏸")
-        self._pause_btn.setFixedSize(40, 32)
-        self._pause_btn.setStyleSheet(self.BUTTON_STYLES['pause'])
-        self._pause_btn.clicked.connect(self.pause)
-        control_layout.addWidget(self._pause_btn)
-
-        # 정지 버튼
-        self._stop_btn = QPushButton("■")
-        self._stop_btn.setFixedSize(40, 32)
-        self._stop_btn.setStyleSheet(self.BUTTON_STYLES['stop'])
-        self._stop_btn.clicked.connect(self.stop)
-        control_layout.addWidget(self._stop_btn)
+        # 캡처 버튼
+        self._capture_btn = QPushButton()
+        self._capture_btn.setFixedSize(40, 32)
+        self._capture_btn.setIcon(self._create_capture_icon())
+        self._capture_btn.setIconSize(self._capture_btn.size() * 0.6)
+        self._capture_btn.setStyleSheet(self.BUTTON_STYLES['capture'])
+        self._capture_btn.clicked.connect(self._on_capture_clicked)
+        self._capture_btn.setEnabled(False)
+        control_layout.addWidget(self._capture_btn)
 
         # 시간 표시 (현재)
         self._current_time_label = QLabel("00:00")
@@ -252,6 +234,9 @@ class PlayerWidget(QWidget):
                 self._display_frame(frame)
                 self._video_player.seek(0)
 
+            # 캡처 버튼 활성화
+            self._capture_btn.setEnabled(True)
+
             return True
         return False
 
@@ -268,11 +253,13 @@ class PlayerWidget(QWidget):
             self._video_player.play()
             fps = self._video_player.fps or 30
             self._timer.start(int(1000 / fps))
+            self._update_play_button_state()
 
     def pause(self):
         """일시정지"""
         self._video_player.pause()
         self._timer.stop()
+        self._update_play_button_state()
 
     def stop(self):
         """정지"""
@@ -280,6 +267,21 @@ class PlayerWidget(QWidget):
         self._timer.stop()
         self._update_time_display()
         self._slider.setValue(0)
+        self._update_play_button_state()
+
+    def _update_play_button_state(self):
+        """재생/일시정지 버튼 상태 업데이트"""
+        if self._video_player.is_playing:
+            self._play_toggle_btn.setText("⏸")
+        else:
+            self._play_toggle_btn.setText("▶")
+
+    def _on_capture_clicked(self):
+        """캡처 버튼 클릭 핸들러"""
+        if self._video_player.is_loaded:
+            timestamp = self._video_player.current_time
+            frame_number = self._video_player.current_frame
+            self.capture_requested.emit(timestamp, frame_number)
 
     def seek_relative(self, seconds: float):
         """상대적 시크 (초 단위)"""
@@ -310,6 +312,7 @@ class PlayerWidget(QWidget):
         else:
             # 영상 끝
             self.pause()
+            self._update_play_button_state()
 
     def _display_frame(self, frame: np.ndarray):
         """프레임 표시"""
@@ -379,3 +382,47 @@ class PlayerWidget(QWidget):
         minutes = int(seconds // 60)
         secs = int(seconds % 60)
         return f"{minutes:02d}:{secs:02d}"
+
+    @staticmethod
+    def _create_capture_icon() -> QIcon:
+        """캡처 버튼 아이콘 생성 (뷰파인더 + 원형)"""
+        size = 24
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # 펜 설정 (흰색, 두께 2)
+        pen = QPen(QColor(255, 255, 255))
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        # 모서리 길이
+        corner_len = 6
+        margin = 2
+
+        # 좌상단 모서리
+        painter.drawLine(margin, margin, margin + corner_len, margin)
+        painter.drawLine(margin, margin, margin, margin + corner_len)
+
+        # 우상단 모서리
+        painter.drawLine(size - margin - corner_len, margin, size - margin, margin)
+        painter.drawLine(size - margin, margin, size - margin, margin + corner_len)
+
+        # 좌하단 모서리
+        painter.drawLine(margin, size - margin - corner_len, margin, size - margin)
+        painter.drawLine(margin, size - margin, margin + corner_len, size - margin)
+
+        # 우하단 모서리
+        painter.drawLine(size - margin, size - margin - corner_len, size - margin, size - margin)
+        painter.drawLine(size - margin - corner_len, size - margin, size - margin, size - margin)
+
+        # 중앙 원 (채워진 원)
+        center = size // 2
+        radius = 4
+        painter.setBrush(QBrush(QColor(255, 255, 255)))
+        painter.drawEllipse(center - radius, center - radius, radius * 2, radius * 2)
+
+        painter.end()
+        return QIcon(pixmap)
