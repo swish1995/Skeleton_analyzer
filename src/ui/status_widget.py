@@ -114,8 +114,8 @@ class StatusWidget(QWidget):
         menubar_container.setStyleSheet("background-color: #333333; border-radius: 4px;")
         menubar_container.setFixedHeight(32)
         menubar_layout = QHBoxLayout(menubar_container)
-        menubar_layout.setContentsMargins(8, 2, 8, 0)
-        menubar_layout.setSpacing(4)
+        menubar_layout.setContentsMargins(8, 3, 8, 3)
+        menubar_layout.setSpacing(8)
 
         # 상태 버튼 (토글) - 각도 패널
         self._angle_btn = QPushButton("상태")
@@ -134,7 +134,7 @@ class StatusWidget(QWidget):
         menubar_layout.addWidget(self._spreadsheet_btn)
 
         # 구분선
-        menubar_layout.addSpacing(8)
+        menubar_layout.addSpacing(20)
 
         # 안전지표 버튼 (토글)
         self._ergonomic_btn = QPushButton("안전지표")
