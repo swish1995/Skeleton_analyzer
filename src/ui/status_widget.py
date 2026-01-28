@@ -34,53 +34,95 @@ class StatusWidget(QWidget):
         self._init_ui()
         self._connect_signals()
 
-    # 버튼 스타일
-    MENU_BUTTON_STYLE = """
+    # 토글 버튼 스타일 (ai-generate 스타일 - On 상태)
+    TOGGLE_BUTTON_ON_STYLE = """
         QPushButton {
-            background: transparent;
-            color: #cccccc;
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #3a9a8a, stop:1 #2a8a7a);
+            color: white;
             border: none;
-            padding: 4px 10px;
-            border-radius: 3px;
+            padding: 5px 12px;
+            border-radius: 4px;
             font-size: 11px;
+            font-weight: bold;
         }
         QPushButton:hover {
-            background: #4a4a4a;
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #4aaa9a, stop:1 #3a9a8a);
         }
-        QPushButton:checked {
-            background: #3a7a6a;
-            color: white;
-        }
-        QPushButton::menu-indicator {
-            width: 10px;
-            subcontrol-position: right center;
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #2a8a7a, stop:1 #1a7a6a);
         }
     """
 
-    MENU_STYLE = """
-        QMenu {
-            background-color: #333333;
-            color: #cccccc;
+    # 토글 버튼 스타일 (ai-generate 스타일 - Off 상태)
+    TOGGLE_BUTTON_OFF_STYLE = """
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #555555, stop:1 #444444);
+            color: #999999;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
             font-size: 11px;
-            border: 1px solid #555555;
-            padding: 4px;
+            font-weight: bold;
         }
-        QMenu::item {
-            padding: 5px 25px 5px 20px;
-            border-radius: 3px;
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #666666, stop:1 #555555);
         }
-        QMenu::item:selected {
-            background: #4a4a4a;
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #444444, stop:1 #333333);
         }
-        QMenu::indicator {
-            width: 14px;
-            height: 14px;
-            margin-left: 5px;
+    """
+
+    # 안전지표 서브 버튼 스타일 (On 상태)
+    SUB_BUTTON_ON_STYLE = """
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #3a8a7a, stop:1 #2a7a6a);
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
         }
-        QMenu::indicator:checked {
-            image: url(none);
-            background: #3a9a8a;
-            border-radius: 2px;
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #4a9a8a, stop:1 #3a8a7a);
+        }
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #2a7a6a, stop:1 #1a6a5a);
+        }
+    """
+
+    # 안전지표 서브 버튼 스타일 (Off 상태)
+    SUB_BUTTON_OFF_STYLE = """
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #4a4a4a, stop:1 #3a3a3a);
+            color: #888888;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #5a5a5a, stop:1 #4a4a4a);
+        }
+        QPushButton:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #3a3a3a, stop:1 #2a2a2a);
+        }
+        QPushButton:disabled {
+            background: #333333;
+            color: #555555;
         }
     """
 
@@ -90,62 +132,64 @@ class StatusWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        # 상단: 메뉴바 컨테이너
+        # 상단: 메뉴바 컨테이너 (왼쪽 메뉴바와 동일한 크기)
         menubar_container = QWidget()
         menubar_container.setStyleSheet("background-color: #333333; border-radius: 4px;")
-        menubar_container.setFixedHeight(28)
+        menubar_container.setFixedHeight(32)
         menubar_layout = QHBoxLayout(menubar_container)
-        menubar_layout.setContentsMargins(4, 2, 4, 0)
-        menubar_layout.setSpacing(2)
+        menubar_layout.setContentsMargins(8, 2, 8, 0)
+        menubar_layout.setSpacing(4)
 
         # 상태 버튼 (토글) - 각도 패널
-        self._angle_btn = QPushButton("상태")
+        self._angle_btn = QPushButton("상태: On")
+        self._angle_btn.setFixedHeight(26)
         self._angle_btn.setCheckable(True)
         self._angle_btn.setChecked(True)
-        self._angle_btn.setStyleSheet(self.MENU_BUTTON_STYLE)
+        self._update_toggle_style(self._angle_btn, True, "상태")
         menubar_layout.addWidget(self._angle_btn)
 
         # 데이터 버튼 (토글) - 스프레드시트
-        self._spreadsheet_btn = QPushButton("데이터")
+        self._spreadsheet_btn = QPushButton("데이터: On")
+        self._spreadsheet_btn.setFixedHeight(26)
         self._spreadsheet_btn.setCheckable(True)
         self._spreadsheet_btn.setChecked(True)
-        self._spreadsheet_btn.setStyleSheet(self.MENU_BUTTON_STYLE)
+        self._update_toggle_style(self._spreadsheet_btn, True, "데이터")
         menubar_layout.addWidget(self._spreadsheet_btn)
 
-        # 안전지표 버튼 (드롭다운 메뉴)
-        self._ergonomic_btn = QPushButton("안전지표 ▾")
+        # 구분선
+        menubar_layout.addSpacing(8)
+
+        # 안전지표 버튼 (토글)
+        self._ergonomic_btn = QPushButton("안전지표: On")
+        self._ergonomic_btn.setFixedHeight(26)
         self._ergonomic_btn.setCheckable(True)
         self._ergonomic_btn.setChecked(True)
-        self._ergonomic_btn.setStyleSheet(self.MENU_BUTTON_STYLE)
-
-        # 안전지표 서브메뉴
-        ergonomic_menu = QMenu(self)
-        ergonomic_menu.setStyleSheet(self.MENU_STYLE)
-
-        self._ergonomic_action = QAction("전체 표시", self)
-        self._ergonomic_action.setCheckable(True)
-        self._ergonomic_action.setChecked(True)
-        ergonomic_menu.addAction(self._ergonomic_action)
-
-        ergonomic_menu.addSeparator()
-
-        self._rula_action = QAction("RULA", self)
-        self._rula_action.setCheckable(True)
-        self._rula_action.setChecked(True)
-        ergonomic_menu.addAction(self._rula_action)
-
-        self._reba_action = QAction("REBA", self)
-        self._reba_action.setCheckable(True)
-        self._reba_action.setChecked(True)
-        ergonomic_menu.addAction(self._reba_action)
-
-        self._owas_action = QAction("OWAS", self)
-        self._owas_action.setCheckable(True)
-        self._owas_action.setChecked(True)
-        ergonomic_menu.addAction(self._owas_action)
-
-        self._ergonomic_btn.setMenu(ergonomic_menu)
+        self._update_toggle_style(self._ergonomic_btn, True, "안전지표")
         menubar_layout.addWidget(self._ergonomic_btn)
+
+        # RULA 버튼
+        self._rula_btn = QPushButton("RULA")
+        self._rula_btn.setFixedHeight(26)
+        self._rula_btn.setCheckable(True)
+        self._rula_btn.setChecked(True)
+        self._update_sub_toggle_style(self._rula_btn, True)
+        menubar_layout.addWidget(self._rula_btn)
+
+        # REBA 버튼
+        self._reba_btn = QPushButton("REBA")
+        self._reba_btn.setFixedHeight(26)
+        self._reba_btn.setCheckable(True)
+        self._reba_btn.setChecked(True)
+        self._update_sub_toggle_style(self._reba_btn, True)
+        menubar_layout.addWidget(self._reba_btn)
+
+        # OWAS 버튼
+        self._owas_btn = QPushButton("OWAS")
+        self._owas_btn.setFixedHeight(26)
+        self._owas_btn.setCheckable(True)
+        self._owas_btn.setChecked(True)
+        self._update_sub_toggle_style(self._owas_btn, True)
+        menubar_layout.addWidget(self._owas_btn)
 
         menubar_layout.addStretch()
         layout.addWidget(menubar_container)
@@ -182,47 +226,67 @@ class StatusWidget(QWidget):
 
         layout.addWidget(self._main_splitter)
 
+    def _update_toggle_style(self, btn: QPushButton, checked: bool, label: str):
+        """토글 버튼 스타일 업데이트 (On/Off 텍스트)"""
+        if checked:
+            btn.setText(f"{label}: On")
+            btn.setStyleSheet(self.TOGGLE_BUTTON_ON_STYLE)
+        else:
+            btn.setText(f"{label}: Off")
+            btn.setStyleSheet(self.TOGGLE_BUTTON_OFF_STYLE)
+
+    def _update_sub_toggle_style(self, btn: QPushButton, checked: bool):
+        """서브 토글 버튼 스타일 업데이트"""
+        if checked:
+            btn.setStyleSheet(self.SUB_BUTTON_ON_STYLE)
+        else:
+            btn.setStyleSheet(self.SUB_BUTTON_OFF_STYLE)
+
     def _connect_signals(self):
         """시그널 연결"""
         self._angle_btn.toggled.connect(self._on_angle_toggled)
-        self._ergonomic_action.toggled.connect(self._on_ergonomic_toggled)
+        self._ergonomic_btn.toggled.connect(self._on_ergonomic_toggled)
         self._spreadsheet_btn.toggled.connect(self._on_spreadsheet_toggled)
-        self._rula_action.toggled.connect(self._on_rula_toggled)
-        self._reba_action.toggled.connect(self._on_reba_toggled)
-        self._owas_action.toggled.connect(self._on_owas_toggled)
-        # 안전지표 버튼 체크 상태 동기화
-        self._ergonomic_action.toggled.connect(self._sync_ergonomic_btn)
+        self._rula_btn.toggled.connect(self._on_rula_toggled)
+        self._reba_btn.toggled.connect(self._on_reba_toggled)
+        self._owas_btn.toggled.connect(self._on_owas_toggled)
 
     def _on_angle_toggled(self, checked: bool):
         """각도 패널 토글"""
         self._angle_widget.setVisible(checked)
+        self._update_toggle_style(self._angle_btn, checked, "상태")
         self.visibility_changed.emit('angle', checked)
 
     def _on_ergonomic_toggled(self, checked: bool):
         """안전지표 패널 토글"""
         self._ergonomic_widget.setVisible(checked)
+        self._update_toggle_style(self._ergonomic_btn, checked, "안전지표")
+        # RULA/REBA/OWAS 버튼 활성/비활성
+        self._rula_btn.setEnabled(checked)
+        self._reba_btn.setEnabled(checked)
+        self._owas_btn.setEnabled(checked)
         self.visibility_changed.emit('ergonomic', checked)
 
     def _on_spreadsheet_toggled(self, checked: bool):
         """스프레드시트 패널 토글"""
         self._spreadsheet_widget.setVisible(checked)
+        self._update_toggle_style(self._spreadsheet_btn, checked, "데이터")
         self.visibility_changed.emit('spreadsheet', checked)
 
     def _on_rula_toggled(self, checked: bool):
         """RULA 패널 토글"""
         self._ergonomic_widget.set_rula_visible(checked)
+        self._update_sub_toggle_style(self._rula_btn, checked)
 
     def _on_reba_toggled(self, checked: bool):
         """REBA 패널 토글"""
         self._ergonomic_widget.set_reba_visible(checked)
+        self._update_sub_toggle_style(self._reba_btn, checked)
 
     def _on_owas_toggled(self, checked: bool):
         """OWAS 패널 토글"""
         self._ergonomic_widget.set_owas_visible(checked)
-
-    def _sync_ergonomic_btn(self, checked: bool):
-        """안전지표 버튼 체크 상태 동기화"""
-        self._ergonomic_btn.setChecked(checked)
+        self._update_sub_toggle_style(self._owas_btn, checked)
 
     # === 외부에서 패널 가시성 제어 ===
 
@@ -232,7 +296,6 @@ class StatusWidget(QWidget):
 
     def set_ergonomic_visible(self, visible: bool):
         """안전지표 패널 가시성 설정"""
-        self._ergonomic_action.setChecked(visible)
         self._ergonomic_btn.setChecked(visible)
 
     def set_spreadsheet_visible(self, visible: bool):
@@ -241,15 +304,15 @@ class StatusWidget(QWidget):
 
     def set_rula_visible(self, visible: bool):
         """RULA 패널 가시성 설정"""
-        self._rula_action.setChecked(visible)
+        self._rula_btn.setChecked(visible)
 
     def set_reba_visible(self, visible: bool):
         """REBA 패널 가시성 설정"""
-        self._reba_action.setChecked(visible)
+        self._reba_btn.setChecked(visible)
 
     def set_owas_visible(self, visible: bool):
         """OWAS 패널 가시성 설정"""
-        self._owas_action.setChecked(visible)
+        self._owas_btn.setChecked(visible)
 
     def is_angle_visible(self) -> bool:
         """각도 패널 가시성 반환"""
@@ -257,7 +320,7 @@ class StatusWidget(QWidget):
 
     def is_ergonomic_visible(self) -> bool:
         """안전지표 패널 가시성 반환"""
-        return self._ergonomic_action.isChecked()
+        return self._ergonomic_btn.isChecked()
 
     def is_spreadsheet_visible(self) -> bool:
         """스프레드시트 패널 가시성 반환"""
@@ -265,15 +328,15 @@ class StatusWidget(QWidget):
 
     def is_rula_visible(self) -> bool:
         """RULA 패널 가시성 반환"""
-        return self._rula_action.isChecked()
+        return self._rula_btn.isChecked()
 
     def is_reba_visible(self) -> bool:
         """REBA 패널 가시성 반환"""
-        return self._reba_action.isChecked()
+        return self._reba_btn.isChecked()
 
     def is_owas_visible(self) -> bool:
         """OWAS 패널 가시성 반환"""
-        return self._owas_action.isChecked()
+        return self._owas_btn.isChecked()
 
     def process_frame(self, frame: np.ndarray):
         """프레임 처리"""
