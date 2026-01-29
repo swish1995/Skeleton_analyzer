@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView,
     QAbstractItemView, QMenu, QMessageBox, QFileDialog,
     QSpinBox, QStyledItemDelegate, QLabel, QDialog,
-    QComboBox, QDialogButtonBox, QFormLayout,
+    QComboBox, QDialogButtonBox, QFormLayout, QCheckBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QColor, QBrush, QAction, QPixmap, QImage
@@ -20,6 +20,20 @@ import json
 import os
 
 from ..core.capture_model import CaptureRecord, CaptureDataModel
+from ..utils.excel_tables import create_all_lookup_sheets
+from ..utils.excel_formulas import (
+    get_rula_score_a_formula,
+    get_rula_score_b_formula,
+    get_rula_final_formula,
+    get_rula_risk_formula,
+    get_reba_score_a_formula,
+    get_reba_score_b_formula,
+    get_reba_final_formula,
+    get_reba_risk_formula,
+    get_owas_code_formula,
+    get_owas_ac_formula,
+    get_owas_risk_formula,
+)
 
 
 # =============================================================================
@@ -729,12 +743,12 @@ class CaptureSpreadsheetWidget(QWidget):
             )
             return
 
-        # 이미지 옵션 확인
-        result = self._ask_image_options()
+        # 내보내기 옵션 확인
+        result = self._ask_export_options()
         if result is None:
             return  # 취소됨
 
-        include_images, img_size, row_height, col_width = result
+        include_images, img_size, row_height, col_width, include_formulas = result
 
         default_filename = self._get_default_filename("xlsx")
         file_path, _ = QFileDialog.getSaveFileName(
@@ -751,8 +765,15 @@ class CaptureSpreadsheetWidget(QWidget):
             ws = wb.active
             ws.title = "Capture Data"
 
+            # 수식 포함 시 조회 테이블 시트 생성
+            if include_formulas:
+                create_all_lookup_sheets(wb)
+
             # 이미지 컬럼 오프셋 계산
             img_col_offset = len(THUMBNAIL_COLUMNS) if include_images else 0
+
+            # 컬럼 매핑 생성 (수식용)
+            col_mapping = self._build_column_mapping(img_col_offset)
 
             # 이미지 헤더 작성 (포함 옵션 선택 시)
             if include_images:
@@ -798,23 +819,34 @@ class CaptureSpreadsheetWidget(QWidget):
                 # 데이터 컬럼 작성
                 for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
                     value = getattr(record, field, '')
+                    excel_col = col_idx + img_col_offset
 
-                    # 타임스탬프 포맷팅
-                    if field == 'timestamp':
-                        minutes = int(value // 60)
-                        seconds = value % 60
-                        value = f"{minutes:02d}:{seconds:06.3f}"
-                    elif field == 'capture_time' and isinstance(value, datetime):
-                        value = value.strftime('%H:%M:%S')
+                    # 수식 적용 필드인지 확인
+                    formula = None
+                    if include_formulas:
+                        formula = self._get_formula_for_field(field, row_idx, col_mapping)
 
-                    cell = ws.cell(row=row_idx, column=col_idx + img_col_offset, value=value)
+                    if formula:
+                        # 수식 삽입
+                        cell = ws.cell(row=row_idx, column=excel_col, value=formula)
+                    else:
+                        # 타임스탬프 포맷팅
+                        if field == 'timestamp':
+                            minutes = int(value // 60)
+                            seconds = value % 60
+                            value = f"{minutes:02d}:{seconds:06.3f}"
+                        elif field == 'capture_time' and isinstance(value, datetime):
+                            value = value.strftime('%H:%M:%S')
+
+                        cell = ws.cell(row=row_idx, column=excel_col, value=value)
 
                     # 수동 입력 컬럼 노랑 배경
                     if editable:
                         cell.fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
 
-                    # 위험 수준 셀 색상
-                    if field in ('rula_risk', 'reba_risk', 'owas_risk'):
+                    # 위험 수준 셀: 수식 포함 시 조건부 서식 대신 기본 스타일만 적용
+                    # (수식 결과는 동적이므로 조건부 서식으로 처리해야 하나, 현재는 생략)
+                    if field in ('rula_risk', 'reba_risk', 'owas_risk') and not include_formulas:
                         risk_color = RISK_COLORS.get(value, QColor(255, 255, 255))
                         fill_color = f"{risk_color.red():02X}{risk_color.green():02X}{risk_color.blue():02X}"
                         cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
@@ -823,23 +855,130 @@ class CaptureSpreadsheetWidget(QWidget):
             for col_idx in range(1, len(COLUMN_DEFINITIONS) + 1):
                 ws.column_dimensions[get_column_letter(col_idx + img_col_offset)].width = 12
 
+            # 수식 포함 시 조회 테이블 시트 숨김
+            if include_formulas:
+                for sheet_name in ['RULA_A', 'RULA_B', 'RULA_C', 'REBA_A', 'REBA_B', 'REBA_C', 'OWAS_AC']:
+                    if sheet_name in wb.sheetnames:
+                        wb[sheet_name].sheet_state = 'hidden'
+
             wb.save(file_path)
             QMessageBox.information(self, "완료", f"Excel 파일이 저장되었습니다:\n{file_path}")
 
         except Exception as e:
             QMessageBox.critical(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
 
-    def _ask_image_options(self) -> Optional[tuple]:
+    def _build_column_mapping(self, img_col_offset: int) -> Dict[str, str]:
         """
-        이미지 옵션 확인 다이얼로그
+        필드명 -> Excel 컬럼 문자 매핑 생성
+
+        Args:
+            img_col_offset: 이미지 컬럼 오프셋
+
+        Returns:
+            필드명과 Excel 컬럼 문자의 매핑 딕셔너리
+        """
+        from openpyxl.utils import get_column_letter
+
+        mapping = {}
+        for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
+            excel_col = get_column_letter(col_idx + img_col_offset)
+            mapping[field] = excel_col
+
+        return mapping
+
+    def _get_formula_for_field(self, field: str, row: int, col_mapping: Dict[str, str]) -> Optional[str]:
+        """
+        필드에 해당하는 Excel 수식 반환
+
+        Args:
+            field: 필드명
+            row: Excel 행 번호
+            col_mapping: 필드 -> 컬럼 매핑
+
+        Returns:
+            Excel 수식 문자열 또는 None (수식이 아닌 필드)
+        """
+        # RULA 수식
+        if field == 'rula_score_a':
+            return get_rula_score_a_formula(row, {
+                'upper_arm': col_mapping['rula_upper_arm'],
+                'lower_arm': col_mapping['rula_lower_arm'],
+                'wrist': col_mapping['rula_wrist'],
+                'wrist_twist': col_mapping['rula_wrist_twist'],
+                'muscle_a': col_mapping['rula_muscle_use_a'],
+                'force_a': col_mapping['rula_force_load_a'],
+            })
+        elif field == 'rula_score_b':
+            return get_rula_score_b_formula(row, {
+                'neck': col_mapping['rula_neck'],
+                'trunk': col_mapping['rula_trunk'],
+                'leg': col_mapping['rula_leg'],
+                'muscle_b': col_mapping['rula_muscle_use_b'],
+                'force_b': col_mapping['rula_force_load_b'],
+            })
+        elif field == 'rula_score':
+            return get_rula_final_formula(row, {
+                'score_a': col_mapping['rula_score_a'],
+                'score_b': col_mapping['rula_score_b'],
+            })
+        elif field == 'rula_risk':
+            return get_rula_risk_formula(row, col_mapping['rula_score'])
+
+        # REBA 수식
+        elif field == 'reba_score_a':
+            return get_reba_score_a_formula(row, {
+                'neck': col_mapping['reba_neck'],
+                'trunk': col_mapping['reba_trunk'],
+                'leg': col_mapping['reba_leg'],
+                'load': col_mapping['reba_load_force'],
+            })
+        elif field == 'reba_score_b':
+            return get_reba_score_b_formula(row, {
+                'upper_arm': col_mapping['reba_upper_arm'],
+                'lower_arm': col_mapping['reba_lower_arm'],
+                'wrist': col_mapping['reba_wrist'],
+                'coupling': col_mapping['reba_coupling'],
+            })
+        elif field == 'reba_score':
+            return get_reba_final_formula(row, {
+                'score_a': col_mapping['reba_score_a'],
+                'score_b': col_mapping['reba_score_b'],
+                'activity': col_mapping['reba_activity'],
+            })
+        elif field == 'reba_risk':
+            return get_reba_risk_formula(row, col_mapping['reba_score'])
+
+        # OWAS 수식
+        elif field == 'owas_code':
+            return get_owas_code_formula(row, {
+                'back': col_mapping['owas_back'],
+                'arms': col_mapping['owas_arms'],
+                'legs': col_mapping['owas_legs'],
+                'load': col_mapping['owas_load'],
+            })
+        elif field == 'owas_ac':
+            return get_owas_ac_formula(row, {
+                'back': col_mapping['owas_back'],
+                'arms': col_mapping['owas_arms'],
+                'legs': col_mapping['owas_legs'],
+            })
+        elif field == 'owas_risk':
+            return get_owas_risk_formula(row, col_mapping['owas_ac'])
+
+        return None
+
+    def _ask_export_options(self) -> Optional[tuple]:
+        """
+        Excel 내보내기 옵션 확인 다이얼로그
 
         Returns:
             None: 취소됨
-            (include_images, img_size, row_height, col_width): 옵션
+            (include_images, img_size, row_height, col_width, include_formulas): 옵션
             - include_images: 이미지 포함 여부
             - img_size: 이미지 크기 (픽셀)
             - row_height: 행 높이 (포인트)
             - col_width: 열 너비
+            - include_formulas: 수식 포함 여부
         """
         # 이미지 크기 옵션: (라벨, 이미지크기, 행높이, 열너비)
         SIZE_OPTIONS = [
@@ -851,65 +990,71 @@ class CaptureSpreadsheetWidget(QWidget):
         DEFAULT_INDEX = 1  # 보통
 
         dialog = QDialog(self)
-        dialog.setWindowTitle("이미지 내보내기 옵션")
+        dialog.setWindowTitle("Excel 내보내기 옵션")
         dialog.setModal(True)
 
         layout = QVBoxLayout(dialog)
 
-        # 설명
-        desc_label = QLabel("Excel 파일에 이미지를 포함하시겠습니까?\n이미지를 포함하면 파일 크기가 증가합니다.")
-        layout.addWidget(desc_label)
+        # 이미지 옵션 섹션
+        img_section_label = QLabel("<b>이미지 옵션</b>")
+        layout.addWidget(img_section_label)
 
-        # 옵션 폼
+        img_checkbox = QCheckBox("이미지 포함")
+        img_checkbox.setChecked(True)  # 기본 선택
+        img_checkbox.setToolTip("Excel 파일에 캡처 이미지를 포함합니다.\n파일 크기가 증가합니다.")
+        layout.addWidget(img_checkbox)
+
+        # 이미지 크기 콤보박스 (체크박스 활성화 시만 사용)
         form_layout = QFormLayout()
-
-        # 이미지 크기 콤보박스
         size_combo = QComboBox()
         for label, _, _, _ in SIZE_OPTIONS:
             size_combo.addItem(label)
         size_combo.setCurrentIndex(DEFAULT_INDEX)
+        size_combo.setEnabled(True)  # 이미지 체크박스가 기본 선택이므로 활성화
         form_layout.addRow("이미지 크기:", size_combo)
-
         layout.addLayout(form_layout)
 
+        # 이미지 체크박스와 콤보박스 연동
+        img_checkbox.toggled.connect(size_combo.setEnabled)
+
+        # 구분선
+        layout.addSpacing(10)
+
+        # 수식 옵션 섹션
+        formula_section_label = QLabel("<b>수식 옵션</b>")
+        layout.addWidget(formula_section_label)
+
+        formula_checkbox = QCheckBox("자동 계산 수식 포함")
+        formula_checkbox.setChecked(True)  # 기본 선택
+        formula_checkbox.setToolTip(
+            "결과 컬럼(Score A/B, Score, Risk)에 Excel 수식을 삽입합니다.\n"
+            "입력값 변경 시 결과가 자동으로 재계산됩니다.\n"
+            "조회 테이블이 별도 시트로 생성됩니다."
+        )
+        layout.addWidget(formula_checkbox)
+
+        layout.addSpacing(10)
+
         # 버튼
-        button_box = QDialogButtonBox()
-        include_btn = button_box.addButton("이미지 포함", QDialogButtonBox.ButtonRole.AcceptRole)
-        no_image_btn = button_box.addButton("이미지 제외", QDialogButtonBox.ButtonRole.RejectRole)
-        cancel_btn = button_box.addButton("취소", QDialogButtonBox.ButtonRole.DestructiveRole)
-
-        # 결과 저장용
-        result = {"include": False, "cancelled": False}
-
-        def on_include():
-            result["include"] = True
-            dialog.accept()
-
-        def on_no_image():
-            result["include"] = False
-            dialog.accept()
-
-        def on_cancel():
-            result["cancelled"] = True
-            dialog.reject()
-
-        include_btn.clicked.connect(on_include)
-        no_image_btn.clicked.connect(on_no_image)
-        cancel_btn.clicked.connect(on_cancel)
-
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
         layout.addWidget(button_box)
 
-        dialog.exec()
-
-        if result["cancelled"]:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return None
 
-        if result["include"]:
+        include_images = img_checkbox.isChecked()
+        include_formulas = formula_checkbox.isChecked()
+
+        if include_images:
             idx = size_combo.currentIndex()
             _, img_size, row_height, col_width = SIZE_OPTIONS[idx]
-            return (True, img_size, row_height, col_width)
+            return (True, img_size, row_height, col_width, include_formulas)
         else:
-            return (False, 0, 0, 0)
+            return (False, 0, 0, 0, include_formulas)
 
     def get_model(self) -> CaptureDataModel:
         """데이터 모델 반환"""
