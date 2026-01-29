@@ -1,6 +1,6 @@
 # Skeleton Analyzer 아키텍처
 
-> 📅 마지막 갱신: 2026-01-27
+> 📅 마지막 갱신: 2026-01-29
 > 🔍 소스: 코드베이스 자동 분석
 
 ## 시스템 개요
@@ -62,7 +62,10 @@ skeleton-analyzer/
 ├── main.py                 # 앱 진입점
 ├── requirements.txt        # 의존성
 ├── pytest.ini             # 테스트 설정
-├── skeleton_analyzer.spec # PyInstaller 설정
+├── skeleton_analyzer.spec  # PyInstaller 설정
+├── .github/
+│   └── workflows/
+│       └── build-windows.yml  # 윈도우 빌드 CI/CD
 ├── src/
 │   ├── __init__.py
 │   ├── core/
@@ -151,3 +154,31 @@ class AngleCalculator:
 27-28: 발목
 29-32: 발
 ```
+
+## CI/CD 파이프라인
+
+### GitHub Actions 워크플로우
+
+윈도우용 실행 파일 빌드를 위한 GitHub Actions 워크플로우가 구성되어 있습니다.
+
+```
+트리거:
+├── 태그 푸시 (v*)     → Release 자동 생성
+└── 수동 실행         → Artifact 생성
+
+빌드 과정:
+1. Windows 환경 (windows-latest)
+2. Python 3.11 설정
+3. 의존성 설치
+4. MediaPipe 모델 다운로드
+5. PyInstaller 빌드
+6. 배포 (Release 또는 Artifact)
+```
+
+### 빌드 결과물
+
+| 파일 | 설명 |
+|------|------|
+| `SkeletonAnalyzer.exe` | 윈도우용 단일 실행 파일 |
+
+자세한 배포 방법은 [배포 가이드](./DEPLOYMENT.md)를 참조하세요.
