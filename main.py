@@ -11,6 +11,43 @@ from PyQt6.QtGui import QIcon
 
 from src.ui.main_window import MainWindow
 
+# 앱 이름 (환경변수로 변경 가능)
+APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
+
+
+def set_process_name(name: str):
+    """프로세스 이름 설정 (macOS dock 툴팁용)"""
+    if sys.platform == 'darwin':
+        try:
+            # setproctitle 패키지 사용
+            import setproctitle
+            setproctitle.setproctitle(name)
+        except ImportError:
+            pass
+
+        try:
+            # ctypes를 통한 프로세스 이름 설정
+            import ctypes
+            libc = ctypes.CDLL('libc.dylib')
+            # pthread_setname_np로 스레드 이름 설정
+            libc.pthread_setname_np(name.encode('utf-8'))
+        except Exception:
+            pass
+
+        try:
+            # AppKit을 통한 macOS 앱 이름 설정
+            from AppKit import NSApplication, NSRunningApplication
+            from Foundation import NSBundle, NSMutableDictionary
+
+            # 번들 정보 수정
+            bundle = NSBundle.mainBundle()
+            info = bundle.infoDictionary()
+            if info is not None:
+                info['CFBundleName'] = name
+                info['CFBundleDisplayName'] = name
+        except ImportError:
+            pass
+
 
 def get_icon_path():
     """아이콘 파일 경로 반환 (macOS/Windows 지원)"""
@@ -46,8 +83,12 @@ class GlobalEventFilter(QObject):
 
 
 def main():
+    # macOS dock 툴팁 이름 설정 (QApplication 생성 전에 호출)
+    set_process_name(APP_NAME)
+
     app = QApplication(sys.argv)
-    app.setApplicationName("Skeleton Analyzer")
+    app.setApplicationName(APP_NAME)
+    app.setApplicationDisplayName(APP_NAME)  # 디스플레이 이름 설정
     app.setOrganizationName("SkeletonAnalyzer")
 
     # 앱 아이콘 설정

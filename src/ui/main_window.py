@@ -1,4 +1,5 @@
 """메인 윈도우 모듈"""
+import os
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QSplitter, QVBoxLayout,
     QMenuBar, QMenu, QStatusBar, QFileDialog, QMessageBox
@@ -9,6 +10,9 @@ from typing import Optional, List
 
 from .player_widget import PlayerWidget
 from .status_widget import StatusWidget
+
+# 앱 이름 (환경변수로 변경 가능)
+APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
 
 
 class MainWindow(QMainWindow):
@@ -28,7 +32,7 @@ class MainWindow(QMainWindow):
 
     def _init_ui(self):
         """UI 초기화"""
-        self.setWindowTitle("Skeleton Analyzer")
+        self.setWindowTitle(APP_NAME)
         self.setMinimumSize(1280, 720)
         self.resize(1600, 900)
 
