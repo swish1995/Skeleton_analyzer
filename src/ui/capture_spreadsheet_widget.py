@@ -555,9 +555,127 @@ class CaptureSpreadsheetWidget(QWidget):
         menu.exec(self._table.viewport().mapToGlobal(pos))
 
     def _delete_row(self, row: int):
-        """행 삭제"""
+        """행 삭제 (이미지 삭제 옵션 포함)"""
+        record = self._model.get_record(row)
+        if not record:
+            return
+
+        # 이미지 경로 확인
+        frame_path = getattr(record, 'video_frame_path', None)
+        skeleton_path = getattr(record, 'skeleton_image_path', None)
+        has_images = (frame_path and os.path.exists(frame_path)) or \
+                     (skeleton_path and os.path.exists(skeleton_path))
+
+        # 삭제 확인 다이얼로그
+        result = self._ask_delete_options(row, has_images)
+        if result is None:
+            return  # 취소됨
+
+        delete_images = result
+
+        # 이미지 삭제 (선택한 경우)
+        if delete_images:
+            if frame_path and os.path.exists(frame_path):
+                try:
+                    os.remove(frame_path)
+                except Exception:
+                    pass
+            if skeleton_path and os.path.exists(skeleton_path):
+                try:
+                    os.remove(skeleton_path)
+                except Exception:
+                    pass
+
+        # 레코드 및 테이블 행 삭제
         self._model.delete_record(row)
         self._table.removeRow(row)
+
+    def _ask_delete_options(self, row: int, has_images: bool) -> Optional[bool]:
+        """
+        삭제 옵션 확인 다이얼로그
+
+        Args:
+            row: 삭제할 행 인덱스
+            has_images: 이미지 파일 존재 여부
+
+        Returns:
+            None: 취소됨
+            True: 이미지도 삭제
+            False: 데이터만 삭제
+        """
+        record = self._model.get_record(row)
+        timestamp = getattr(record, 'timestamp', 0) if record else 0
+        minutes = int(timestamp // 60)
+        seconds = timestamp % 60
+        time_str = f"{minutes:02d}:{seconds:05.2f}"
+
+        if not has_images:
+            # 이미지가 없으면 단순 확인
+            reply = QMessageBox.question(
+                self,
+                "행 삭제",
+                f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                return False
+            return None
+
+        # 이미지가 있는 경우 옵션 다이얼로그
+        dialog = QDialog(self)
+        dialog.setWindowTitle("행 삭제")
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+
+        # 설명
+        desc_label = QLabel(
+            f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?\n\n"
+            "이 캡처에 연결된 이미지 파일이 있습니다.\n"
+            "이미지 파일도 함께 삭제하시겠습니까?"
+        )
+        layout.addWidget(desc_label)
+
+        # 버튼
+        button_box = QDialogButtonBox()
+        delete_with_images_btn = button_box.addButton(
+            "이미지도 삭제", QDialogButtonBox.ButtonRole.AcceptRole
+        )
+        delete_data_only_btn = button_box.addButton(
+            "데이터만 삭제", QDialogButtonBox.ButtonRole.ActionRole
+        )
+        cancel_btn = button_box.addButton(
+            "취소", QDialogButtonBox.ButtonRole.RejectRole
+        )
+
+        # 결과 저장용
+        result = {"delete_images": False, "cancelled": True}
+
+        def on_delete_with_images():
+            result["delete_images"] = True
+            result["cancelled"] = False
+            dialog.accept()
+
+        def on_delete_data_only():
+            result["delete_images"] = False
+            result["cancelled"] = False
+            dialog.accept()
+
+        def on_cancel():
+            result["cancelled"] = True
+            dialog.reject()
+
+        delete_with_images_btn.clicked.connect(on_delete_with_images)
+        delete_data_only_btn.clicked.connect(on_delete_data_only)
+        cancel_btn.clicked.connect(on_cancel)
+
+        layout.addWidget(button_box)
+
+        dialog.exec()
+
+        if result["cancelled"]:
+            return None
+        return result["delete_images"]
 
     def _clear_all(self):
         """전체 삭제"""
