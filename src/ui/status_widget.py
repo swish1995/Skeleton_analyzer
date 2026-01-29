@@ -12,6 +12,7 @@ from .skeleton_widget import SkeletonWidget
 from .angle_widget import AngleWidget
 from .ergonomic import ErgonomicWidget
 from .capture_spreadsheet_widget import CaptureSpreadsheetWidget
+from .settings_dialog import SettingsDialog
 from ..core.pose_detector import PoseDetector
 from ..core.angle_calculator import AngleCalculator
 from ..core.capture_model import CaptureRecord
@@ -49,6 +50,7 @@ class StatusWidget(QWidget):
         'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
         'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
         'OWAS': ('#b85a6a', '#a84a5a', '#c86a7a'),      # 빨간색
+        '설정': ('#7a7a7a', '#6a6a6a', '#8a8a8a'),      # 회색
         '종료': ('#c55a5a', '#b54a4a', '#d56a6a'),      # 진한 빨간색
     }
 
@@ -177,6 +179,13 @@ class StatusWidget(QWidget):
         menubar_layout.addWidget(self._owas_btn)
 
         menubar_layout.addStretch()
+
+        # 설정 버튼
+        self._settings_btn = QPushButton("설정")
+        self._settings_btn.setFixedHeight(28)
+        self._settings_btn.setStyleSheet(self._get_button_style("설정", True))
+        self._settings_btn.clicked.connect(self._open_settings)
+        menubar_layout.addWidget(self._settings_btn)
 
         # 종료 버튼 (맨 오른쪽)
         self._exit_btn = QPushButton("종료")
@@ -474,6 +483,11 @@ class StatusWidget(QWidget):
     def ergonomic_widget(self) -> ErgonomicWidget:
         """인체공학적 평가 위젯 반환"""
         return self._ergonomic_widget
+
+    def _open_settings(self):
+        """설정 다이얼로그 열기"""
+        dialog = SettingsDialog(self._config, self)
+        dialog.exec()
 
     def release(self):
         """리소스 해제"""
