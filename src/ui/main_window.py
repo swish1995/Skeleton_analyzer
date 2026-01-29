@@ -90,6 +90,7 @@ class MainWindow(QMainWindow):
         self.player_widget.frame_changed.connect(self._on_frame_changed)
         self.player_widget.capture_requested.connect(self._on_capture_requested)
         self.player_widget.video_loaded.connect(self._on_video_loaded)
+        self.status_widget.exit_requested.connect(self.close)
 
     def _init_menu(self):
         """메뉴 초기화"""
@@ -316,6 +317,27 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """창 닫기 이벤트"""
+        # 종료 확인 다이얼로그
+        from PyQt6.QtWidgets import QStyle
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("종료 확인")
+        msg_box.setText("앱을 종료하시겠습니까?")
+        # 시스템 표준 물음표 아이콘 사용
+        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
+        msg_box.setIconPixmap(icon.pixmap(64, 64))
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        reply = msg_box.exec()
+
+        if reply != QMessageBox.StandardButton.Yes:
+            event.ignore()
+            return
+
+        # TODO: 고아 이미지 검사 및 삭제
+        # self._cleanup_orphan_images()
+
         self._save_settings()
         self.player_widget.release()
         super().closeEvent(event)

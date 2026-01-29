@@ -25,6 +25,7 @@ class StatusWidget(QWidget):
     # 시그널
     capture_added = pyqtSignal(int)  # 캡처 추가 시 행 인덱스 전달
     visibility_changed = pyqtSignal(str, bool)  # 패널 가시성 변경 (패널명, 상태)
+    exit_requested = pyqtSignal()  # 종료 요청
 
     def __init__(self, config: Optional[Config] = None):
         super().__init__()
@@ -48,6 +49,7 @@ class StatusWidget(QWidget):
         'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
         'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
         'OWAS': ('#b85a6a', '#a84a5a', '#c86a7a'),      # 빨간색
+        '종료': ('#c55a5a', '#b54a4a', '#d56a6a'),      # 진한 빨간색
     }
 
     @classmethod
@@ -175,6 +177,14 @@ class StatusWidget(QWidget):
         menubar_layout.addWidget(self._owas_btn)
 
         menubar_layout.addStretch()
+
+        # 종료 버튼 (맨 오른쪽)
+        self._exit_btn = QPushButton("종료")
+        self._exit_btn.setFixedHeight(28)
+        self._exit_btn.setStyleSheet(self._get_button_style("종료", True))
+        self._exit_btn.clicked.connect(self.exit_requested.emit)
+        menubar_layout.addWidget(self._exit_btn)
+
         layout.addWidget(menubar_container)
 
         # 스플리터 스타일 정의
