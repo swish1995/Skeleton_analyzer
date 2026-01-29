@@ -1,5 +1,6 @@
 """메인 윈도우 모듈"""
 import os
+import platform
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QSplitter, QVBoxLayout,
     QMenuBar, QMenu, QStatusBar, QFileDialog, QMessageBox
@@ -10,6 +11,8 @@ from typing import Optional, List
 
 from .player_widget import PlayerWidget
 from .status_widget import StatusWidget
+from .settings_dialog import SettingsDialog
+from ..utils.config import Config
 
 # 앱 이름 (환경변수로 변경 가능)
 APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
@@ -24,6 +27,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._recent_files: List[str] = []
         self._settings = QSettings("SkeletonAnalyzer", "SkeletonAnalyzer")
+        self._config = Config()
 
         self._init_ui()
         self._init_menu()
@@ -69,7 +73,7 @@ class MainWindow(QMainWindow):
         self._splitter.addWidget(self.player_widget)
 
         # 오른쪽: 스테이터스 위젯
-        self.status_widget = StatusWidget()
+        self.status_widget = StatusWidget(config=self._config)
         self._splitter.addWidget(self.status_widget)
 
         # 50:50 비율 설정
@@ -103,6 +107,17 @@ class MainWindow(QMainWindow):
         # 최근 파일 서브메뉴
         self._recent_menu = file_menu.addMenu("최근 파일(&R)")
         self._update_recent_menu()
+
+        file_menu.addSeparator()
+
+        # 설정
+        settings_action = QAction("설정(&S)...", self)
+        if platform.system() == "Darwin":
+            settings_action.setShortcut("Ctrl+,")
+        else:
+            settings_action.setShortcut("Ctrl+P")
+        settings_action.triggered.connect(self._open_settings)
+        file_menu.addAction(settings_action)
 
         file_menu.addSeparator()
 
@@ -213,15 +228,21 @@ class MainWindow(QMainWindow):
 
     def _open_file(self):
         """파일 열기 다이얼로그"""
+        default_dir = self._config.get("directories.video_open", "")
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "동영상 열기",
-            "",
+            default_dir,
             "동영상 파일 (*.mp4 *.avi *.mov *.mkv);;모든 파일 (*.*)"
         )
 
         if file_path:
             self._load_video(file_path)
+
+    def _open_settings(self):
+        """설정 다이얼로그 열기"""
+        dialog = SettingsDialog(self._config, self)
+        dialog.exec()
 
     def _load_video(self, file_path: str):
         """비디오 로드"""

@@ -21,6 +21,7 @@ import os
 
 from ..core.capture_model import CaptureRecord, CaptureDataModel
 from ..utils.excel_tables import create_all_lookup_sheets
+from ..utils.config import Config
 from ..utils.excel_formulas import (
     get_rula_score_a_formula,
     get_rula_score_b_formula,
@@ -284,8 +285,9 @@ class CaptureSpreadsheetWidget(QWidget):
     record_updated = pyqtSignal(int)  # 레코드 업데이트 시 행 인덱스 전달
     export_requested = pyqtSignal(str)  # 내보내기 요청 (파일 경로)
 
-    def __init__(self, parent=None):
+    def __init__(self, config: Optional[Config] = None, parent=None):
         super().__init__(parent)
+        self._config = config
         self._model = CaptureDataModel()
         self._updating = False  # 재계산 중 무한 루프 방지
         self._video_name: Optional[str] = None  # 현재 동영상 파일명
@@ -580,12 +582,45 @@ class CaptureSpreadsheetWidget(QWidget):
         has_images = (frame_path and os.path.exists(frame_path)) or \
                      (skeleton_path and os.path.exists(skeleton_path))
 
-        # 삭제 확인 다이얼로그
-        result = self._ask_delete_options(row, has_images)
-        if result is None:
-            return  # 취소됨
+        # Config에서 설정 가져오기
+        auto_delete = True  # 기본값
+        confirm_delete = True  # 기본값
+        if self._config:
+            auto_delete = self._config.get("images.auto_delete_on_row_delete", True)
+            confirm_delete = self._config.get("images.confirm_before_delete", True)
 
-        delete_images = result
+        # 자동 삭제 + 확인 안 함 설정인 경우
+        if auto_delete and not confirm_delete:
+            delete_images = has_images
+        # 자동 삭제 + 확인 설정인 경우
+        elif auto_delete and confirm_delete:
+            if has_images:
+                reply = QMessageBox.question(
+                    self,
+                    "행 삭제",
+                    f"행 {row + 1}을(를) 삭제하시겠습니까?\n\n"
+                    "연결된 이미지 파일도 함께 삭제됩니다.",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+                delete_images = True
+            else:
+                reply = QMessageBox.question(
+                    self,
+                    "행 삭제",
+                    f"행 {row + 1}을(를) 삭제하시겠습니까?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+                delete_images = False
+        # 자동 삭제 안 함 설정인 경우 (기존 다이얼로그 사용)
+        else:
+            result = self._ask_delete_options(row, has_images)
+            if result is None:
+                return
+            delete_images = result
 
         # 이미지 삭제 (선택한 경우)
         if delete_images:
@@ -693,13 +728,55 @@ class CaptureSpreadsheetWidget(QWidget):
 
     def _clear_all(self):
         """전체 삭제"""
+        if len(self._model) == 0:
+            return
+
+        # Config에서 설정 가져오기
+        auto_delete = True  # 기본값
+        if self._config:
+            auto_delete = self._config.get("images.auto_delete_on_row_delete", True)
+
+        # 이미지 파일 수 확인
+        image_count = 0
+        for record in self._model.get_all_records():
+            frame_path = getattr(record, 'video_frame_path', None)
+            skeleton_path = getattr(record, 'skeleton_image_path', None)
+            if frame_path and os.path.exists(frame_path):
+                image_count += 1
+            if skeleton_path and os.path.exists(skeleton_path):
+                image_count += 1
+
+        # 확인 메시지 구성
+        if auto_delete and image_count > 0:
+            message = f"모든 캡처 데이터({len(self._model)}개)를 삭제하시겠습니까?\n\n" \
+                      f"연결된 이미지 파일 {image_count}개도 함께 삭제됩니다."
+        else:
+            message = f"모든 캡처 데이터({len(self._model)}개)를 삭제하시겠습니까?"
+
         reply = QMessageBox.question(
             self,
-            "확인",
-            "모든 캡처 데이터를 삭제하시겠습니까?",
+            "전체 삭제",
+            message,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
+
         if reply == QMessageBox.StandardButton.Yes:
+            # 이미지 삭제 (설정에 따라)
+            if auto_delete:
+                for record in self._model.get_all_records():
+                    frame_path = getattr(record, 'video_frame_path', None)
+                    skeleton_path = getattr(record, 'skeleton_image_path', None)
+                    if frame_path and os.path.exists(frame_path):
+                        try:
+                            os.remove(frame_path)
+                        except Exception:
+                            pass
+                    if skeleton_path and os.path.exists(skeleton_path):
+                        try:
+                            os.remove(skeleton_path)
+                        except Exception:
+                            pass
+
             self._model.clear()
             self._table.setRowCount(0)
 

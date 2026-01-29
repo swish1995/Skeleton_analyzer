@@ -16,6 +16,7 @@ from ..core.pose_detector import PoseDetector
 from ..core.angle_calculator import AngleCalculator
 from ..core.capture_model import CaptureRecord
 from ..utils.image_saver import ImageSaver
+from ..utils.config import Config
 
 
 class StatusWidget(QWidget):
@@ -25,11 +26,12 @@ class StatusWidget(QWidget):
     capture_added = pyqtSignal(int)  # 캡처 추가 시 행 인덱스 전달
     visibility_changed = pyqtSignal(str, bool)  # 패널 가시성 변경 (패널명, 상태)
 
-    def __init__(self):
+    def __init__(self, config: Optional[Config] = None):
         super().__init__()
+        self._config = config
         self._pose_detector = PoseDetector()
         self._angle_calculator = AngleCalculator()
-        self._image_saver = ImageSaver()
+        self._image_saver = ImageSaver(config=config)
         self._current_timestamp = 0.0
         self._current_frame_number = 0
         self._current_frame: Optional[np.ndarray] = None  # 현재 프레임 저장
@@ -234,7 +236,7 @@ class StatusWidget(QWidget):
         self._main_splitter.addWidget(self._ergonomic_widget)
 
         # 하단: 캡처 스프레드시트
-        self._spreadsheet_widget = CaptureSpreadsheetWidget()
+        self._spreadsheet_widget = CaptureSpreadsheetWidget(config=self._config)
         self._main_splitter.addWidget(self._spreadsheet_widget)
 
         # 상단:중단:하단 = 35:35:30 비율

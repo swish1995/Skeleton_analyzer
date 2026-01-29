@@ -130,3 +130,123 @@ class TestImageSaverSavePixmap:
         saver = ImageSaver()
         result = saver.save_pixmap(sample_pixmap, "/invalid/nonexistent/path/skeleton.png")
         assert result is False
+
+
+class TestImageSaverConfigIntegration:
+    """ImageSaver Config 연동 테스트"""
+
+    def test_image_saver_with_config(self, tmp_path):
+        """Config에서 캡처 디렉토리 설정 연동"""
+        from utils.config import Config
+
+        # Arrange
+        config = Config(app_name="TestApp")
+        config._config_dir = tmp_path
+        config._config_file = tmp_path / "config.json"
+        config._config = {}
+        config.set("directories.capture_save", str(tmp_path / "custom_captures"))
+
+        # Act
+        saver = ImageSaver(config=config)
+
+        # Assert
+        assert saver._base_dir == str(tmp_path / "custom_captures")
+
+    def test_image_saver_default_base_dir(self):
+        """Config 없을 때 기본 디렉토리 사용"""
+        # Act
+        saver = ImageSaver()
+
+        # Assert
+        assert saver._base_dir == "captures"
+
+    def test_image_saver_config_without_capture_save(self, tmp_path):
+        """Config에 capture_save 설정 없을 때 기본값 사용"""
+        from utils.config import Config
+
+        # Arrange
+        config = Config(app_name="TestApp")
+        config._config_dir = tmp_path
+        config._config_file = tmp_path / "config.json"
+        config._config = {}
+
+        # Act
+        saver = ImageSaver(config=config)
+
+        # Assert
+        assert saver._base_dir == "captures"
+
+
+class TestImageSaverUniqueFilename:
+    """파일명 중복 방지 테스트"""
+
+    def test_generate_unique_filename_no_conflict(self, tmp_path):
+        """충돌 없는 경우 원본 이름 반환"""
+        # Arrange
+        saver = ImageSaver(base_dir=str(tmp_path))
+        video_dir = tmp_path / "test_video"
+        video_dir.mkdir()
+
+        # Act
+        unique_name = saver.generate_unique_filename(
+            dir_path=str(video_dir),
+            base_name="frame_00_05_123.png"
+        )
+
+        # Assert
+        assert unique_name == "frame_00_05_123.png"
+
+    def test_generate_unique_filename_single_conflict(self, tmp_path):
+        """파일 1개 존재 시 _1 추가"""
+        # Arrange
+        saver = ImageSaver(base_dir=str(tmp_path))
+        video_dir = tmp_path / "test_video"
+        video_dir.mkdir()
+
+        # 기존 파일 생성
+        (video_dir / "frame_00_05_123.png").touch()
+
+        # Act
+        unique_name = saver.generate_unique_filename(
+            dir_path=str(video_dir),
+            base_name="frame_00_05_123.png"
+        )
+
+        # Assert
+        assert unique_name == "frame_00_05_123_1.png"
+
+    def test_generate_unique_filename_multiple_conflicts(self, tmp_path):
+        """여러 파일 존재 시 다음 시퀀스 번호"""
+        # Arrange
+        saver = ImageSaver(base_dir=str(tmp_path))
+        video_dir = tmp_path / "test_video"
+        video_dir.mkdir()
+
+        # 기존 파일 생성
+        (video_dir / "frame_00_05_123.png").touch()
+        (video_dir / "frame_00_05_123_1.png").touch()
+
+        # Act
+        unique_name = saver.generate_unique_filename(
+            dir_path=str(video_dir),
+            base_name="frame_00_05_123.png"
+        )
+
+        # Assert
+        assert unique_name == "frame_00_05_123_2.png"
+
+    def test_save_capture_no_overwrite(self, tmp_path):
+        """동일 타임스탬프 캡처 시 덮어쓰기 방지"""
+        # Arrange
+        saver = ImageSaver(base_dir=str(tmp_path))
+        frame = np.zeros((100, 100, 3), dtype=np.uint8)
+
+        # Act - 같은 타임스탬프로 2번 저장
+        path1, _ = saver.save_capture("test_video", 5.123, frame=frame)
+        path2, _ = saver.save_capture("test_video", 5.123, frame=frame)
+
+        # Assert
+        assert path1 != path2
+        assert os.path.exists(path1)
+        assert os.path.exists(path2)
+        assert "_1" in path2

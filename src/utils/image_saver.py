@@ -6,22 +6,29 @@
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import cv2
 import numpy as np
 from PyQt6.QtGui import QPixmap
 
+if TYPE_CHECKING:
+    from utils.config import Config
+
 
 class ImageSaver:
     """이미지 저장 유틸리티"""
 
-    def __init__(self, base_dir: str = "captures"):
+    def __init__(self, base_dir: str = "captures", config: Optional["Config"] = None):
         """
         Args:
             base_dir: 캡처 이미지 저장 기본 디렉토리
+            config: 설정 객체 (directories.capture_save 키 사용)
         """
-        self._base_dir = base_dir
+        if config is not None:
+            self._base_dir = config.get("directories.capture_save", base_dir)
+        else:
+            self._base_dir = base_dir
 
     def generate_filename(self, timestamp: float, prefix: str) -> str:
         """
@@ -52,6 +59,33 @@ class ImageSaver:
         dir_path = os.path.join(self._base_dir, video_name)
         os.makedirs(dir_path, exist_ok=True)
         return dir_path
+
+    def generate_unique_filename(self, dir_path: str, base_name: str) -> str:
+        """
+        충돌 없는 고유 파일명 생성
+
+        기존 파일이 존재하면 _1, _2 등의 시퀀스 번호를 추가
+
+        Args:
+            dir_path: 디렉토리 경로
+            base_name: 기본 파일명 (예: "frame_00_05_123.png")
+
+        Returns:
+            고유 파일명 (예: "frame_00_05_123_1.png")
+        """
+        name, ext = os.path.splitext(base_name)
+        full_path = os.path.join(dir_path, base_name)
+
+        if not os.path.exists(full_path):
+            return base_name
+
+        seq = 1
+        while True:
+            new_name = f"{name}_{seq}{ext}"
+            new_path = os.path.join(dir_path, new_name)
+            if not os.path.exists(new_path):
+                return new_name
+            seq += 1
 
     def save_frame(self, frame: np.ndarray, path: str) -> bool:
         """
@@ -110,13 +144,15 @@ class ImageSaver:
         skeleton_path = None
 
         if frame is not None:
-            filename = self.generate_filename(timestamp, "frame")
+            base_filename = self.generate_filename(timestamp, "frame")
+            filename = self.generate_unique_filename(dir_path, base_filename)
             path = os.path.join(dir_path, filename)
             if self.save_frame(frame, path):
                 frame_path = path
 
         if skeleton_pixmap is not None:
-            filename = self.generate_filename(timestamp, "skeleton")
+            base_filename = self.generate_filename(timestamp, "skeleton")
+            filename = self.generate_unique_filename(dir_path, base_filename)
             path = os.path.join(dir_path, filename)
             if self.save_pixmap(skeleton_pixmap, path):
                 skeleton_path = path
