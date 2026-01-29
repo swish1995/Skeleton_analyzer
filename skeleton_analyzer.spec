@@ -15,6 +15,8 @@ a = Analysis(
     binaries=[],
     datas=[
         (model_path, 'src/core'),  # MediaPipe 모델 포함
+        ('resources/icon.ico', 'resources'),  # Windows 아이콘
+        ('resources/icon.icns', 'resources'),  # macOS 아이콘
     ],
     hiddenimports=[
         'mediapipe',
@@ -57,14 +59,14 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # 아이콘 파일 경로 (resources/icon.ico)
+    icon='resources/icon.ico',  # Windows 아이콘
 )
 
 # macOS 앱 번들 (선택적)
 app = BUNDLE(
     exe,
     name='SkeletonAnalyzer.app',
-    icon=None,  # resources/icon.icns
+    icon='resources/icon.icns',  # macOS 아이콘
     bundle_identifier='com.skeletonanalyzer.app',
     info_plist={
         'NSHighResolutionCapable': 'True',
