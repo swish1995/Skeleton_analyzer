@@ -261,15 +261,15 @@ class CaptureSpreadsheetWidget(QWidget):
         # 버튼 영역
         btn_layout = QHBoxLayout()
 
-        self._json_btn = QPushButton("JSON 내보내기")
-        self._json_btn.setStyleSheet(BUTTON_STYLES['json'])
-        self._json_btn.clicked.connect(self._export_json)
-        btn_layout.addWidget(self._json_btn)
-
         self._excel_btn = QPushButton("Excel 내보내기")
         self._excel_btn.setStyleSheet(BUTTON_STYLES['excel'])
         self._excel_btn.clicked.connect(self._export_excel)
         btn_layout.addWidget(self._excel_btn)
+
+        self._json_btn = QPushButton("JSON 내보내기")
+        self._json_btn.setStyleSheet(BUTTON_STYLES['json'])
+        self._json_btn.clicked.connect(self._export_json)
+        btn_layout.addWidget(self._json_btn)
 
         btn_layout.addStretch()
 
