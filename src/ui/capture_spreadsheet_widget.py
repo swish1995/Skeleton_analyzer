@@ -9,16 +9,29 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView,
     QAbstractItemView, QMenu, QMessageBox, QFileDialog,
-    QSpinBox, QStyledItemDelegate,
+    QSpinBox, QStyledItemDelegate, QLabel, QDialog,
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QBrush, QAction
+from PyQt6.QtCore import Qt, pyqtSignal, QSize
+from PyQt6.QtGui import QColor, QBrush, QAction, QPixmap, QImage
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
 import os
 
 from ..core.capture_model import CaptureRecord, CaptureDataModel
+
+
+# =============================================================================
+# 썸네일 컬럼 정의
+# =============================================================================
+
+THUMBNAIL_SIZE = 40  # 썸네일 크기 (정사각형)
+
+# 썸네일 컬럼 (맨 앞에 추가)
+THUMBNAIL_COLUMNS = [
+    ('video_frame_path', 'Frame', 'thumbnail'),
+    ('skeleton_image_path', 'Skeleton', 'thumbnail'),
+]
 
 
 # =============================================================================
@@ -185,6 +198,45 @@ BUTTON_STYLES = {
 }
 
 
+class ImageViewerDialog(QDialog):
+    """이미지 원본 보기 다이얼로그"""
+
+    def __init__(self, image_path: str, title: str = "이미지 보기", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setModal(True)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        # 이미지 라벨
+        self._image_label = QLabel()
+        self._image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        if os.path.exists(image_path):
+            pixmap = QPixmap(image_path)
+            # 최대 크기 제한 (화면의 80%)
+            max_size = 800
+            if pixmap.width() > max_size or pixmap.height() > max_size:
+                pixmap = pixmap.scaled(
+                    max_size, max_size,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+            self._image_label.setPixmap(pixmap)
+            self.resize(pixmap.width() + 20, pixmap.height() + 60)
+        else:
+            self._image_label.setText("이미지를 찾을 수 없습니다.")
+            self.resize(300, 100)
+
+        layout.addWidget(self._image_label)
+
+        # 닫기 버튼
+        close_btn = QPushButton("닫기")
+        close_btn.clicked.connect(self.close)
+        layout.addWidget(close_btn)
+
+
 class SpinBoxDelegate(QStyledItemDelegate):
     """SpinBox 에디터를 제공하는 Delegate"""
 
@@ -232,18 +284,26 @@ class CaptureSpreadsheetWidget(QWidget):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
 
+        # 전체 컬럼 수 (썸네일 + 데이터)
+        self._thumbnail_count = len(THUMBNAIL_COLUMNS)
+        total_columns = self._thumbnail_count + len(COLUMN_DEFINITIONS)
+
         # 테이블 위젯
         self._table = QTableWidget()
-        self._table.setColumnCount(len(COLUMN_DEFINITIONS))
+        self._table.setColumnCount(total_columns)
 
-        # 헤더 설정
-        headers = [col[1] for col in COLUMN_DEFINITIONS]
+        # 헤더 설정 (썸네일 + 데이터)
+        headers = [col[1] for col in THUMBNAIL_COLUMNS] + [col[1] for col in COLUMN_DEFINITIONS]
         self._table.setHorizontalHeaderLabels(headers)
 
         # 헤더 스타일
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header.setStretchLastSection(True)
+
+        # 썸네일 컬럼 고정 크기
+        for i in range(self._thumbnail_count):
+            self._table.setColumnWidth(i, THUMBNAIL_SIZE + 10)
 
         # 선택 모드
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -255,6 +315,9 @@ class CaptureSpreadsheetWidget(QWidget):
 
         # 셀 변경 시그널
         self._table.cellChanged.connect(self._on_cell_changed)
+
+        # 셀 클릭 시그널 (썸네일 클릭 처리)
+        self._table.cellClicked.connect(self._on_cell_clicked)
 
         layout.addWidget(self._table)
 
@@ -289,15 +352,24 @@ class CaptureSpreadsheetWidget(QWidget):
             if editable and value_range:
                 min_val, max_val = value_range
                 delegate = SpinBoxDelegate(min_val, max_val, self._table)
-                self._table.setItemDelegateForColumn(col_idx, delegate)
+                # 썸네일 컬럼 오프셋 적용
+                self._table.setItemDelegateForColumn(col_idx + self._thumbnail_count, delegate)
 
     def _apply_header_colors(self):
         """헤더 배경색 적용"""
+        # 썸네일 컬럼 헤더
+        thumbnail_color = QColor(180, 180, 220)  # 연보라
+        for col_idx, (field, header, group) in enumerate(THUMBNAIL_COLUMNS):
+            item = QTableWidgetItem(header)
+            item.setBackground(QBrush(thumbnail_color))
+            self._table.setHorizontalHeaderItem(col_idx, item)
+
+        # 데이터 컬럼 헤더
         for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS):
             color = GROUP_COLORS.get(group, QColor(200, 200, 200))
             item = QTableWidgetItem(header)
             item.setBackground(QBrush(color))
-            self._table.setHorizontalHeaderItem(col_idx, item)
+            self._table.setHorizontalHeaderItem(col_idx + self._thumbnail_count, item)
 
     def add_record(self, record: CaptureRecord) -> int:
         """
@@ -329,6 +401,15 @@ class CaptureSpreadsheetWidget(QWidget):
 
         self._updating = True
 
+        # 행 높이 설정 (썸네일 크기에 맞춤)
+        self._table.setRowHeight(row, THUMBNAIL_SIZE + 4)
+
+        # 썸네일 컬럼 업데이트
+        for col_idx, (field, header, group) in enumerate(THUMBNAIL_COLUMNS):
+            image_path = getattr(record, field, None)
+            self._set_thumbnail_cell(row, col_idx, image_path)
+
+        # 데이터 컬럼 업데이트
         for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS):
             value = getattr(record, field, '')
 
@@ -364,16 +445,61 @@ class CaptureSpreadsheetWidget(QWidget):
             else:
                 item.setForeground(QBrush(QColor(0, 0, 0)))
 
-            self._table.setItem(row, col_idx, item)
+            self._table.setItem(row, col_idx + self._thumbnail_count, item)
 
         self._updating = False
+
+    def _set_thumbnail_cell(self, row: int, col: int, image_path: Optional[str]):
+        """썸네일 셀 설정"""
+        label = QLabel()
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
+
+        if image_path and os.path.exists(image_path):
+            pixmap = QPixmap(image_path)
+            pixmap = pixmap.scaled(
+                THUMBNAIL_SIZE, THUMBNAIL_SIZE,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            label.setPixmap(pixmap)
+            label.setToolTip(f"클릭하여 원본 보기\n{image_path}")
+        else:
+            label.setText("-")
+            label.setStyleSheet("color: #888;")
+
+        self._table.setCellWidget(row, col, label)
+
+    def _on_cell_clicked(self, row: int, col: int):
+        """셀 클릭 시 처리 (썸네일 클릭 시 원본 보기)"""
+        if col < self._thumbnail_count:
+            record = self._model.get_record(row)
+            if not record:
+                return
+
+            field = THUMBNAIL_COLUMNS[col][0]
+            image_path = getattr(record, field, None)
+
+            if image_path and os.path.exists(image_path):
+                title = "프레임 이미지" if col == 0 else "스켈레톤 이미지"
+                dialog = ImageViewerDialog(image_path, title, self)
+                dialog.exec()
 
     def _on_cell_changed(self, row: int, col: int):
         """셀 변경 시 재계산"""
         if self._updating:
             return
 
-        field, header, group, editable, value_range = COLUMN_DEFINITIONS[col]
+        # 썸네일 컬럼은 무시
+        if col < self._thumbnail_count:
+            return
+
+        # 실제 데이터 컬럼 인덱스
+        data_col = col - self._thumbnail_count
+        if data_col >= len(COLUMN_DEFINITIONS):
+            return
+
+        field, header, group, editable, value_range = COLUMN_DEFINITIONS[data_col]
         if not editable:
             return
 
