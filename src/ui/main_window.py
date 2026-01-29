@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu("파일(&F)")
 
         # 열기
-        open_action = QAction("열기(&O)...", self)
+        open_action = QAction("동영상 파일 열기(&O)...", self)
         open_action.setShortcut(QKeySequence.StandardKey.Open)
         open_action.triggered.connect(self._open_file)
         file_menu.addAction(open_action)
