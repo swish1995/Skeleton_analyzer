@@ -311,6 +311,7 @@ class PlayerWidget(QWidget):
         if self._video_player.is_loaded:
             timestamp = self._video_player.current_time
             frame_number = self._video_player.current_frame
+            self.flash_effect()  # 플래시 효과 + 잠깐 멈춤
             self.capture_requested.emit(timestamp, frame_number)
 
     def flash_effect(self):
