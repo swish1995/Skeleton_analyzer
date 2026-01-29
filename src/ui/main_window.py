@@ -131,8 +131,8 @@ class MainWindow(QMainWindow):
         # 보기 메뉴
         view_menu = menubar.addMenu("보기(&V)")
 
-        # 각도 패널
-        self._angle_action = QAction("각도(&A)", self)
+        # 상태 패널
+        self._angle_action = QAction("상태(&A)", self)
         self._angle_action.setCheckable(True)
         self._angle_action.setChecked(True)
         self._angle_action.setShortcut("Ctrl+1")
@@ -141,25 +141,25 @@ class MainWindow(QMainWindow):
         )
         view_menu.addAction(self._angle_action)
 
-        # 안전지표 패널
-        self._ergonomic_action = QAction("안전지표(&E)", self)
-        self._ergonomic_action.setCheckable(True)
-        self._ergonomic_action.setChecked(True)
-        self._ergonomic_action.setShortcut("Ctrl+2")
-        self._ergonomic_action.triggered.connect(
-            lambda checked: self.status_widget.set_ergonomic_visible(checked)
-        )
-        view_menu.addAction(self._ergonomic_action)
-
-        # 스프레드시트 패널
-        self._spreadsheet_action = QAction("스프레드시트(&P)", self)
+        # 데이터 패널
+        self._spreadsheet_action = QAction("데이터(&D)", self)
         self._spreadsheet_action.setCheckable(True)
         self._spreadsheet_action.setChecked(True)
-        self._spreadsheet_action.setShortcut("Ctrl+3")
+        self._spreadsheet_action.setShortcut("Ctrl+2")
         self._spreadsheet_action.triggered.connect(
             lambda checked: self.status_widget.set_spreadsheet_visible(checked)
         )
         view_menu.addAction(self._spreadsheet_action)
+
+        # 안전지표 패널
+        self._ergonomic_action = QAction("안전지표(&E)", self)
+        self._ergonomic_action.setCheckable(True)
+        self._ergonomic_action.setChecked(True)
+        self._ergonomic_action.setShortcut("Ctrl+3")
+        self._ergonomic_action.triggered.connect(
+            lambda checked: self.status_widget.set_ergonomic_visible(checked)
+        )
+        view_menu.addAction(self._ergonomic_action)
 
         # StatusWidget 가시성 변경 시 메뉴 동기화
         self.status_widget.visibility_changed.connect(self._on_visibility_changed)

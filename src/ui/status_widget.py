@@ -1,4 +1,5 @@
 """스테이터스 위젯 모듈 (스켈레톤 + 각도 + 인체공학적 평가 + 캡처 스프레드시트)"""
+import platform
 from PyQt6.QtWidgets import (
     QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, QMenu, QSizePolicy
 )
@@ -38,6 +39,9 @@ class StatusWidget(QWidget):
         self._current_frame_number = 0
         self._current_frame: Optional[np.ndarray] = None  # 현재 프레임 저장
         self._video_name: Optional[str] = None  # 동영상 이름
+
+        # 단축키 표시 접두사 (macOS: ⌘, 기타: Ctrl+)
+        self._shortcut_prefix = "⌘" if platform.system() == "Darwin" else "Ctrl+"
 
         self._init_ui()
         self._connect_signals()
@@ -128,7 +132,7 @@ class StatusWidget(QWidget):
         menubar_layout.setSpacing(8)
 
         # 상태 버튼 (토글) - 각도 패널
-        self._angle_btn = QPushButton("상태")
+        self._angle_btn = QPushButton(f"상태 ({self._shortcut_prefix}1)")
         self._angle_btn.setFixedHeight(28)
         self._angle_btn.setCheckable(True)
         self._angle_btn.setChecked(True)
@@ -136,7 +140,7 @@ class StatusWidget(QWidget):
         menubar_layout.addWidget(self._angle_btn)
 
         # 데이터 버튼 (토글) - 스프레드시트
-        self._spreadsheet_btn = QPushButton("데이터")
+        self._spreadsheet_btn = QPushButton(f"데이터 ({self._shortcut_prefix}2)")
         self._spreadsheet_btn.setFixedHeight(28)
         self._spreadsheet_btn.setCheckable(True)
         self._spreadsheet_btn.setChecked(True)
@@ -147,7 +151,7 @@ class StatusWidget(QWidget):
         menubar_layout.addSpacing(20)
 
         # 안전지표 버튼 (토글)
-        self._ergonomic_btn = QPushButton("안전지표")
+        self._ergonomic_btn = QPushButton(f"안전지표 ({self._shortcut_prefix}3)")
         self._ergonomic_btn.setFixedHeight(28)
         self._ergonomic_btn.setCheckable(True)
         self._ergonomic_btn.setChecked(True)
@@ -180,8 +184,9 @@ class StatusWidget(QWidget):
 
         menubar_layout.addStretch()
 
-        # 설정 버튼
-        self._settings_btn = QPushButton("설정")
+        # 설정 버튼 (macOS: ⌘,, 기타: Ctrl+P)
+        settings_shortcut = "⌘," if platform.system() == "Darwin" else "Ctrl+P"
+        self._settings_btn = QPushButton(f"설정 ({settings_shortcut})")
         self._settings_btn.setFixedHeight(28)
         self._settings_btn.setStyleSheet(self._get_button_style("설정", True))
         self._settings_btn.clicked.connect(self._open_settings)
