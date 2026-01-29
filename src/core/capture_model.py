@@ -2,7 +2,7 @@
 캡처 데이터 모델
 
 스프레드시트 캡처 기능을 위한 데이터 모델 정의.
-CaptureRecord: 단일 캡처 레코드 (43개 필드)
+CaptureRecord: 단일 캡처 레코드 (40개 필드)
 CaptureDataModel: 레코드 컬렉션 관리
 """
 
@@ -29,12 +29,13 @@ from .score_calculator import (
 @dataclass
 class CaptureRecord:
     """
-    단일 캡처 레코드 (총 43개 필드)
+    단일 캡처 레코드 (총 40개 필드)
 
     - 기본 정보 (3개): timestamp, frame_number, capture_time
     - RULA (15개): 부위 7 + 수동입력 4 + 결과 4
     - REBA (13개): 부위 6 + 수동입력 3 + 결과 4
     - OWAS (7개): 부위 3 + 수동입력 1 + 결과 3
+    - 이미지 경로 (2개): video_frame_path, skeleton_image_path
     """
 
     # === 기본 정보 (3개) ===
@@ -97,6 +98,10 @@ class CaptureRecord:
     owas_code: str = "1111"  # Posture Code
     owas_ac: int = 1  # Action Category
     owas_risk: str = ""  # Risk Level
+
+    # === 이미지 경로 (2개) ===
+    video_frame_path: Optional[str] = None  # 동영상 프레임 이미지 경로
+    skeleton_image_path: Optional[str] = None  # 스켈레톤 이미지 경로
 
     def recalculate_rula(self) -> None:
         """RULA 점수 재계산"""

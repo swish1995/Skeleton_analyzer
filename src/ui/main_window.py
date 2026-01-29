@@ -258,7 +258,7 @@ class MainWindow(QMainWindow):
 
     def _on_video_loaded(self, video_name: str):
         """동영상 로드 시 호출"""
-        self.status_widget.spreadsheet_widget.set_video_name(video_name)
+        self.status_widget.set_video_name(video_name)
 
     def _on_frame_changed(self, frame, frame_number: int):
         """프레임 변경 시 호출"""

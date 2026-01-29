@@ -15,6 +15,7 @@ from .capture_spreadsheet_widget import CaptureSpreadsheetWidget
 from ..core.pose_detector import PoseDetector
 from ..core.angle_calculator import AngleCalculator
 from ..core.capture_model import CaptureRecord
+from ..utils.image_saver import ImageSaver
 
 
 class StatusWidget(QWidget):
@@ -28,8 +29,11 @@ class StatusWidget(QWidget):
         super().__init__()
         self._pose_detector = PoseDetector()
         self._angle_calculator = AngleCalculator()
+        self._image_saver = ImageSaver()
         self._current_timestamp = 0.0
         self._current_frame_number = 0
+        self._current_frame: Optional[np.ndarray] = None  # 현재 프레임 저장
+        self._video_name: Optional[str] = None  # 동영상 이름
 
         self._init_ui()
         self._connect_signals()
@@ -344,6 +348,9 @@ class StatusWidget(QWidget):
 
     def process_frame(self, frame: np.ndarray):
         """프레임 처리"""
+        # 현재 프레임 저장 (캡처용)
+        self._current_frame = frame.copy()
+
         # 포즈 감지
         result = self._pose_detector.detect(frame)
 
@@ -383,6 +390,18 @@ class StatusWidget(QWidget):
         reba = results.get('reba')
         owas = results.get('owas')
 
+        # 이미지 저장
+        video_frame_path = None
+        skeleton_image_path = None
+
+        if self._video_name:
+            video_frame_path, skeleton_image_path = self._image_saver.save_capture(
+                video_name=self._video_name,
+                timestamp=self._current_timestamp,
+                frame=self._current_frame,
+                skeleton_pixmap=self._skeleton_widget.grab_as_pixmap(),
+            )
+
         # CaptureRecord 생성
         record = CaptureRecord(
             timestamp=self._current_timestamp,
@@ -419,12 +438,20 @@ class StatusWidget(QWidget):
             owas_code=owas.posture_code if owas else '1111',
             owas_ac=owas.action_category if owas else 1,
             owas_risk=owas.risk_level if owas else '',
+            # 이미지 경로
+            video_frame_path=video_frame_path,
+            skeleton_image_path=skeleton_image_path,
         )
 
         # 스프레드시트에 추가
         row_idx = self._spreadsheet_widget.add_record(record)
         self.capture_added.emit(row_idx)
         return row_idx
+
+    def set_video_name(self, video_name: str):
+        """동영상 이름 설정"""
+        self._video_name = video_name
+        self._spreadsheet_widget.set_video_name(video_name)
 
     @property
     def spreadsheet_widget(self) -> CaptureSpreadsheetWidget:

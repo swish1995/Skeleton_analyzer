@@ -1,7 +1,7 @@
 """스켈레톤 시각화 위젯 모듈"""
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QPalette
+from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QPalette, QPixmap
 from typing import List, Dict, Optional
 
 
@@ -173,3 +173,7 @@ class SkeletonWidget(QWidget):
         if idx in [24, 26, 28, 30, 32]:
             return BODY_PART_COLORS['right_leg']
         return BODY_PART_COLORS['torso']
+
+    def grab_as_pixmap(self) -> QPixmap:
+        """위젯을 QPixmap으로 캡처"""
+        return self.grab()
