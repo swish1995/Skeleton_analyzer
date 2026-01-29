@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView,
     QAbstractItemView, QMenu, QMessageBox, QFileDialog,
     QSpinBox, QStyledItemDelegate, QLabel, QDialog,
+    QComboBox, QDialogButtonBox, QFormLayout,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QColor, QBrush, QAction, QPixmap, QImage
@@ -600,6 +601,8 @@ class CaptureSpreadsheetWidget(QWidget):
         try:
             import openpyxl
             from openpyxl.styles import PatternFill, Font, Alignment
+            from openpyxl.drawing.image import Image as XLImage
+            from openpyxl.utils import get_column_letter
         except ImportError:
             QMessageBox.critical(
                 self,
@@ -607,6 +610,13 @@ class CaptureSpreadsheetWidget(QWidget):
                 "openpyxl 패키지가 설치되지 않았습니다.\npip install openpyxl 명령어로 설치해주세요.",
             )
             return
+
+        # 이미지 옵션 확인
+        result = self._ask_image_options()
+        if result is None:
+            return  # 취소됨
+
+        include_images, img_size, row_height, col_width = result
 
         default_filename = self._get_default_filename("xlsx")
         file_path, _ = QFileDialog.getSaveFileName(
@@ -623,9 +633,23 @@ class CaptureSpreadsheetWidget(QWidget):
             ws = wb.active
             ws.title = "Capture Data"
 
-            # 헤더 작성
+            # 이미지 컬럼 오프셋 계산
+            img_col_offset = len(THUMBNAIL_COLUMNS) if include_images else 0
+
+            # 이미지 헤더 작성 (포함 옵션 선택 시)
+            if include_images:
+                thumbnail_color = "B4B4DC"  # 연보라
+                for col_idx, (field, header, group) in enumerate(THUMBNAIL_COLUMNS, start=1):
+                    cell = ws.cell(row=1, column=col_idx, value=header)
+                    cell.fill = PatternFill(start_color=thumbnail_color, end_color=thumbnail_color, fill_type="solid")
+                    cell.font = Font(bold=True)
+                    cell.alignment = Alignment(horizontal='center')
+                    # 이미지 컬럼 너비 설정
+                    ws.column_dimensions[get_column_letter(col_idx)].width = col_width
+
+            # 데이터 헤더 작성
             for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
-                cell = ws.cell(row=1, column=col_idx, value=header)
+                cell = ws.cell(row=1, column=col_idx + img_col_offset, value=header)
 
                 # 배경색
                 color = GROUP_COLORS.get(group, QColor(200, 200, 200))
@@ -636,6 +660,24 @@ class CaptureSpreadsheetWidget(QWidget):
 
             # 데이터 작성
             for row_idx, record in enumerate(self._model.get_all_records(), start=2):
+                # 이미지 삽입 (포함 옵션 선택 시)
+                if include_images:
+                    ws.row_dimensions[row_idx].height = row_height
+
+                    for col_idx, (field, header, group) in enumerate(THUMBNAIL_COLUMNS, start=1):
+                        image_path = getattr(record, field, None)
+                        if image_path and os.path.exists(image_path):
+                            try:
+                                img = XLImage(image_path)
+                                img.width = img_size
+                                img.height = img_size
+                                cell_ref = f"{get_column_letter(col_idx)}{row_idx}"
+                                ws.add_image(img, cell_ref)
+                            except Exception:
+                                # 이미지 로드 실패 시 빈 셀
+                                pass
+
+                # 데이터 컬럼 작성
                 for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
                     value = getattr(record, field, '')
 
@@ -647,7 +689,7 @@ class CaptureSpreadsheetWidget(QWidget):
                     elif field == 'capture_time' and isinstance(value, datetime):
                         value = value.strftime('%H:%M:%S')
 
-                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                    cell = ws.cell(row=row_idx, column=col_idx + img_col_offset, value=value)
 
                     # 수동 입력 컬럼 노랑 배경
                     if editable:
@@ -659,15 +701,97 @@ class CaptureSpreadsheetWidget(QWidget):
                         fill_color = f"{risk_color.red():02X}{risk_color.green():02X}{risk_color.blue():02X}"
                         cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
 
-            # 컬럼 너비 자동 조정
+            # 데이터 컬럼 너비 자동 조정
             for col_idx in range(1, len(COLUMN_DEFINITIONS) + 1):
-                ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = 12
+                ws.column_dimensions[get_column_letter(col_idx + img_col_offset)].width = 12
 
             wb.save(file_path)
             QMessageBox.information(self, "완료", f"Excel 파일이 저장되었습니다:\n{file_path}")
 
         except Exception as e:
             QMessageBox.critical(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
+
+    def _ask_image_options(self) -> Optional[tuple]:
+        """
+        이미지 옵션 확인 다이얼로그
+
+        Returns:
+            None: 취소됨
+            (include_images, img_size, row_height, col_width): 옵션
+            - include_images: 이미지 포함 여부
+            - img_size: 이미지 크기 (픽셀)
+            - row_height: 행 높이 (포인트)
+            - col_width: 열 너비
+        """
+        # 이미지 크기 옵션: (라벨, 이미지크기, 행높이, 열너비)
+        SIZE_OPTIONS = [
+            ("작게 (50x50)", 50, 40, 8),
+            ("보통 (150x150)", 150, 115, 22),
+            ("크게 (200x200)", 200, 155, 29),
+            ("매우 크게 (300x300)", 300, 230, 43),
+        ]
+        DEFAULT_INDEX = 1  # 보통
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("이미지 내보내기 옵션")
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+
+        # 설명
+        desc_label = QLabel("Excel 파일에 이미지를 포함하시겠습니까?\n이미지를 포함하면 파일 크기가 증가합니다.")
+        layout.addWidget(desc_label)
+
+        # 옵션 폼
+        form_layout = QFormLayout()
+
+        # 이미지 크기 콤보박스
+        size_combo = QComboBox()
+        for label, _, _, _ in SIZE_OPTIONS:
+            size_combo.addItem(label)
+        size_combo.setCurrentIndex(DEFAULT_INDEX)
+        form_layout.addRow("이미지 크기:", size_combo)
+
+        layout.addLayout(form_layout)
+
+        # 버튼
+        button_box = QDialogButtonBox()
+        include_btn = button_box.addButton("이미지 포함", QDialogButtonBox.ButtonRole.AcceptRole)
+        no_image_btn = button_box.addButton("이미지 제외", QDialogButtonBox.ButtonRole.RejectRole)
+        cancel_btn = button_box.addButton("취소", QDialogButtonBox.ButtonRole.DestructiveRole)
+
+        # 결과 저장용
+        result = {"include": False, "cancelled": False}
+
+        def on_include():
+            result["include"] = True
+            dialog.accept()
+
+        def on_no_image():
+            result["include"] = False
+            dialog.accept()
+
+        def on_cancel():
+            result["cancelled"] = True
+            dialog.reject()
+
+        include_btn.clicked.connect(on_include)
+        no_image_btn.clicked.connect(on_no_image)
+        cancel_btn.clicked.connect(on_cancel)
+
+        layout.addWidget(button_box)
+
+        dialog.exec()
+
+        if result["cancelled"]:
+            return None
+
+        if result["include"]:
+            idx = size_combo.currentIndex()
+            _, img_size, row_height, col_width = SIZE_OPTIONS[idx]
+            return (True, img_size, row_height, col_width)
+        else:
+            return (False, 0, 0, 0)
 
     def get_model(self) -> CaptureDataModel:
         """데이터 모델 반환"""
