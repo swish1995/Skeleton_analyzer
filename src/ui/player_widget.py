@@ -19,6 +19,8 @@ class PlayerWidget(QWidget):
     frame_changed = pyqtSignal(object, int)
     # 캡처 요청 시그널: (timestamp, frame_number)
     capture_requested = pyqtSignal(float, int)
+    # 동영상 로드 시그널: (video_name)
+    video_loaded = pyqtSignal(str)
 
     # 버튼 스타일 (ai-generate 스타일)
     BUTTON_STYLES = {
@@ -93,6 +95,8 @@ class PlayerWidget(QWidget):
         self._video_player = VideoPlayer()
         self._timer = QTimer()
         self._timer.timeout.connect(self._on_timer)
+        self._current_video_path = None
+        self._current_video_name = None
 
         self._init_ui()
         self._setup_drag_drop()
@@ -267,6 +271,12 @@ class PlayerWidget(QWidget):
             # 캡처 버튼 활성화
             self._capture_btn.setEnabled(True)
 
+            # 파일명 저장 및 시그널 발생
+            import os
+            self._current_video_path = file_path
+            self._current_video_name = os.path.splitext(os.path.basename(file_path))[0]
+            self.video_loaded.emit(self._current_video_name)
+
             return True
         return False
 
@@ -360,6 +370,11 @@ class PlayerWidget(QWidget):
     def get_current_frame_number(self) -> int:
         """현재 프레임 번호 반환"""
         return self._video_player.current_frame if self._video_player.is_loaded else 0
+
+    @property
+    def video_name(self) -> Optional[str]:
+        """현재 로드된 동영상 파일명 (확장자 제외)"""
+        return self._current_video_name
 
     def release(self):
         """리소스 해제"""

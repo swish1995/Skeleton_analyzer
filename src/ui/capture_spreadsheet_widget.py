@@ -16,6 +16,7 @@ from PyQt6.QtGui import QColor, QBrush, QAction
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
+import os
 
 from ..core.capture_model import CaptureRecord, CaptureDataModel
 
@@ -220,6 +221,7 @@ class CaptureSpreadsheetWidget(QWidget):
         super().__init__(parent)
         self._model = CaptureDataModel()
         self._updating = False  # 재계산 중 무한 루프 방지
+        self._video_name: Optional[str] = None  # 현재 동영상 파일명
 
         self._init_ui()
         self._setup_delegates()
@@ -448,10 +450,11 @@ class CaptureSpreadsheetWidget(QWidget):
             QMessageBox.warning(self, "경고", "내보낼 데이터가 없습니다.")
             return
 
+        default_filename = self._get_default_filename("json")
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "JSON 내보내기",
-            "",
+            default_filename,
             "JSON Files (*.json)",
         )
         if file_path:
@@ -479,10 +482,11 @@ class CaptureSpreadsheetWidget(QWidget):
             )
             return
 
+        default_filename = self._get_default_filename("xlsx")
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Excel 내보내기",
-            "",
+            default_filename,
             "Excel Files (*.xlsx)",
         )
         if not file_path:
@@ -546,3 +550,14 @@ class CaptureSpreadsheetWidget(QWidget):
     def get_record_count(self) -> int:
         """레코드 수 반환"""
         return len(self._model)
+
+    def set_video_name(self, video_name: str):
+        """동영상 파일명 설정"""
+        self._video_name = video_name
+
+    def _get_default_filename(self, extension: str) -> str:
+        """기본 파일명 생성 (동영상제목_타임스탬프.확장자)"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if self._video_name:
+            return f"{self._video_name}_{timestamp}.{extension}"
+        return f"capture_{timestamp}.{extension}"

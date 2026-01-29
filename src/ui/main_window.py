@@ -85,6 +85,7 @@ class MainWindow(QMainWindow):
         # 시그널 연결
         self.player_widget.frame_changed.connect(self._on_frame_changed)
         self.player_widget.capture_requested.connect(self._on_capture_requested)
+        self.player_widget.video_loaded.connect(self._on_video_loaded)
 
     def _init_menu(self):
         """메뉴 초기화"""
@@ -254,6 +255,10 @@ class MainWindow(QMainWindow):
             self._recent_menu.addAction(action)
 
         self._recent_menu.setEnabled(len(self._recent_files) > 0)
+
+    def _on_video_loaded(self, video_name: str):
+        """동영상 로드 시 호출"""
+        self.status_widget.spreadsheet_widget.set_video_name(video_name)
 
     def _on_frame_changed(self, frame, frame_number: int):
         """프레임 변경 시 호출"""
