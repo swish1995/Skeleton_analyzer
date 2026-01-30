@@ -303,7 +303,7 @@ class MainWindow(QMainWindow):
                 "저장되지 않은 캡처 이미지도 함께 삭제됩니다.\n"
                 "계속하시겠습니까?"
             )
-            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxWarning)
+            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
             msg_box.setIconPixmap(icon.pixmap(64, 64))
             msg_box.setStandardButtons(
                 QMessageBox.StandardButton.Save |
@@ -319,8 +319,8 @@ class MainWindow(QMainWindow):
                 if not self._save_project():
                     return
 
-            # 현재 데이터 및 고아 이미지 정리
-            self._cleanup_before_new_video()
+            # 기존 캡처 이미지 정리
+            self._cleanup_capture_images()
 
         if self.player_widget.load_video(file_path):
             self._add_recent_file(file_path)
@@ -334,9 +334,13 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
 
-    def _cleanup_before_new_video(self):
-        """새 동영상 로드 전 정리 (캡처 데이터 및 고아 이미지 삭제)"""
-        # 현재 캡처 디렉토리의 이미지 삭제 (고아 이미지 포함)
+    def _cleanup_capture_images(self, silent: bool = False):
+        """
+        캡처 이미지 디렉토리 정리 (삭제)
+
+        Args:
+            silent: True이면 에러 무시, False이면 상태바에 에러 표시
+        """
         if self._video_name:
             capture_dir = Path(self._config.get(
                 "directories.capture_save",
@@ -348,7 +352,8 @@ class MainWindow(QMainWindow):
                 try:
                     shutil.rmtree(capture_dir)
                 except Exception as e:
-                    self._status_bar.showMessage(f"이미지 삭제 실패: {e}")
+                    if not silent:
+                        self._status_bar.showMessage(f"이미지 삭제 실패: {e}")
 
     def _add_recent_file(self, file_path: str):
         """최근 파일 목록에 추가"""
@@ -414,17 +419,26 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """창 닫기 이벤트"""
+        from PyQt6.QtWidgets import QStyle
+
         # 저장되지 않은 변경사항 확인
         if self._project_manager.is_dirty:
-            reply = QMessageBox.question(
-                self,
-                "저장되지 않은 변경사항",
-                "저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?",
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("저장되지 않은 변경사항")
+            msg_box.setText(
+                "저장되지 않은 변경사항이 있습니다.\n\n"
+                "저장하지 않으면 캡처 이미지도 함께 삭제됩니다.\n"
+                "저장하시겠습니까?"
+            )
+            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
+            msg_box.setIconPixmap(icon.pixmap(64, 64))
+            msg_box.setStandardButtons(
                 QMessageBox.StandardButton.Save |
                 QMessageBox.StandardButton.Discard |
-                QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Save
+                QMessageBox.StandardButton.Cancel
             )
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
+            reply = msg_box.exec()
 
             if reply == QMessageBox.StandardButton.Cancel:
                 event.ignore()
@@ -433,9 +447,11 @@ class MainWindow(QMainWindow):
                 if not self._save_project():
                     event.ignore()
                     return
+            elif reply == QMessageBox.StandardButton.Discard:
+                # 캡처 이미지 정리
+                self._cleanup_capture_images(silent=True)
 
         # 종료 확인 다이얼로그
-        from PyQt6.QtWidgets import QStyle
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("종료 확인")
         msg_box.setText("앱을 종료하시겠습니까?")
