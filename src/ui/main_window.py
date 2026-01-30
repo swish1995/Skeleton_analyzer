@@ -4,10 +4,11 @@ import platform
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QSplitter, QVBoxLayout,
-    QMenuBar, QMenu, QStatusBar, QFileDialog, QMessageBox
+    QMenuBar, QMenu, QStatusBar, QFileDialog, QMessageBox,
+    QToolBar, QToolButton
 )
-from PyQt6.QtCore import Qt, QSettings
-from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtCore import Qt, QSettings, QSize
+from PyQt6.QtGui import QAction, QKeySequence, QIcon
 from typing import Optional, List
 
 from .player_widget import PlayerWidget
@@ -39,6 +40,7 @@ class MainWindow(QMainWindow):
 
         self._init_ui()
         self._init_menu()
+        self._init_toolbar()
         self._init_shortcuts()
         self._load_settings()
 
@@ -208,6 +210,78 @@ class MainWindow(QMainWindow):
 
         # StatusWidget 가시성 변경 시 메뉴 동기화
         self.status_widget.visibility_changed.connect(self._on_visibility_changed)
+
+    # 툴바 버튼 색상 정의
+    TOOLBAR_BUTTON_COLORS = {
+        'open': ('#b8a25a', '#a8924a', '#c8b26a'),     # 골드/노란색
+        'save': ('#5ab87a', '#4aa86a', '#6ac88a'),     # 초록색
+    }
+
+    def _get_toolbar_button_style(self, color_key: str) -> str:
+        """툴바 버튼 스타일 생성 (기존 StatusWidget 스타일과 동일)"""
+        colors = self.TOOLBAR_BUTTON_COLORS.get(color_key, self.TOOLBAR_BUTTON_COLORS['open'])
+        base, dark, light = colors
+        return f"""
+            QPushButton {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {base}, stop:1 {dark});
+                color: white;
+                border: none;
+                padding: 5px 12px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {light}, stop:1 {base});
+            }}
+            QPushButton:pressed {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {dark}, stop:1 {base});
+            }}
+        """
+
+    def _get_icon_path(self, icon_name: str) -> str:
+        """아이콘 경로 반환"""
+        return str(Path(__file__).parent.parent / "resources" / "icons" / f"{icon_name}.svg")
+
+    def _init_toolbar(self):
+        """메인 툴바 초기화"""
+        from PyQt6.QtWidgets import QPushButton
+
+        self._toolbar = QToolBar("메인 툴바")
+        self._toolbar.setMovable(False)
+        self._toolbar.setFloatable(False)
+        self._toolbar.setStyleSheet("""
+            QToolBar {
+                background-color: #333333;
+                border: none;
+                padding: 8px 10px;
+                spacing: 8px;
+            }
+        """)
+        self.addToolBar(self._toolbar)
+
+        # 프로젝트 열기 버튼
+        self._open_btn = QPushButton(" 프로젝트 열기")
+        self._open_btn.setIcon(QIcon(self._get_icon_path("folder_open")))
+        self._open_btn.setIconSize(QSize(16, 16))
+        self._open_btn.setFixedHeight(28)
+        self._open_btn.setToolTip("프로젝트 열기 (Ctrl+Shift+O)")
+        self._open_btn.setStyleSheet(self._get_toolbar_button_style('open'))
+        self._open_btn.clicked.connect(self._open_project)
+        self._toolbar.addWidget(self._open_btn)
+
+        # 프로젝트 저장 버튼
+        self._save_btn = QPushButton(" 프로젝트 저장")
+        self._save_btn.setIcon(QIcon(self._get_icon_path("save")))
+        self._save_btn.setIconSize(QSize(16, 16))
+        self._save_btn.setFixedHeight(28)
+        self._save_btn.setToolTip("프로젝트 저장 (Ctrl+S)")
+        self._save_btn.setStyleSheet(self._get_toolbar_button_style('save'))
+        self._save_btn.clicked.connect(self._save_project)
+        self._toolbar.addWidget(self._save_btn)
 
     def _init_shortcuts(self):
         """단축키 초기화"""
