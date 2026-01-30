@@ -215,21 +215,33 @@ class MainWindow(QMainWindow):
     TOOLBAR_BUTTON_COLORS = {
         'open': ('#b8a25a', '#a8924a', '#c8b26a'),     # 골드/노란색
         'save': ('#5ab87a', '#4aa86a', '#6ac88a'),     # 초록색
+        '상태': ('#3a9a8a', '#2a8a7a', '#4aaa9a'),      # 틸색
+        '데이터': ('#5a7ab8', '#4a6aa8', '#6a8ac8'),    # 파란색
+        '안전지표': ('#8a5ab8', '#7a4aa8', '#9a6ac8'),  # 보라색
+        'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
+        'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
+        'OWAS': ('#b85a6a', '#a84a5a', '#c86a7a'),      # 빨간색
+        '설정': ('#7a7a7a', '#6a6a6a', '#8a8a8a'),      # 회색
+        '종료': ('#c55a5a', '#b54a4a', '#d56a6a'),      # 진한 빨간색
     }
 
-    def _get_toolbar_button_style(self, color_key: str) -> str:
-        """툴바 버튼 스타일 생성 (기존 StatusWidget 스타일과 동일)"""
+    def _get_toolbar_button_style(self, color_key: str, is_on: bool = True, is_sub: bool = False) -> str:
+        """툴바 버튼 스타일 생성"""
         colors = self.TOOLBAR_BUTTON_COLORS.get(color_key, self.TOOLBAR_BUTTON_COLORS['open'])
         base, dark, light = colors
+        padding = "5px 8px" if is_sub else "5px 12px"
+        font_size = "10px" if is_sub else "11px"
+        text_color = "white" if is_on else "#666666"
+
         return f"""
             QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 {base}, stop:1 {dark});
-                color: white;
+                color: {text_color};
                 border: none;
-                padding: 5px 12px;
+                padding: {padding};
                 border-radius: 4px;
-                font-size: 11px;
+                font-size: {font_size};
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -240,6 +252,10 @@ class MainWindow(QMainWindow):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 {dark}, stop:1 {base});
             }}
+            QPushButton:disabled {{
+                background: #444444;
+                color: #555555;
+            }}
         """
 
     def _get_icon_path(self, icon_name: str) -> str:
@@ -248,7 +264,10 @@ class MainWindow(QMainWindow):
 
     def _init_toolbar(self):
         """메인 툴바 초기화"""
-        from PyQt6.QtWidgets import QPushButton
+        from PyQt6.QtWidgets import QPushButton, QWidget, QHBoxLayout
+
+        # 단축키 표시 접두사 (macOS: ⌘, 기타: Ctrl+)
+        shortcut_prefix = "⌘" if platform.system() == "Darwin" else "Ctrl+"
 
         self._toolbar = QToolBar("메인 툴바")
         self._toolbar.setMovable(False)
@@ -282,6 +301,128 @@ class MainWindow(QMainWindow):
         self._save_btn.setStyleSheet(self._get_toolbar_button_style('save'))
         self._save_btn.clicked.connect(self._save_project)
         self._toolbar.addWidget(self._save_btn)
+
+        # 구분선
+        self._toolbar.addSeparator()
+
+        # 상태 버튼 (토글)
+        self._status_btn = QPushButton(f"상태 ({shortcut_prefix}1)")
+        self._status_btn.setFixedHeight(28)
+        self._status_btn.setCheckable(True)
+        self._status_btn.setChecked(True)
+        self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', True))
+        self._status_btn.toggled.connect(self._on_status_toggled)
+        self._toolbar.addWidget(self._status_btn)
+
+        # 데이터 버튼 (토글)
+        self._data_btn = QPushButton(f"데이터 ({shortcut_prefix}2)")
+        self._data_btn.setFixedHeight(28)
+        self._data_btn.setCheckable(True)
+        self._data_btn.setChecked(True)
+        self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', True))
+        self._data_btn.toggled.connect(self._on_data_toggled)
+        self._toolbar.addWidget(self._data_btn)
+
+        # 구분선
+        self._toolbar.addSeparator()
+
+        # 안전지표 버튼 (토글)
+        self._safety_btn = QPushButton(f"안전지표 ({shortcut_prefix}3)")
+        self._safety_btn.setFixedHeight(28)
+        self._safety_btn.setCheckable(True)
+        self._safety_btn.setChecked(True)
+        self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', True))
+        self._safety_btn.toggled.connect(self._on_safety_toggled)
+        self._toolbar.addWidget(self._safety_btn)
+
+        # RULA 버튼 (서브 토글)
+        self._rula_btn = QPushButton("RULA")
+        self._rula_btn.setFixedHeight(28)
+        self._rula_btn.setCheckable(True)
+        self._rula_btn.setChecked(True)
+        self._rula_btn.setStyleSheet(self._get_toolbar_button_style('RULA', True, True))
+        self._rula_btn.toggled.connect(self._on_rula_toggled)
+        self._toolbar.addWidget(self._rula_btn)
+
+        # REBA 버튼 (서브 토글)
+        self._reba_btn = QPushButton("REBA")
+        self._reba_btn.setFixedHeight(28)
+        self._reba_btn.setCheckable(True)
+        self._reba_btn.setChecked(True)
+        self._reba_btn.setStyleSheet(self._get_toolbar_button_style('REBA', True, True))
+        self._reba_btn.toggled.connect(self._on_reba_toggled)
+        self._toolbar.addWidget(self._reba_btn)
+
+        # OWAS 버튼 (서브 토글)
+        self._owas_btn = QPushButton("OWAS")
+        self._owas_btn.setFixedHeight(28)
+        self._owas_btn.setCheckable(True)
+        self._owas_btn.setChecked(True)
+        self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', True, True))
+        self._owas_btn.toggled.connect(self._on_owas_toggled)
+        self._toolbar.addWidget(self._owas_btn)
+
+        # 늘어나는 공간 (spacer)
+        spacer = QWidget()
+        spacer.setSizePolicy(
+            spacer.sizePolicy().horizontalPolicy().Expanding,
+            spacer.sizePolicy().verticalPolicy().Preferred
+        )
+        self._toolbar.addWidget(spacer)
+
+        # 설정 버튼
+        settings_shortcut = "⌘," if platform.system() == "Darwin" else "Ctrl+P"
+        self._settings_btn = QPushButton(f"설정 ({settings_shortcut})")
+        self._settings_btn.setFixedHeight(28)
+        self._settings_btn.setStyleSheet(self._get_toolbar_button_style('설정', True))
+        self._settings_btn.clicked.connect(self._open_settings)
+        self._toolbar.addWidget(self._settings_btn)
+
+        # 종료 버튼
+        self._exit_btn = QPushButton("종료")
+        self._exit_btn.setFixedHeight(28)
+        self._exit_btn.setStyleSheet(self._get_toolbar_button_style('종료', True))
+        self._exit_btn.clicked.connect(self.close)
+        self._toolbar.addWidget(self._exit_btn)
+
+    # === 툴바 버튼 토글 핸들러 ===
+
+    def _on_status_toggled(self, checked: bool):
+        """상태 패널 토글"""
+        self.status_widget.set_angle_visible(checked)
+        self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', checked))
+        self._angle_action.setChecked(checked)
+
+    def _on_data_toggled(self, checked: bool):
+        """데이터 패널 토글"""
+        self.status_widget.set_spreadsheet_visible(checked)
+        self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', checked))
+        self._spreadsheet_action.setChecked(checked)
+
+    def _on_safety_toggled(self, checked: bool):
+        """안전지표 패널 토글"""
+        self.status_widget.set_ergonomic_visible(checked)
+        self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', checked))
+        self._ergonomic_action.setChecked(checked)
+        # RULA/REBA/OWAS 버튼 활성/비활성
+        self._rula_btn.setEnabled(checked)
+        self._reba_btn.setEnabled(checked)
+        self._owas_btn.setEnabled(checked)
+
+    def _on_rula_toggled(self, checked: bool):
+        """RULA 패널 토글"""
+        self.status_widget.set_rula_visible(checked)
+        self._rula_btn.setStyleSheet(self._get_toolbar_button_style('RULA', checked, True))
+
+    def _on_reba_toggled(self, checked: bool):
+        """REBA 패널 토글"""
+        self.status_widget.set_reba_visible(checked)
+        self._reba_btn.setStyleSheet(self._get_toolbar_button_style('REBA', checked, True))
+
+    def _on_owas_toggled(self, checked: bool):
+        """OWAS 패널 토글"""
+        self.status_widget.set_owas_visible(checked)
+        self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', checked, True))
 
     def _init_shortcuts(self):
         """단축키 초기화"""
@@ -324,6 +465,25 @@ class MainWindow(QMainWindow):
         self._ergonomic_action.setChecked(ergonomic_visible)
         self._spreadsheet_action.setChecked(spreadsheet_visible)
 
+        # 툴바 버튼 상태 동기화
+        self._status_btn.setChecked(angle_visible)
+        self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', angle_visible))
+        self._data_btn.setChecked(spreadsheet_visible)
+        self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', spreadsheet_visible))
+        self._safety_btn.setChecked(ergonomic_visible)
+        self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', ergonomic_visible))
+        self._rula_btn.setChecked(rula_visible)
+        self._rula_btn.setStyleSheet(self._get_toolbar_button_style('RULA', rula_visible, True))
+        self._reba_btn.setChecked(reba_visible)
+        self._reba_btn.setStyleSheet(self._get_toolbar_button_style('REBA', reba_visible, True))
+        self._owas_btn.setChecked(owas_visible)
+        self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', owas_visible, True))
+        # 안전지표 비활성 시 RULA/REBA/OWAS 버튼도 비활성
+        if not ergonomic_visible:
+            self._rula_btn.setEnabled(False)
+            self._reba_btn.setEnabled(False)
+            self._owas_btn.setEnabled(False)
+
     def _save_settings(self):
         """설정 저장"""
         self._settings.setValue("recent_files", self._recent_files)
@@ -340,13 +500,19 @@ class MainWindow(QMainWindow):
         self._settings.setValue("panel_owas", self.status_widget.is_owas_visible())
 
     def _on_visibility_changed(self, panel: str, visible: bool):
-        """패널 가시성 변경 시 메뉴 동기화"""
+        """패널 가시성 변경 시 메뉴 및 툴바 동기화"""
         if panel == 'angle':
             self._angle_action.setChecked(visible)
+            self._status_btn.setChecked(visible)
+            self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', visible))
         elif panel == 'ergonomic':
             self._ergonomic_action.setChecked(visible)
+            self._safety_btn.setChecked(visible)
+            self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', visible))
         elif panel == 'spreadsheet':
             self._spreadsheet_action.setChecked(visible)
+            self._data_btn.setChecked(visible)
+            self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', visible))
 
     def _open_file(self):
         """파일 열기 다이얼로그"""

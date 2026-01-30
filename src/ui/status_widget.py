@@ -123,83 +123,13 @@ class StatusWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        # 상단: 메뉴바 컨테이너 (왼쪽 메뉴바와 동일한 스타일)
-        menubar_container = QWidget()
-        menubar_container.setStyleSheet("background-color: #333333; border-radius: 6px;")
-        menubar_container.setFixedHeight(45)
-        menubar_layout = QHBoxLayout(menubar_container)
-        menubar_layout.setContentsMargins(10, 8, 10, 10)
-        menubar_layout.setSpacing(8)
-
-        # 상태 버튼 (토글) - 각도 패널
-        self._angle_btn = QPushButton(f"상태 ({self._shortcut_prefix}1)")
-        self._angle_btn.setFixedHeight(28)
-        self._angle_btn.setCheckable(True)
-        self._angle_btn.setChecked(True)
-        self._angle_btn.setStyleSheet(self._get_button_style("상태", True))
-        menubar_layout.addWidget(self._angle_btn)
-
-        # 데이터 버튼 (토글) - 스프레드시트
-        self._spreadsheet_btn = QPushButton(f"데이터 ({self._shortcut_prefix}2)")
-        self._spreadsheet_btn.setFixedHeight(28)
-        self._spreadsheet_btn.setCheckable(True)
-        self._spreadsheet_btn.setChecked(True)
-        self._spreadsheet_btn.setStyleSheet(self._get_button_style("데이터", True))
-        menubar_layout.addWidget(self._spreadsheet_btn)
-
-        # 구분선
-        menubar_layout.addSpacing(20)
-
-        # 안전지표 버튼 (토글)
-        self._ergonomic_btn = QPushButton(f"안전지표 ({self._shortcut_prefix}3)")
-        self._ergonomic_btn.setFixedHeight(28)
-        self._ergonomic_btn.setCheckable(True)
-        self._ergonomic_btn.setChecked(True)
-        self._ergonomic_btn.setStyleSheet(self._get_button_style("안전지표", True))
-        menubar_layout.addWidget(self._ergonomic_btn)
-
-        # RULA 버튼
-        self._rula_btn = QPushButton("RULA")
-        self._rula_btn.setFixedHeight(28)
-        self._rula_btn.setCheckable(True)
-        self._rula_btn.setChecked(True)
-        self._rula_btn.setStyleSheet(self._get_button_style("RULA", True, True))
-        menubar_layout.addWidget(self._rula_btn)
-
-        # REBA 버튼
-        self._reba_btn = QPushButton("REBA")
-        self._reba_btn.setFixedHeight(28)
-        self._reba_btn.setCheckable(True)
-        self._reba_btn.setChecked(True)
-        self._reba_btn.setStyleSheet(self._get_button_style("REBA", True, True))
-        menubar_layout.addWidget(self._reba_btn)
-
-        # OWAS 버튼
-        self._owas_btn = QPushButton("OWAS")
-        self._owas_btn.setFixedHeight(28)
-        self._owas_btn.setCheckable(True)
-        self._owas_btn.setChecked(True)
-        self._owas_btn.setStyleSheet(self._get_button_style("OWAS", True, True))
-        menubar_layout.addWidget(self._owas_btn)
-
-        menubar_layout.addStretch()
-
-        # 설정 버튼 (macOS: ⌘,, 기타: Ctrl+P)
-        settings_shortcut = "⌘," if platform.system() == "Darwin" else "Ctrl+P"
-        self._settings_btn = QPushButton(f"설정 ({settings_shortcut})")
-        self._settings_btn.setFixedHeight(28)
-        self._settings_btn.setStyleSheet(self._get_button_style("설정", True))
-        self._settings_btn.clicked.connect(self._open_settings)
-        menubar_layout.addWidget(self._settings_btn)
-
-        # 종료 버튼 (맨 오른쪽)
-        self._exit_btn = QPushButton("종료")
-        self._exit_btn.setFixedHeight(28)
-        self._exit_btn.setStyleSheet(self._get_button_style("종료", True))
-        self._exit_btn.clicked.connect(self.exit_requested.emit)
-        menubar_layout.addWidget(self._exit_btn)
-
-        layout.addWidget(menubar_container)
+        # 패널 가시성 상태 (버튼 없이 직접 관리)
+        self._angle_visible = True
+        self._spreadsheet_visible = True
+        self._ergonomic_visible = True
+        self._rula_visible = True
+        self._reba_visible = True
+        self._owas_visible = True
 
         # 스플리터 스타일 정의
         horizontal_splitter_style = """
@@ -268,109 +198,69 @@ class StatusWidget(QWidget):
 
         layout.addWidget(self._main_splitter)
 
-    def _update_toggle_style(self, btn: QPushButton, checked: bool, label: str):
-        """토글 버튼 스타일 업데이트 (텍스트 색상만 변경)"""
-        btn.setStyleSheet(self._get_button_style(label, checked))
-
-    def _update_sub_toggle_style(self, btn: QPushButton, checked: bool, label: str):
-        """서브 토글 버튼 스타일 업데이트"""
-        btn.setStyleSheet(self._get_button_style(label, checked, True))
-
     def _connect_signals(self):
         """시그널 연결"""
-        self._angle_btn.toggled.connect(self._on_angle_toggled)
-        self._ergonomic_btn.toggled.connect(self._on_ergonomic_toggled)
-        self._spreadsheet_btn.toggled.connect(self._on_spreadsheet_toggled)
-        self._rula_btn.toggled.connect(self._on_rula_toggled)
-        self._reba_btn.toggled.connect(self._on_reba_toggled)
-        self._owas_btn.toggled.connect(self._on_owas_toggled)
-
-    def _on_angle_toggled(self, checked: bool):
-        """각도 패널 토글"""
-        self._angle_widget.setVisible(checked)
-        self._update_toggle_style(self._angle_btn, checked, "상태")
-        self.visibility_changed.emit('angle', checked)
-
-    def _on_ergonomic_toggled(self, checked: bool):
-        """안전지표 패널 토글"""
-        self._ergonomic_widget.setVisible(checked)
-        self._update_toggle_style(self._ergonomic_btn, checked, "안전지표")
-        # RULA/REBA/OWAS 버튼 활성/비활성
-        self._rula_btn.setEnabled(checked)
-        self._reba_btn.setEnabled(checked)
-        self._owas_btn.setEnabled(checked)
-        self.visibility_changed.emit('ergonomic', checked)
-
-    def _on_spreadsheet_toggled(self, checked: bool):
-        """스프레드시트 패널 토글"""
-        self._spreadsheet_widget.setVisible(checked)
-        self._update_toggle_style(self._spreadsheet_btn, checked, "데이터")
-        self.visibility_changed.emit('spreadsheet', checked)
-
-    def _on_rula_toggled(self, checked: bool):
-        """RULA 패널 토글"""
-        self._ergonomic_widget.set_rula_visible(checked)
-        self._update_sub_toggle_style(self._rula_btn, checked, "RULA")
-
-    def _on_reba_toggled(self, checked: bool):
-        """REBA 패널 토글"""
-        self._ergonomic_widget.set_reba_visible(checked)
-        self._update_sub_toggle_style(self._reba_btn, checked, "REBA")
-
-    def _on_owas_toggled(self, checked: bool):
-        """OWAS 패널 토글"""
-        self._ergonomic_widget.set_owas_visible(checked)
-        self._update_sub_toggle_style(self._owas_btn, checked, "OWAS")
+        # 버튼이 메인 툴바로 이동하여 시그널 연결 불필요
+        pass
 
     # === 외부에서 패널 가시성 제어 ===
 
     def set_angle_visible(self, visible: bool):
         """각도 패널 가시성 설정"""
-        self._angle_btn.setChecked(visible)
+        self._angle_visible = visible
+        self._angle_widget.setVisible(visible)
+        self.visibility_changed.emit('angle', visible)
 
     def set_ergonomic_visible(self, visible: bool):
         """안전지표 패널 가시성 설정"""
-        self._ergonomic_btn.setChecked(visible)
+        self._ergonomic_visible = visible
+        self._ergonomic_widget.setVisible(visible)
+        self.visibility_changed.emit('ergonomic', visible)
 
     def set_spreadsheet_visible(self, visible: bool):
         """스프레드시트 패널 가시성 설정"""
-        self._spreadsheet_btn.setChecked(visible)
+        self._spreadsheet_visible = visible
+        self._spreadsheet_widget.setVisible(visible)
+        self.visibility_changed.emit('spreadsheet', visible)
 
     def set_rula_visible(self, visible: bool):
         """RULA 패널 가시성 설정"""
-        self._rula_btn.setChecked(visible)
+        self._rula_visible = visible
+        self._ergonomic_widget.set_rula_visible(visible)
 
     def set_reba_visible(self, visible: bool):
         """REBA 패널 가시성 설정"""
-        self._reba_btn.setChecked(visible)
+        self._reba_visible = visible
+        self._ergonomic_widget.set_reba_visible(visible)
 
     def set_owas_visible(self, visible: bool):
         """OWAS 패널 가시성 설정"""
-        self._owas_btn.setChecked(visible)
+        self._owas_visible = visible
+        self._ergonomic_widget.set_owas_visible(visible)
 
     def is_angle_visible(self) -> bool:
         """각도 패널 가시성 반환"""
-        return self._angle_btn.isChecked()
+        return self._angle_visible
 
     def is_ergonomic_visible(self) -> bool:
         """안전지표 패널 가시성 반환"""
-        return self._ergonomic_btn.isChecked()
+        return self._ergonomic_visible
 
     def is_spreadsheet_visible(self) -> bool:
         """스프레드시트 패널 가시성 반환"""
-        return self._spreadsheet_btn.isChecked()
+        return self._spreadsheet_visible
 
     def is_rula_visible(self) -> bool:
         """RULA 패널 가시성 반환"""
-        return self._rula_btn.isChecked()
+        return self._rula_visible
 
     def is_reba_visible(self) -> bool:
         """REBA 패널 가시성 반환"""
-        return self._reba_btn.isChecked()
+        return self._reba_visible
 
     def is_owas_visible(self) -> bool:
         """OWAS 패널 가시성 반환"""
-        return self._owas_btn.isChecked()
+        return self._owas_visible
 
     def process_frame(self, frame: np.ndarray):
         """프레임 처리"""
