@@ -283,9 +283,9 @@ class MainWindow(QMainWindow):
         self.addToolBar(self._toolbar)
 
         # 프로젝트 열기 버튼
-        self._open_btn = QPushButton(" 프로젝트 열기")
+        self._open_btn = QPushButton(" 열기")
         self._open_btn.setIcon(QIcon(self._get_icon_path("folder_open")))
-        self._open_btn.setIconSize(QSize(16, 16))
+        self._open_btn.setIconSize(QSize(14, 14))
         self._open_btn.setFixedHeight(28)
         self._open_btn.setToolTip("프로젝트 열기 (Ctrl+Shift+O)")
         self._open_btn.setStyleSheet(self._get_toolbar_button_style('open'))
@@ -293,9 +293,9 @@ class MainWindow(QMainWindow):
         self._toolbar.addWidget(self._open_btn)
 
         # 프로젝트 저장 버튼
-        self._save_btn = QPushButton(" 프로젝트 저장")
+        self._save_btn = QPushButton(" 저장")
         self._save_btn.setIcon(QIcon(self._get_icon_path("save")))
-        self._save_btn.setIconSize(QSize(16, 16))
+        self._save_btn.setIconSize(QSize(14, 14))
         self._save_btn.setFixedHeight(28)
         self._save_btn.setToolTip("프로젝트 저장 (Ctrl+S)")
         self._save_btn.setStyleSheet(self._get_toolbar_button_style('save'))
@@ -306,7 +306,9 @@ class MainWindow(QMainWindow):
         self._toolbar.addSeparator()
 
         # 상태 버튼 (토글)
-        self._status_btn = QPushButton(f"상태 ({shortcut_prefix}1)")
+        self._status_btn = QPushButton(f" 상태 ({shortcut_prefix}1)")
+        self._status_btn.setIcon(QIcon(self._get_icon_path("status")))
+        self._status_btn.setIconSize(QSize(14, 14))
         self._status_btn.setFixedHeight(28)
         self._status_btn.setCheckable(True)
         self._status_btn.setChecked(True)
@@ -315,7 +317,9 @@ class MainWindow(QMainWindow):
         self._toolbar.addWidget(self._status_btn)
 
         # 데이터 버튼 (토글)
-        self._data_btn = QPushButton(f"데이터 ({shortcut_prefix}2)")
+        self._data_btn = QPushButton(f" 데이터 ({shortcut_prefix}2)")
+        self._data_btn.setIcon(QIcon(self._get_icon_path("data")))
+        self._data_btn.setIconSize(QSize(14, 14))
         self._data_btn.setFixedHeight(28)
         self._data_btn.setCheckable(True)
         self._data_btn.setChecked(True)
@@ -327,7 +331,9 @@ class MainWindow(QMainWindow):
         self._toolbar.addSeparator()
 
         # 안전지표 버튼 (토글)
-        self._safety_btn = QPushButton(f"안전지표 ({shortcut_prefix}3)")
+        self._safety_btn = QPushButton(f" 안전지표 ({shortcut_prefix}3)")
+        self._safety_btn.setIcon(QIcon(self._get_icon_path("safety")))
+        self._safety_btn.setIconSize(QSize(14, 14))
         self._safety_btn.setFixedHeight(28)
         self._safety_btn.setCheckable(True)
         self._safety_btn.setChecked(True)
@@ -372,14 +378,18 @@ class MainWindow(QMainWindow):
 
         # 설정 버튼
         settings_shortcut = "⌘," if platform.system() == "Darwin" else "Ctrl+P"
-        self._settings_btn = QPushButton(f"설정 ({settings_shortcut})")
+        self._settings_btn = QPushButton(f" 설정 ({settings_shortcut})")
+        self._settings_btn.setIcon(QIcon(self._get_icon_path("settings")))
+        self._settings_btn.setIconSize(QSize(14, 14))
         self._settings_btn.setFixedHeight(28)
         self._settings_btn.setStyleSheet(self._get_toolbar_button_style('설정', True))
         self._settings_btn.clicked.connect(self._open_settings)
         self._toolbar.addWidget(self._settings_btn)
 
         # 종료 버튼
-        self._exit_btn = QPushButton("종료")
+        self._exit_btn = QPushButton(" 종료")
+        self._exit_btn.setIcon(QIcon(self._get_icon_path("exit")))
+        self._exit_btn.setIconSize(QSize(14, 14))
         self._exit_btn.setFixedHeight(28)
         self._exit_btn.setStyleSheet(self._get_toolbar_button_style('종료', True))
         self._exit_btn.clicked.connect(self.close)

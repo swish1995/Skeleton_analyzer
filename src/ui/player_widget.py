@@ -4,12 +4,18 @@ from PyQt6.QtWidgets import (
     QPushButton, QSlider, QSizePolicy, QFileDialog,
     QGraphicsOpacityEffect
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve, QSize
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QBrush, QIcon
 import numpy as np
+from pathlib import Path
 from typing import Optional
 
 from ..core.video_player import VideoPlayer
+
+
+def _get_icon_path(icon_name: str) -> str:
+    """아이콘 경로 반환"""
+    return str(Path(__file__).parent.parent / "resources" / "icons" / f"{icon_name}.svg")
 
 
 class PlayerWidget(QWidget):
@@ -114,7 +120,9 @@ class PlayerWidget(QWidget):
         menu_layout.setContentsMargins(8, 2, 8, 0)
 
         # 파일 열기 버튼
-        self._open_btn = QPushButton("동영상 파일 열기")
+        self._open_btn = QPushButton(" 동영상 파일 열기")
+        self._open_btn.setIcon(QIcon(_get_icon_path("video")))
+        self._open_btn.setIconSize(QSize(14, 14))
         self._open_btn.setFixedHeight(26)
         self._open_btn.setStyleSheet(self.BUTTON_STYLES['open'])
         self._open_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)

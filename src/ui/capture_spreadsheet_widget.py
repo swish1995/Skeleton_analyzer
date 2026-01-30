@@ -13,11 +13,17 @@ from PyQt6.QtWidgets import (
     QComboBox, QDialogButtonBox, QFormLayout, QCheckBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QColor, QBrush, QAction, QPixmap, QImage
+from PyQt6.QtGui import QColor, QBrush, QAction, QPixmap, QImage, QIcon
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+from pathlib import Path
 import json
 import os
+
+
+def _get_icon_path(icon_name: str) -> str:
+    """아이콘 경로 반환"""
+    return str(Path(__file__).parent.parent / "resources" / "icons" / f"{icon_name}.svg")
 
 from ..core.capture_model import CaptureRecord, CaptureDataModel
 from ..utils.excel_tables import create_all_lookup_sheets
@@ -341,19 +347,25 @@ class CaptureSpreadsheetWidget(QWidget):
         # 버튼 영역
         btn_layout = QHBoxLayout()
 
-        self._excel_btn = QPushButton("Excel 내보내기")
+        self._excel_btn = QPushButton(" Excel 내보내기")
+        self._excel_btn.setIcon(QIcon(_get_icon_path("excel")))
+        self._excel_btn.setIconSize(QSize(14, 14))
         self._excel_btn.setStyleSheet(BUTTON_STYLES['excel'])
         self._excel_btn.clicked.connect(self._export_excel)
         btn_layout.addWidget(self._excel_btn)
 
-        self._json_btn = QPushButton("JSON 내보내기")
+        self._json_btn = QPushButton(" JSON 내보내기")
+        self._json_btn.setIcon(QIcon(_get_icon_path("json")))
+        self._json_btn.setIconSize(QSize(14, 14))
         self._json_btn.setStyleSheet(BUTTON_STYLES['json'])
         self._json_btn.clicked.connect(self._export_json)
         btn_layout.addWidget(self._json_btn)
 
         btn_layout.addStretch()
 
-        self._clear_btn = QPushButton("전체 삭제")
+        self._clear_btn = QPushButton(" 전체 삭제")
+        self._clear_btn.setIcon(QIcon(_get_icon_path("trash")))
+        self._clear_btn.setIconSize(QSize(14, 14))
         self._clear_btn.setStyleSheet(BUTTON_STYLES['delete'])
         self._clear_btn.clicked.connect(self._clear_all)
         btn_layout.addWidget(self._clear_btn)
