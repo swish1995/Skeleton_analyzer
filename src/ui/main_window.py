@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QToolBar, QToolButton
 )
 from PyQt6.QtCore import Qt, QSettings, QSize
-from PyQt6.QtGui import QAction, QKeySequence, QIcon
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QPainter
 from typing import Optional, List
 
 from .player_widget import PlayerWidget
@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
         base, dark, light = colors
         padding = "5px 8px" if is_sub else "5px 12px"
         font_size = "10px" if is_sub else "11px"
-        text_color = "white" if is_on else "#666666"
+        text_color = "white" if is_on else "rgba(255, 255, 255, 0.6)"
 
         return f"""
             QPushButton {{
@@ -261,6 +261,19 @@ class MainWindow(QMainWindow):
     def _get_icon_path(self, icon_name: str) -> str:
         """아이콘 경로 반환"""
         return str(Path(__file__).parent.parent / "resources" / "icons" / f"{icon_name}.svg")
+
+    def _get_icon_with_opacity(self, icon_name: str, opacity: float = 1.0) -> QIcon:
+        """투명도가 적용된 아이콘 반환"""
+        pixmap = QPixmap(self._get_icon_path(icon_name))
+        if opacity < 1.0:
+            transparent = QPixmap(pixmap.size())
+            transparent.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(transparent)
+            painter.setOpacity(opacity)
+            painter.drawPixmap(0, 0, pixmap)
+            painter.end()
+            return QIcon(transparent)
+        return QIcon(pixmap)
 
     def _init_toolbar(self):
         """메인 툴바 초기화"""
@@ -409,18 +422,21 @@ class MainWindow(QMainWindow):
         """상태 패널 토글"""
         self.status_widget.set_angle_visible(checked)
         self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', checked))
+        self._status_btn.setIcon(self._get_icon_with_opacity("status", 1.0 if checked else 0.6))
         self._angle_action.setChecked(checked)
 
     def _on_data_toggled(self, checked: bool):
         """데이터 패널 토글"""
         self.status_widget.set_spreadsheet_visible(checked)
         self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', checked))
+        self._data_btn.setIcon(self._get_icon_with_opacity("data", 1.0 if checked else 0.6))
         self._spreadsheet_action.setChecked(checked)
 
     def _on_safety_toggled(self, checked: bool):
         """안전지표 패널 토글"""
         self.status_widget.set_ergonomic_visible(checked)
         self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', checked))
+        self._safety_btn.setIcon(self._get_icon_with_opacity("safety", 1.0 if checked else 0.6))
         self._ergonomic_action.setChecked(checked)
         # RULA/REBA/OWAS 버튼 활성/비활성
         self._rula_btn.setEnabled(checked)
