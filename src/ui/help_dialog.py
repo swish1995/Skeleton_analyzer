@@ -4,11 +4,11 @@ import sys
 from pathlib import Path
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QTabWidget, QTextBrowser,
+    QDialog, QVBoxLayout, QTabWidget, QWidget,
     QDialogButtonBox
 )
 from PyQt6.QtCore import QSettings, QUrl
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 
 def get_resource_path(relative_path: str) -> Path:
@@ -42,8 +42,8 @@ class HelpDialog(QDialog):
     def _init_ui(self):
         """UI 초기화"""
         self.setWindowTitle("도움말")
-        self.setMinimumSize(750, 550)
-        self.resize(950, 750)
+        self.setMinimumSize(800, 600)
+        self.resize(1000, 800)
         self.setModal(True)
 
         layout = QVBoxLayout(self)
@@ -60,12 +60,13 @@ class HelpDialog(QDialog):
             QTabBar::tab {
                 background: #2a2a2a;
                 color: #aaaaaa;
-                padding: 12px 28px;
+                padding: 12px 40px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
-                font-size: 13px;
+                font-size: 14px;
                 font-weight: 500;
+                min-width: 120px;
             }
             QTabBar::tab:selected {
                 background: #1e1e1e;
@@ -79,12 +80,12 @@ class HelpDialog(QDialog):
         layout.addWidget(self._tab_widget)
 
         # 프로그램 정보 탭
-        self._about_browser = self._create_text_browser()
-        self._tab_widget.addTab(self._about_browser, "  프로그램 정보  ")
+        self._about_view = self._create_web_view()
+        self._tab_widget.addTab(self._about_view, "  프로그램 정보  ")
 
         # 사용 방법 탭
-        self._usage_browser = self._create_text_browser()
-        self._tab_widget.addTab(self._usage_browser, "  사용 방법  ")
+        self._usage_view = self._create_web_view()
+        self._tab_widget.addTab(self._usage_view, "  사용 방법  ")
 
         # 콘텐츠 로드
         self._load_content()
@@ -98,7 +99,7 @@ class HelpDialog(QDialog):
                 border-top: 1px solid #3a3a3a;
             }
             QPushButton {
-                background: linear-gradient(180deg, #4a9eff 0%, #3a8eef 100%);
+                background-color: #4a9eff;
                 color: white;
                 border: none;
                 padding: 10px 28px;
@@ -107,70 +108,39 @@ class HelpDialog(QDialog):
                 font-size: 13px;
             }
             QPushButton:hover {
-                background: linear-gradient(180deg, #5aaeFF 0%, #4a9eff 100%);
+                background-color: #5aaeFF;
             }
             QPushButton:pressed {
-                background: linear-gradient(180deg, #3a8eef 0%, #2a7edf 100%);
+                background-color: #3a8eef;
             }
         """)
         close_btn = button_container.addButton("닫기", QDialogButtonBox.ButtonRole.RejectRole)
         button_container.rejected.connect(self.accept)
         layout.addWidget(button_container)
 
-    def _create_text_browser(self) -> QTextBrowser:
-        """텍스트 브라우저 위젯 생성"""
-        browser = QTextBrowser()
-        browser.setOpenExternalLinks(False)
-        browser.anchorClicked.connect(self._on_link_clicked)
-        browser.setStyleSheet("""
-            QTextBrowser {
-                background-color: #1e1e1e;
-                border: none;
-            }
-            QScrollBar:vertical {
-                background-color: #1e1e1e;
-                width: 14px;
-                border-radius: 7px;
-                margin: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #444;
-                border-radius: 5px;
-                min-height: 40px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #555;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0;
-            }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none;
-            }
-        """)
-        return browser
+    def _create_web_view(self) -> QWebEngineView:
+        """웹 뷰 위젯 생성"""
+        view = QWebEngineView()
+        view.setStyleSheet("background-color: #1e1e1e;")
+        # 외부 링크 처리 비활성화 (모든 링크를 내부에서 처리)
+        view.page().setBackgroundColor(view.palette().color(view.palette().ColorRole.Window))
+        return view
 
     def _load_content(self):
         """도움말 콘텐츠 로드"""
         # 프로그램 정보 (HTML)
         about_path = get_resource_path("help/about.html")
-        about_html = self._load_html(about_path)
-        self._about_browser.setHtml(about_html)
+        if about_path.exists():
+            self._about_view.setUrl(QUrl.fromLocalFile(str(about_path)))
+        else:
+            self._about_view.setHtml(self._error_html(f"도움말 파일을 찾을 수 없습니다: {about_path.name}"))
 
         # 사용 방법 (HTML)
         usage_path = get_resource_path("help/usage.html")
-        usage_html = self._load_html(usage_path)
-        self._usage_browser.setHtml(usage_html)
-
-    def _load_html(self, path: Path) -> str:
-        """HTML 파일 로드"""
-        try:
-            if path.exists():
-                return path.read_text(encoding='utf-8')
-            else:
-                return self._error_html(f"도움말 파일을 찾을 수 없습니다: {path.name}")
-        except Exception as e:
-            return self._error_html(f"도움말 파일 로드 중 오류: {e}")
+        if usage_path.exists():
+            self._usage_view.setUrl(QUrl.fromLocalFile(str(usage_path)))
+        else:
+            self._usage_view.setHtml(self._error_html(f"도움말 파일을 찾을 수 없습니다: {usage_path.name}"))
 
     def _error_html(self, message: str) -> str:
         """에러 메시지 HTML 생성"""
@@ -211,18 +181,6 @@ class HelpDialog(QDialog):
         </body>
         </html>
         """
-
-    def _on_link_clicked(self, url: QUrl):
-        """링크 클릭 처리"""
-        url_str = url.toString()
-        # 내부 앵커 링크 처리
-        if url_str.startswith('#'):
-            current_browser = self._tab_widget.currentWidget()
-            if isinstance(current_browser, QTextBrowser):
-                current_browser.scrollToAnchor(url_str[1:])
-        else:
-            # 외부 링크는 기본 브라우저에서 열기
-            QDesktopServices.openUrl(url)
 
     def _load_settings(self):
         """설정 로드"""
