@@ -371,6 +371,20 @@ class PlayerWidget(QWidget):
         """현재 프레임 번호 반환"""
         return self._video_player.current_frame if self._video_player.is_loaded else 0
 
+    def get_video_path(self) -> Optional[str]:
+        """현재 로드된 동영상 경로 반환"""
+        return self._video_player.video_path if self._video_player.is_loaded else None
+
+    def get_fps(self) -> float:
+        """동영상 FPS 반환"""
+        return self._video_player.fps if self._video_player.is_loaded else 30.0
+
+    def seek_to_frame(self, frame_number: int):
+        """특정 프레임으로 이동"""
+        if self._video_player.is_loaded:
+            self._video_player.seek(frame_number)
+            self._update_display()
+
     @property
     def video_name(self) -> Optional[str]:
         """현재 로드된 동영상 파일명 (확장자 제외)"""

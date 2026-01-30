@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+# 테스트 모듈 경로 설정
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from core.capture_model import CaptureRecord, CaptureDataModel
@@ -446,3 +447,270 @@ class TestCaptureRecordFromErgonomicResult:
         assert record.rula_score == 3
         assert record.reba_neck == 1
         assert record.owas_back == 1
+
+
+class TestCaptureRecordSerialization:
+    """CaptureRecord 직렬화/역직렬화 테스트 (Phase 1)"""
+
+    def test_from_dict_basic(self):
+        """dict에서 CaptureRecord 생성"""
+        data = {
+            'timestamp': 5.123,
+            'frame_number': 154,
+            'capture_time': '2026-01-30T10:35:00',
+            'rula_upper_arm': 2,
+            'rula_lower_arm': 1,
+            'rula_wrist': 2,
+            'rula_wrist_twist': 1,
+            'rula_neck': 2,
+            'rula_trunk': 3,
+            'rula_leg': 1,
+            'rula_muscle_use_a': 0,
+            'rula_force_load_a': 0,
+            'rula_muscle_use_b': 0,
+            'rula_force_load_b': 0,
+            'rula_score_a': 3,
+            'rula_score_b': 4,
+            'rula_score': 4,
+            'rula_risk': '낮음',
+            'reba_neck': 2,
+            'reba_trunk': 3,
+            'reba_leg': 1,
+            'reba_upper_arm': 2,
+            'reba_lower_arm': 1,
+            'reba_wrist': 2,
+            'reba_load_force': 0,
+            'reba_coupling': 0,
+            'reba_activity': 0,
+            'reba_score_a': 4,
+            'reba_score_b': 3,
+            'reba_score': 5,
+            'reba_risk': '중간',
+            'owas_back': 1,
+            'owas_arms': 1,
+            'owas_legs': 1,
+            'owas_load': 1,
+            'owas_code': '1111',
+            'owas_ac': 1,
+            'owas_risk': '안전',
+            'video_frame_path': 'images/frame_00_05_123.png',
+            'skeleton_image_path': 'images/skeleton_00_05_123.png',
+        }
+
+        record = CaptureRecord.from_dict(data)
+
+        assert record.timestamp == 5.123
+        assert record.frame_number == 154
+        assert isinstance(record.capture_time, datetime)
+        assert record.rula_upper_arm == 2
+        assert record.rula_score == 4
+        assert record.video_frame_path == 'images/frame_00_05_123.png'
+
+    def test_from_dict_with_none_values(self):
+        """None 값이 있는 dict에서 CaptureRecord 생성"""
+        data = {
+            'timestamp': 1.0,
+            'frame_number': 30,
+            'capture_time': '2026-01-30T10:35:00',
+            'rula_upper_arm': 0,
+            'rula_lower_arm': 0,
+            'rula_wrist': 0,
+            'rula_wrist_twist': 0,
+            'rula_neck': 0,
+            'rula_trunk': 0,
+            'rula_leg': 0,
+            'rula_muscle_use_a': 0,
+            'rula_force_load_a': 0,
+            'rula_muscle_use_b': 0,
+            'rula_force_load_b': 0,
+            'rula_score_a': 0,
+            'rula_score_b': 0,
+            'rula_score': 0,
+            'rula_risk': '',
+            'reba_neck': 0,
+            'reba_trunk': 0,
+            'reba_leg': 0,
+            'reba_upper_arm': 0,
+            'reba_lower_arm': 0,
+            'reba_wrist': 0,
+            'reba_load_force': 0,
+            'reba_coupling': 0,
+            'reba_activity': 0,
+            'reba_score_a': 0,
+            'reba_score_b': 0,
+            'reba_score': 0,
+            'reba_risk': '',
+            'owas_back': 1,
+            'owas_arms': 1,
+            'owas_legs': 1,
+            'owas_load': 1,
+            'owas_code': '1111',
+            'owas_ac': 1,
+            'owas_risk': '',
+            'video_frame_path': None,
+            'skeleton_image_path': None,
+        }
+
+        record = CaptureRecord.from_dict(data)
+
+        assert record.video_frame_path is None
+        assert record.skeleton_image_path is None
+
+    def test_roundtrip_to_dict_from_dict(self):
+        """to_dict() → from_dict() 왕복 변환 검증"""
+        now = datetime.now()
+        original = CaptureRecord(
+            timestamp=5.0,
+            frame_number=150,
+            capture_time=now,
+            rula_upper_arm=2,
+            rula_score=4,
+            video_frame_path="/path/to/frame.png",
+            skeleton_image_path="/path/to/skeleton.png",
+        )
+
+        # 왕복 변환
+        data = original.to_dict()
+        restored = CaptureRecord.from_dict(data)
+
+        # 모든 필드 일치 확인
+        assert restored.timestamp == original.timestamp
+        assert restored.frame_number == original.frame_number
+        assert restored.rula_upper_arm == original.rula_upper_arm
+        assert restored.rula_score == original.rula_score
+        assert restored.video_frame_path == original.video_frame_path
+
+    def test_to_dict_datetime_iso_format(self):
+        """to_dict()에서 datetime이 ISO 8601 형식으로 직렬화되는지 확인"""
+        record = CaptureRecord(
+            timestamp=1.0,
+            frame_number=30,
+            capture_time=datetime(2026, 1, 30, 10, 35, 0),
+        )
+
+        data = record.to_dict()
+
+        assert data['capture_time'] == '2026-01-30T10:35:00'
+
+
+class TestCaptureDataModelProjectSerialization:
+    """CaptureDataModel 프로젝트 직렬화 테스트 (Phase 1)"""
+
+    def test_to_project_dict(self):
+        """프로젝트용 딕셔너리 생성"""
+        model = CaptureDataModel()
+        now = datetime.now()
+        model.add_record(CaptureRecord(
+            timestamp=5.0,
+            frame_number=150,
+            capture_time=now,
+            video_frame_path="/abs/path/to/frame.png",
+        ))
+
+        result = model.to_project_dict(base_path=Path("/abs/path"))
+
+        assert 'records' in result
+        assert len(result['records']) == 1
+        # 이미지 경로가 상대 경로로 변환되어야 함
+        assert result['records'][0]['video_frame_path'] == 'to/frame.png'
+
+    def test_from_project_dict(self):
+        """프로젝트 딕셔너리에서 모델 복원"""
+        data = {
+            'records': [
+                {
+                    'timestamp': 5.0,
+                    'frame_number': 150,
+                    'capture_time': '2026-01-30T10:35:00',
+                    'rula_upper_arm': 2,
+                    'rula_lower_arm': 0,
+                    'rula_wrist': 0,
+                    'rula_wrist_twist': 0,
+                    'rula_neck': 0,
+                    'rula_trunk': 0,
+                    'rula_leg': 0,
+                    'rula_muscle_use_a': 0,
+                    'rula_force_load_a': 0,
+                    'rula_muscle_use_b': 0,
+                    'rula_force_load_b': 0,
+                    'rula_score_a': 0,
+                    'rula_score_b': 0,
+                    'rula_score': 0,
+                    'rula_risk': '',
+                    'reba_neck': 0,
+                    'reba_trunk': 0,
+                    'reba_leg': 0,
+                    'reba_upper_arm': 0,
+                    'reba_lower_arm': 0,
+                    'reba_wrist': 0,
+                    'reba_load_force': 0,
+                    'reba_coupling': 0,
+                    'reba_activity': 0,
+                    'reba_score_a': 0,
+                    'reba_score_b': 0,
+                    'reba_score': 0,
+                    'reba_risk': '',
+                    'owas_back': 1,
+                    'owas_arms': 1,
+                    'owas_legs': 1,
+                    'owas_load': 1,
+                    'owas_code': '1111',
+                    'owas_ac': 1,
+                    'owas_risk': '',
+                    'video_frame_path': 'images/frame.png',
+                    'skeleton_image_path': None,
+                }
+            ]
+        }
+
+        model = CaptureDataModel.from_project_dict(
+            data,
+            base_path=Path("/project/captures")
+        )
+
+        assert len(model) == 1
+        record = model.get_record(0)
+        # 상대 경로가 절대 경로로 변환되어야 함
+        assert record.video_frame_path == '/project/captures/images/frame.png'
+
+    def test_empty_records_handling(self):
+        """빈 레코드 리스트 처리"""
+        model = CaptureDataModel()
+
+        result = model.to_project_dict(base_path=Path("/abs/path"))
+
+        assert result['records'] == []
+
+        # 빈 데이터에서 복원
+        restored = CaptureDataModel.from_project_dict(
+            {'records': []},
+            base_path=Path("/abs/path")
+        )
+        assert len(restored) == 0
+
+    def test_roundtrip_project_serialization(self):
+        """to_project_dict() → from_project_dict() 왕복 변환"""
+        model = CaptureDataModel()
+        now = datetime.now()
+        model.add_record(CaptureRecord(
+            timestamp=5.0,
+            frame_number=150,
+            capture_time=now,
+            rula_score=4,
+            video_frame_path="/base/images/frame.png",
+            skeleton_image_path="/base/images/skeleton.png",
+        ))
+        model.add_record(CaptureRecord(
+            timestamp=10.0,
+            frame_number=300,
+            capture_time=now,
+            reba_score=3,
+        ))
+
+        base = Path("/base")
+        data = model.to_project_dict(base_path=base)
+        restored = CaptureDataModel.from_project_dict(data, base_path=base)
+
+        assert len(restored) == 2
+        assert restored.get_record(0).timestamp == 5.0
+        assert restored.get_record(1).timestamp == 10.0

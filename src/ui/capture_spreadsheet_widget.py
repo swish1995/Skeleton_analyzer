@@ -1137,6 +1137,17 @@ class CaptureSpreadsheetWidget(QWidget):
         """데이터 모델 반환"""
         return self._model
 
+    def clear_all(self):
+        """모든 레코드 삭제 및 테이블 초기화"""
+        self._model.clear()
+        self._table.setRowCount(0)
+
+    def load_from_model(self, model: CaptureDataModel):
+        """CaptureDataModel에서 데이터 로드"""
+        self.clear_all()
+        for record in model.get_all_records():
+            self.add_record(record)
+
     def get_record_count(self) -> int:
         """레코드 수 반환"""
         return len(self._model)

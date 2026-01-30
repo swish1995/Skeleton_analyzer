@@ -66,6 +66,11 @@ class VideoPlayer:
             return 0.0
         return self._current_frame / self.fps
 
+    @property
+    def video_path(self) -> Optional[str]:
+        """로드된 비디오 파일 경로 반환"""
+        return self._file_path
+
     def load(self, file_path: str) -> bool:
         """
         비디오 파일 로드

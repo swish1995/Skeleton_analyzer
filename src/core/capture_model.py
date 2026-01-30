@@ -9,6 +9,7 @@ CaptureDataModel: 레코드 컬렉션 관리
 from dataclasses import dataclass, field, fields, asdict
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from pathlib import Path
 import json
 import bisect
 
@@ -193,6 +194,61 @@ class CaptureRecord:
         return d
 
     @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'CaptureRecord':
+        """딕셔너리에서 CaptureRecord 생성 (역직렬화)"""
+        # capture_time 처리: ISO 문자열 → datetime
+        capture_time = data.get('capture_time')
+        if isinstance(capture_time, str):
+            capture_time = datetime.fromisoformat(capture_time)
+
+        return cls(
+            timestamp=data.get('timestamp', 0.0),
+            frame_number=data.get('frame_number', 0),
+            capture_time=capture_time,
+            # RULA 필드
+            rula_upper_arm=data.get('rula_upper_arm', 0),
+            rula_lower_arm=data.get('rula_lower_arm', 0),
+            rula_wrist=data.get('rula_wrist', 0),
+            rula_wrist_twist=data.get('rula_wrist_twist', 0),
+            rula_neck=data.get('rula_neck', 0),
+            rula_trunk=data.get('rula_trunk', 0),
+            rula_leg=data.get('rula_leg', 0),
+            rula_muscle_use_a=data.get('rula_muscle_use_a', 0),
+            rula_force_load_a=data.get('rula_force_load_a', 0),
+            rula_muscle_use_b=data.get('rula_muscle_use_b', 0),
+            rula_force_load_b=data.get('rula_force_load_b', 0),
+            rula_score_a=data.get('rula_score_a', 0),
+            rula_score_b=data.get('rula_score_b', 0),
+            rula_score=data.get('rula_score', 0),
+            rula_risk=data.get('rula_risk', ''),
+            # REBA 필드
+            reba_neck=data.get('reba_neck', 0),
+            reba_trunk=data.get('reba_trunk', 0),
+            reba_leg=data.get('reba_leg', 0),
+            reba_upper_arm=data.get('reba_upper_arm', 0),
+            reba_lower_arm=data.get('reba_lower_arm', 0),
+            reba_wrist=data.get('reba_wrist', 0),
+            reba_load_force=data.get('reba_load_force', 0),
+            reba_coupling=data.get('reba_coupling', 0),
+            reba_activity=data.get('reba_activity', 0),
+            reba_score_a=data.get('reba_score_a', 0),
+            reba_score_b=data.get('reba_score_b', 0),
+            reba_score=data.get('reba_score', 0),
+            reba_risk=data.get('reba_risk', ''),
+            # OWAS 필드
+            owas_back=data.get('owas_back', 1),
+            owas_arms=data.get('owas_arms', 1),
+            owas_legs=data.get('owas_legs', 1),
+            owas_load=data.get('owas_load', 1),
+            owas_code=data.get('owas_code', '1111'),
+            owas_ac=data.get('owas_ac', 1),
+            owas_risk=data.get('owas_risk', ''),
+            # 이미지 경로
+            video_frame_path=data.get('video_frame_path'),
+            skeleton_image_path=data.get('skeleton_image_path'),
+        )
+
+    @classmethod
     def from_results(
         cls,
         timestamp: float,
@@ -303,3 +359,69 @@ class CaptureDataModel:
     def to_dict_list(self) -> List[Dict[str, Any]]:
         """딕셔너리 리스트 반환 (Excel용)"""
         return [record.to_dict() for record in self._records]
+
+    def to_project_dict(self, base_path: Path) -> Dict[str, Any]:
+        """
+        프로젝트 저장용 딕셔너리 생성
+
+        이미지 경로를 base_path 기준 상대 경로로 변환합니다.
+
+        Args:
+            base_path: 이미지 경로의 기준 디렉토리
+
+        Returns:
+            {'records': [...]} 형태의 딕셔너리
+        """
+        records = []
+        for record in self._records:
+            data = record.to_dict()
+
+            # 이미지 경로를 상대 경로로 변환
+            for key in ('video_frame_path', 'skeleton_image_path'):
+                path = data.get(key)
+                if path:
+                    try:
+                        abs_path = Path(path)
+                        if abs_path.is_absolute():
+                            data[key] = str(abs_path.relative_to(base_path))
+                    except ValueError:
+                        # base_path 밖의 경로인 경우 원본 유지
+                        pass
+
+            records.append(data)
+
+        return {'records': records}
+
+    @classmethod
+    def from_project_dict(
+        cls,
+        data: Dict[str, Any],
+        base_path: Path
+    ) -> 'CaptureDataModel':
+        """
+        프로젝트 딕셔너리에서 모델 복원
+
+        상대 경로를 base_path 기준 절대 경로로 변환합니다.
+
+        Args:
+            data: {'records': [...]} 형태의 딕셔너리
+            base_path: 이미지 경로의 기준 디렉토리
+
+        Returns:
+            CaptureDataModel 인스턴스
+        """
+        model = cls()
+
+        for record_data in data.get('records', []):
+            # 이미지 경로를 절대 경로로 변환
+            for key in ('video_frame_path', 'skeleton_image_path'):
+                path = record_data.get(key)
+                if path:
+                    rel_path = Path(path)
+                    if not rel_path.is_absolute():
+                        record_data[key] = str(base_path / rel_path)
+
+            record = CaptureRecord.from_dict(record_data)
+            model.add_record(record)
+
+        return model
