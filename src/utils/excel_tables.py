@@ -262,6 +262,41 @@ def create_owas_sheet(wb):
     _create_named_range(wb, "OWAS_AC", "OWAS_AC", 12, 7)
 
 
+def create_si_sheets(wb):
+    """
+    SI (Strain Index) 조회 테이블 시트 생성
+
+    Args:
+        wb: openpyxl Workbook 객체
+
+    생성되는 시트:
+        - SI_IE: Intensity of Exertion (1x5)
+        - SI_DE: Duration of Exertion (1x5)
+        - SI_EM: Efforts per Minute (1x5)
+        - SI_HWP: Hand/Wrist Posture (1x5)
+        - SI_SW: Speed of Work (1x5)
+        - SI_DD: Duration per Day (1x5)
+    """
+    # SI Multiplier 테이블 (레벨 1-5)
+    # 소스: core/score_calculator.py SI_MULTIPLIERS
+    si_tables = {
+        'SI_IE': [1.0, 3.0, 6.0, 9.0, 13.0],      # Intensity of Exertion
+        'SI_DE': [0.5, 1.0, 1.5, 2.0, 3.0],       # Duration of Exertion
+        'SI_EM': [0.5, 1.0, 1.5, 2.0, 3.0],       # Efforts per Minute
+        'SI_HWP': [1.0, 1.0, 1.5, 2.0, 3.0],      # Hand/Wrist Posture
+        'SI_SW': [1.0, 1.0, 1.0, 1.5, 2.0],       # Speed of Work
+        'SI_DD': [0.25, 0.5, 0.75, 1.0, 1.5],     # Duration per Day
+    }
+
+    for name, values in si_tables.items():
+        ws = wb.create_sheet(name)
+        # 1행에 가로로 작성 (INDEX 함수에서 1차원 배열로 사용)
+        for col_idx, value in enumerate(values, start=1):
+            ws.cell(row=1, column=col_idx, value=value)
+        # Named Range 생성 (1행 × 5열)
+        _create_named_range(wb, name, name, 1, 5)
+
+
 def create_all_lookup_sheets(wb):
     """
     모든 조회 테이블 시트 생성
@@ -273,7 +308,9 @@ def create_all_lookup_sheets(wb):
         - RULA_A, RULA_B, RULA_C
         - REBA_A, REBA_B, REBA_C
         - OWAS_AC
+        - SI_IE, SI_DE, SI_EM, SI_HWP, SI_SW, SI_DD
     """
     create_rula_sheets(wb)
     create_reba_sheets(wb)
     create_owas_sheet(wb)
+    create_si_sheets(wb)

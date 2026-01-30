@@ -286,3 +286,72 @@ def get_owas_risk_formula(row: int, ac_col: str) -> str:
     ac = f"{ac_col}{row}"
 
     return f'=IF({ac}=1,"normal",IF({ac}=2,"slight",IF({ac}=3,"harmful","very_harmful")))'
+
+
+def get_nle_risk_formula(row: int, li_col: str) -> str:
+    """
+    NLE Risk 수식 생성
+
+    수식 로직:
+        IF(li<=1, "safe", IF(li<=3, "increased", "high"))
+
+    Args:
+        row: Excel 행 번호
+        li_col: LI (Lifting Index) 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    li = f"{li_col}{row}"
+
+    return f'=IF({li}<=1,"safe",IF({li}<=3,"increased","high"))'
+
+
+def get_si_score_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    SI Score 수식 생성
+
+    수식 로직:
+        INDEX(SI_IE,ie) * INDEX(SI_DE,de) * INDEX(SI_EM,em) *
+        INDEX(SI_HWP,hwp) * INDEX(SI_SW,sw) * INDEX(SI_DD,dd)
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - ie: Intensity of Exertion 컬럼 (1-5)
+            - de: Duration of Exertion 컬럼 (1-5)
+            - em: Efforts per Minute 컬럼 (1-5)
+            - hwp: Hand/Wrist Posture 컬럼 (1-5)
+            - sw: Speed of Work 컬럼 (1-5)
+            - dd: Duration per Day 컬럼 (1-5)
+
+    Returns:
+        Excel 수식 문자열
+    """
+    ie = f"{cols['ie']}{row}"
+    de = f"{cols['de']}{row}"
+    em = f"{cols['em']}{row}"
+    hwp = f"{cols['hwp']}{row}"
+    sw = f"{cols['sw']}{row}"
+    dd = f"{cols['dd']}{row}"
+
+    return f"=INDEX(SI_IE,{ie})*INDEX(SI_DE,{de})*INDEX(SI_EM,{em})*INDEX(SI_HWP,{hwp})*INDEX(SI_SW,{sw})*INDEX(SI_DD,{dd})"
+
+
+def get_si_risk_formula(row: int, score_col: str) -> str:
+    """
+    SI Risk 수식 생성
+
+    수식 로직:
+        IF(score<3, "safe", IF(score<7, "uncertain", "hazardous"))
+
+    Args:
+        row: Excel 행 번호
+        score_col: SI Score 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    s = f"{score_col}{row}"
+
+    return f'=IF({s}<3,"safe",IF({s}<7,"uncertain","hazardous"))'

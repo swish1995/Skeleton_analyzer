@@ -54,6 +54,8 @@ class StatusWidget(QWidget):
         'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
         'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
         'OWAS': ('#b85a6a', '#a84a5a', '#c86a7a'),      # 빨간색
+        'NLE': ('#5a8ab8', '#4a7aa8', '#6a9ac8'),       # 하늘색
+        'SI': ('#b8a85a', '#a8984a', '#c8b86a'),        # 황금색
         '설정': ('#7a7a7a', '#6a6a6a', '#8a8a8a'),      # 회색
         '종료': ('#c55a5a', '#b54a4a', '#d56a6a'),      # 진한 빨간색
     }
@@ -130,6 +132,8 @@ class StatusWidget(QWidget):
         self._rula_visible = True
         self._reba_visible = True
         self._owas_visible = True
+        self._nle_visible = False  # 기본 숨김
+        self._si_visible = False   # 기본 숨김
 
         # 스플리터 스타일 정의
         horizontal_splitter_style = """
@@ -277,6 +281,24 @@ class StatusWidget(QWidget):
         """OWAS 패널 가시성 반환"""
         return self._owas_visible
 
+    def set_nle_visible(self, visible: bool):
+        """NLE 패널 가시성 설정"""
+        self._nle_visible = visible
+        self._ergonomic_widget.set_nle_visible(visible)
+
+    def set_si_visible(self, visible: bool):
+        """SI 패널 가시성 설정"""
+        self._si_visible = visible
+        self._ergonomic_widget.set_si_visible(visible)
+
+    def is_nle_visible(self) -> bool:
+        """NLE 패널 가시성 반환"""
+        return self._nle_visible
+
+    def is_si_visible(self) -> bool:
+        """SI 패널 가시성 반환"""
+        return self._si_visible
+
     def process_frame(self, frame: np.ndarray):
         """프레임 처리"""
         # 현재 프레임 저장 (캡처용)
@@ -320,6 +342,12 @@ class StatusWidget(QWidget):
         rula = results.get('rula')
         reba = results.get('reba')
         owas = results.get('owas')
+        nle = results.get('nle')
+        si = results.get('si')
+
+        # NLE/SI 입력값 가져오기
+        nle_inputs = self._ergonomic_widget.get_nle_inputs()
+        si_inputs = self._ergonomic_widget.get_si_inputs()
 
         # 이미지 저장
         video_frame_path = None
@@ -372,6 +400,26 @@ class StatusWidget(QWidget):
             # 이미지 경로
             video_frame_path=video_frame_path,
             skeleton_image_path=skeleton_image_path,
+            # NLE
+            nle_h=nle_inputs.get('h', 25),
+            nle_v=nle_inputs.get('v', 75),
+            nle_d=nle_inputs.get('d', 25),
+            nle_a=nle_inputs.get('a', 0),
+            nle_f=nle_inputs.get('f', 1),
+            nle_c=nle_inputs.get('c', 1),
+            nle_load=nle_inputs.get('load', 0),
+            nle_rwl=nle.rwl if nle else 0,
+            nle_li=nle.li if nle else 0,
+            nle_risk=nle.risk_level if nle else '',
+            # SI
+            si_ie=si_inputs.get('ie', 1),
+            si_de=si_inputs.get('de', 1),
+            si_em=si_inputs.get('em', 1),
+            si_hwp=si_inputs.get('hwp', 1),
+            si_sw=si_inputs.get('sw', 1),
+            si_dd=si_inputs.get('dd', 1),
+            si_score=si.score if si else 0,
+            si_risk=si.risk_level if si else '',
         )
 
         # 스프레드시트에 추가

@@ -365,3 +365,293 @@ def get_owas_risk_level(ac: int) -> str:
         return 'harmful'
     else:
         return 'very_harmful'
+
+
+# =============================================================================
+# NLE (NIOSH Lifting Equation) Tables and Functions
+# =============================================================================
+
+# LC (Load Constant) = 23 kg
+NLE_LC = 23.0
+
+# FM (Frequency Multiplier) Table
+# FM_TABLE[frequency][duration_index][v_position]
+# duration_index: 0=≤1hr, 1=1-2hr, 2=2-8hr
+# v_position: 0=V<75cm, 1=V≥75cm
+NLE_FM_TABLE = {
+    0.2: [[1.00, 1.00], [0.95, 0.95], [0.85, 0.85]],
+    0.5: [[0.97, 0.97], [0.92, 0.92], [0.81, 0.81]],
+    1:   [[0.94, 0.94], [0.88, 0.88], [0.75, 0.75]],
+    2:   [[0.91, 0.91], [0.84, 0.84], [0.65, 0.65]],
+    3:   [[0.88, 0.88], [0.79, 0.79], [0.55, 0.55]],
+    4:   [[0.84, 0.84], [0.72, 0.72], [0.45, 0.45]],
+    5:   [[0.80, 0.80], [0.60, 0.60], [0.35, 0.35]],
+    6:   [[0.75, 0.75], [0.50, 0.50], [0.27, 0.27]],
+    7:   [[0.70, 0.70], [0.42, 0.42], [0.22, 0.22]],
+    8:   [[0.60, 0.60], [0.35, 0.35], [0.18, 0.18]],
+    9:   [[0.52, 0.52], [0.30, 0.30], [0.00, 0.15]],
+    10:  [[0.45, 0.45], [0.26, 0.26], [0.00, 0.13]],
+    11:  [[0.41, 0.41], [0.00, 0.23], [0.00, 0.00]],
+    12:  [[0.37, 0.37], [0.00, 0.21], [0.00, 0.00]],
+    13:  [[0.00, 0.34], [0.00, 0.00], [0.00, 0.00]],
+    14:  [[0.00, 0.31], [0.00, 0.00], [0.00, 0.00]],
+    15:  [[0.00, 0.28], [0.00, 0.00], [0.00, 0.00]],
+}
+
+# CM (Coupling Multiplier) Table
+# CM_TABLE[coupling][v_position]
+# coupling: 1=Good, 2=Fair, 3=Poor
+# v_position: 0=V<75cm, 1=V≥75cm
+NLE_CM_TABLE = {
+    1: [1.00, 1.00],   # Good
+    2: [0.95, 1.00],   # Fair
+    3: [0.90, 0.90],   # Poor
+}
+
+
+def calculate_nle_hm(h: float) -> float:
+    """
+    HM (Horizontal Multiplier) 계산
+
+    Args:
+        h: 수평 거리 (cm)
+
+    Returns:
+        HM 값 (최대 1.0)
+    """
+    if h <= 0:
+        return 0.0
+    hm = 25.0 / h
+    return min(hm, 1.0)
+
+
+def calculate_nle_vm(v: float) -> float:
+    """
+    VM (Vertical Multiplier) 계산
+
+    Args:
+        v: 수직 높이 (cm)
+
+    Returns:
+        VM 값
+    """
+    vm = 1.0 - 0.003 * abs(v - 75.0)
+    return max(vm, 0.0)
+
+
+def calculate_nle_dm(d: float) -> float:
+    """
+    DM (Distance Multiplier) 계산
+
+    Args:
+        d: 이동 거리 (cm)
+
+    Returns:
+        DM 값 (최대 1.0)
+    """
+    if d <= 0:
+        return 1.0
+    dm = 0.82 + 4.5 / d
+    return min(dm, 1.0)
+
+
+def calculate_nle_am(a: float) -> float:
+    """
+    AM (Asymmetry Multiplier) 계산
+
+    Args:
+        a: 비틀림 각도 (°)
+
+    Returns:
+        AM 값 (최소 0.0)
+    """
+    am = 1.0 - 0.0032 * abs(a)
+    return max(am, 0.0)
+
+
+def calculate_nle_fm(frequency: float, duration_hours: float = 1.0, v: float = 75.0) -> float:
+    """
+    FM (Frequency Multiplier) 조회
+
+    Args:
+        frequency: 들기 빈도 (회/분)
+        duration_hours: 작업 지속 시간 (시간)
+        v: 수직 높이 (cm)
+
+    Returns:
+        FM 값
+    """
+    # Duration index
+    if duration_hours <= 1:
+        dur_idx = 0
+    elif duration_hours <= 2:
+        dur_idx = 1
+    else:
+        dur_idx = 2
+
+    # V position index
+    v_idx = 1 if v >= 75 else 0
+
+    # 가장 가까운 frequency 키 찾기
+    freq_keys = sorted(NLE_FM_TABLE.keys())
+    closest_freq = min(freq_keys, key=lambda x: abs(x - frequency))
+
+    return NLE_FM_TABLE[closest_freq][dur_idx][v_idx]
+
+
+def calculate_nle_cm(coupling: int, v: float = 75.0) -> float:
+    """
+    CM (Coupling Multiplier) 조회
+
+    Args:
+        coupling: 커플링 등급 (1=Good, 2=Fair, 3=Poor)
+        v: 수직 높이 (cm)
+
+    Returns:
+        CM 값
+    """
+    coupling = max(1, min(3, coupling))
+    v_idx = 1 if v >= 75 else 0
+    return NLE_CM_TABLE[coupling][v_idx]
+
+
+def calculate_nle_rwl(
+    h: float, v: float, d: float, a: float,
+    frequency: float = 1.0, duration_hours: float = 1.0, coupling: int = 1
+) -> float:
+    """
+    RWL (Recommended Weight Limit) 계산
+
+    Args:
+        h: 수평 거리 (cm)
+        v: 수직 높이 (cm)
+        d: 이동 거리 (cm)
+        a: 비틀림 각도 (°)
+        frequency: 들기 빈도 (회/분)
+        duration_hours: 작업 지속 시간 (시간)
+        coupling: 커플링 등급 (1=Good, 2=Fair, 3=Poor)
+
+    Returns:
+        RWL (kg)
+    """
+    hm = calculate_nle_hm(h)
+    vm = calculate_nle_vm(v)
+    dm = calculate_nle_dm(d)
+    am = calculate_nle_am(a)
+    fm = calculate_nle_fm(frequency, duration_hours, v)
+    cm = calculate_nle_cm(coupling, v)
+
+    rwl = NLE_LC * hm * vm * dm * am * fm * cm
+    return rwl
+
+
+def calculate_nle_li(load: float, rwl: float) -> float:
+    """
+    LI (Lifting Index) 계산
+
+    Args:
+        load: 실제 중량 (kg)
+        rwl: 권장 중량 (kg)
+
+    Returns:
+        LI 값
+    """
+    if rwl <= 0:
+        return 0.0 if load <= 0 else float('inf')
+    return load / rwl
+
+
+def get_nle_risk_level(li: float) -> str:
+    """
+    NLE 위험 수준 반환
+
+    Args:
+        li: Lifting Index
+
+    Returns:
+        위험 수준 문자열
+    """
+    if li <= 1.0:
+        return 'safe'
+    elif li <= 3.0:
+        return 'increased'
+    else:
+        return 'high'
+
+
+# =============================================================================
+# SI (Strain Index) Tables and Functions
+# =============================================================================
+
+# SI Multiplier Tables
+SI_MULTIPLIERS = {
+    'ie': [1.0, 3.0, 6.0, 9.0, 13.0],     # Intensity of Exertion
+    'de': [0.5, 1.0, 1.5, 2.0, 3.0],      # Duration of Exertion
+    'em': [0.5, 1.0, 1.5, 2.0, 3.0],      # Efforts per Minute
+    'hwp': [1.0, 1.0, 1.5, 2.0, 3.0],     # Hand/Wrist Posture
+    'sw': [1.0, 1.0, 1.0, 1.5, 2.0],      # Speed of Work
+    'dd': [0.25, 0.50, 0.75, 1.00, 1.50]  # Duration per Day
+}
+
+
+def get_si_multiplier(param: str, level: int) -> float:
+    """
+    SI Multiplier 값 조회
+
+    Args:
+        param: 파라미터 이름 ('ie', 'de', 'em', 'hwp', 'sw', 'dd')
+        level: 레벨 (1-5)
+
+    Returns:
+        Multiplier 값
+    """
+    if param not in SI_MULTIPLIERS:
+        return 1.0
+    level = max(1, min(5, level))
+    return SI_MULTIPLIERS[param][level - 1]
+
+
+def calculate_si_score(
+    ie: int = 1, de: int = 1, em: int = 1,
+    hwp: int = 1, sw: int = 1, dd: int = 1
+) -> float:
+    """
+    SI Score 계산
+
+    Args:
+        ie: Intensity of Exertion (1-5)
+        de: Duration of Exertion (1-5)
+        em: Efforts per Minute (1-5)
+        hwp: Hand/Wrist Posture (1-5)
+        sw: Speed of Work (1-5)
+        dd: Duration per Day (1-5)
+
+    Returns:
+        SI Score
+    """
+    ie_m = get_si_multiplier('ie', ie)
+    de_m = get_si_multiplier('de', de)
+    em_m = get_si_multiplier('em', em)
+    hwp_m = get_si_multiplier('hwp', hwp)
+    sw_m = get_si_multiplier('sw', sw)
+    dd_m = get_si_multiplier('dd', dd)
+
+    return ie_m * de_m * em_m * hwp_m * sw_m * dd_m
+
+
+def get_si_risk_level(score: float) -> str:
+    """
+    SI 위험 수준 반환
+
+    Args:
+        score: SI Score
+
+    Returns:
+        위험 수준 문자열
+    """
+    if score < 3:
+        return 'safe'
+    elif score < 7:
+        return 'uncertain'
+    else:
+        return 'hazardous'

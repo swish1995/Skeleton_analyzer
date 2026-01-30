@@ -4,6 +4,8 @@ from .base_assessment import BaseAssessment, AssessmentResult
 from .rula_calculator import RULACalculator, RULAResult
 from .reba_calculator import REBACalculator, REBAResult
 from .owas_calculator import OWASCalculator, OWASResult
+from .nle_calculator import NLECalculator, NLEResult
+from .si_calculator import SICalculator, SIResult
 
 __all__ = [
     'BaseAssessment',
@@ -14,4 +16,8 @@ __all__ = [
     'REBAResult',
     'OWASCalculator',
     'OWASResult',
+    'NLECalculator',
+    'NLEResult',
+    'SICalculator',
+    'SIResult',
 ]

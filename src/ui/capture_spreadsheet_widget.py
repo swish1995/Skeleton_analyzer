@@ -41,6 +41,9 @@ from ..utils.excel_formulas import (
     get_owas_code_formula,
     get_owas_ac_formula,
     get_owas_risk_formula,
+    get_nle_risk_formula,
+    get_si_score_formula,
+    get_si_risk_formula,
 )
 
 
@@ -120,6 +123,32 @@ COLUMN_DEFINITIONS = [
     ('owas_code', 'Code', 'owas_result', False, None),
     ('owas_ac', 'AC', 'owas_result', False, None),
     ('owas_risk', 'Risk', 'owas_result', False, None),
+
+    # NLE 입력 (7개)
+    ('nle_h', 'H (cm)', 'nle_input', True, (25, 63)),
+    ('nle_v', 'V (cm)', 'nle_input', True, (0, 175)),
+    ('nle_d', 'D (cm)', 'nle_input', True, (25, 175)),
+    ('nle_a', 'A (°)', 'nle_input', True, (0, 135)),
+    ('nle_f', 'F (/min)', 'nle_input', True, (0.2, 15)),
+    ('nle_c', 'Coupling', 'nle_input', True, (1, 3)),
+    ('nle_load', 'Load (kg)', 'nle_input', True, (0, 100)),
+
+    # NLE 결과 (3개)
+    ('nle_rwl', 'RWL', 'nle_result', False, None),
+    ('nle_li', 'LI', 'nle_result', False, None),
+    ('nle_risk', 'Risk', 'nle_result', False, None),
+
+    # SI 입력 (6개)
+    ('si_ie', 'IE', 'si_input', True, (1, 5)),
+    ('si_de', 'DE', 'si_input', True, (1, 5)),
+    ('si_em', 'EM', 'si_input', True, (1, 5)),
+    ('si_hwp', 'HWP', 'si_input', True, (1, 5)),
+    ('si_sw', 'SW', 'si_input', True, (1, 5)),
+    ('si_dd', 'DD', 'si_input', True, (1, 5)),
+
+    # SI 결과 (2개)
+    ('si_score', 'Score', 'si_result', False, None),
+    ('si_risk', 'Risk', 'si_result', False, None),
 ]
 
 # 그룹별 색상
@@ -134,6 +163,10 @@ GROUP_COLORS = {
     'owas_body': QColor(255, 165, 0),   # 주황
     'owas_manual': QColor(255, 255, 150),  # 노랑
     'owas_result': QColor(255, 200, 100),  # 연주황
+    'nle_input': QColor(90, 138, 184),  # 하늘색 (편집 가능)
+    'nle_result': QColor(130, 170, 210),  # 연하늘색
+    'si_input': QColor(184, 168, 90),   # 황금색 (편집 가능)
+    'si_result': QColor(210, 198, 130),  # 연황금색
 }
 
 # 위험 수준별 색상
@@ -154,6 +187,14 @@ RISK_COLORS = {
     'slight': QColor(255, 255, 150),
     'harmful': QColor(255, 165, 0),
     'very_harmful': QColor(255, 99, 71),
+    # NLE
+    'safe': QColor(144, 238, 144),        # 연초록 (LI <= 1)
+    'increased': QColor(255, 165, 0),     # 주황 (LI 1-3)
+    # 'high' already defined for REBA (LI > 3)
+    # SI
+    # 'safe' already defined for NLE
+    'uncertain': QColor(255, 165, 0),     # 주황 (SI 3-7)
+    'hazardous': QColor(255, 99, 71),     # 빨강 (SI >= 7)
 }
 
 # 버튼 스타일 (PlayerWidget과 동일)

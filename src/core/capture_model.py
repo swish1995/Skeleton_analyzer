@@ -24,6 +24,13 @@ from .score_calculator import (
     get_reba_risk_level,
     get_owas_action_category,
     get_owas_risk_level,
+    # NLE functions
+    calculate_nle_rwl,
+    calculate_nle_li,
+    get_nle_risk_level,
+    # SI functions
+    calculate_si_score,
+    get_si_risk_level,
 )
 from .logger import get_logger
 
@@ -33,12 +40,14 @@ _logger = get_logger('capture_model')
 @dataclass
 class CaptureRecord:
     """
-    단일 캡처 레코드 (총 40개 필드)
+    단일 캡처 레코드 (총 58개 필드)
 
     - 기본 정보 (3개): timestamp, frame_number, capture_time
     - RULA (15개): 부위 7 + 수동입력 4 + 결과 4
     - REBA (13개): 부위 6 + 수동입력 3 + 결과 4
     - OWAS (7개): 부위 3 + 수동입력 1 + 결과 3
+    - NLE (10개): 입력 7 + 결과 3
+    - SI (8개): 입력 6 + 결과 2
     - 이미지 경로 (2개): video_frame_path, skeleton_image_path
     """
 
@@ -102,6 +111,34 @@ class CaptureRecord:
     owas_code: str = "1111"  # Posture Code
     owas_ac: int = 1  # Action Category
     owas_risk: str = ""  # Risk Level
+
+    # === NLE (10개) ===
+    # 입력 파라미터 (7개)
+    nle_h: float = 25.0           # Horizontal distance (cm), 기본값 25
+    nle_v: float = 75.0           # Vertical location (cm), 기본값 75
+    nle_d: float = 25.0           # Vertical travel distance (cm)
+    nle_a: float = 0.0            # Asymmetry angle (°)
+    nle_f: float = 1.0            # Frequency (lifts/min)
+    nle_c: int = 1                # Coupling (1=Good, 2=Fair, 3=Poor)
+    nle_load: float = 0.0         # Actual load weight (kg)
+
+    # 계산 결과 (3개)
+    nle_rwl: float = 0.0          # Recommended Weight Limit (kg)
+    nle_li: float = 0.0           # Lifting Index
+    nle_risk: str = ""            # Risk level (safe/increased/high)
+
+    # === SI (8개) ===
+    # 입력 파라미터 (6개)
+    si_ie: int = 1                # Intensity of Exertion (1-5)
+    si_de: int = 1                # Duration of Exertion (1-5)
+    si_em: int = 1                # Efforts per Minute (1-5)
+    si_hwp: int = 1               # Hand/Wrist Posture (1-5)
+    si_sw: int = 1                # Speed of Work (1-5)
+    si_dd: int = 1                # Duration per Day (1-5)
+
+    # 계산 결과 (2개)
+    si_score: float = 0.0         # Strain Index score
+    si_risk: str = ""             # Risk level (safe/uncertain/hazardous)
 
     # === 이미지 경로 (2개) ===
     video_frame_path: Optional[str] = None  # 동영상 프레임 이미지 경로
@@ -182,11 +219,47 @@ class CaptureRecord:
         # Risk Level
         self.owas_risk = get_owas_risk_level(self.owas_ac)
 
+    def recalculate_nle(self) -> None:
+        """NLE 점수 재계산"""
+        # RWL 계산
+        self.nle_rwl = calculate_nle_rwl(
+            h=self.nle_h,
+            v=self.nle_v,
+            d=self.nle_d,
+            a=self.nle_a,
+            frequency=self.nle_f,
+            duration_hours=1.0,  # 기본 1시간
+            coupling=self.nle_c,
+        )
+
+        # LI 계산
+        self.nle_li = calculate_nle_li(self.nle_load, self.nle_rwl)
+
+        # Risk Level
+        self.nle_risk = get_nle_risk_level(self.nle_li)
+
+    def recalculate_si(self) -> None:
+        """SI 점수 재계산"""
+        # SI Score 계산
+        self.si_score = calculate_si_score(
+            ie=self.si_ie,
+            de=self.si_de,
+            em=self.si_em,
+            hwp=self.si_hwp,
+            sw=self.si_sw,
+            dd=self.si_dd,
+        )
+
+        # Risk Level
+        self.si_risk = get_si_risk_level(self.si_score)
+
     def recalculate_all(self) -> None:
         """모든 평가 재계산"""
         self.recalculate_rula()
         self.recalculate_reba()
         self.recalculate_owas()
+        self.recalculate_nle()
+        self.recalculate_si()
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -246,6 +319,26 @@ class CaptureRecord:
             owas_code=data.get('owas_code', '1111'),
             owas_ac=data.get('owas_ac', 1),
             owas_risk=data.get('owas_risk', ''),
+            # NLE 필드
+            nle_h=data.get('nle_h', 25.0),
+            nle_v=data.get('nle_v', 75.0),
+            nle_d=data.get('nle_d', 25.0),
+            nle_a=data.get('nle_a', 0.0),
+            nle_f=data.get('nle_f', 1.0),
+            nle_c=data.get('nle_c', 1),
+            nle_load=data.get('nle_load', 0.0),
+            nle_rwl=data.get('nle_rwl', 0.0),
+            nle_li=data.get('nle_li', 0.0),
+            nle_risk=data.get('nle_risk', ''),
+            # SI 필드
+            si_ie=data.get('si_ie', 1),
+            si_de=data.get('si_de', 1),
+            si_em=data.get('si_em', 1),
+            si_hwp=data.get('si_hwp', 1),
+            si_sw=data.get('si_sw', 1),
+            si_dd=data.get('si_dd', 1),
+            si_score=data.get('si_score', 0.0),
+            si_risk=data.get('si_risk', ''),
             # 이미지 경로
             video_frame_path=data.get('video_frame_path'),
             skeleton_image_path=data.get('skeleton_image_path'),

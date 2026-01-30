@@ -228,6 +228,8 @@ class MainWindow(QMainWindow):
         'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
         'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
         'OWAS': ('#b85a6a', '#a84a5a', '#c86a7a'),      # 빨간색
+        'NLE': ('#5a8ab8', '#4a7aa8', '#6a9ac8'),       # 하늘색
+        'SI': ('#b8a85a', '#a8984a', '#c8b86a'),        # 황금색
         '설정': ('#7a7a7a', '#6a6a6a', '#8a8a8a'),      # 회색
         '종료': ('#c55a5a', '#b54a4a', '#d56a6a'),      # 진한 빨간색
     }
@@ -396,6 +398,24 @@ class MainWindow(QMainWindow):
         self._owas_btn.toggled.connect(self._on_owas_toggled)
         self._toolbar.addWidget(self._owas_btn)
 
+        # NLE 버튼 (서브 토글) - 기본 비활성
+        self._nle_btn = QPushButton("NLE")
+        self._nle_btn.setFixedHeight(28)
+        self._nle_btn.setCheckable(True)
+        self._nle_btn.setChecked(False)
+        self._nle_btn.setStyleSheet(self._get_toolbar_button_style('NLE', False, True))
+        self._nle_btn.toggled.connect(self._on_nle_toggled)
+        self._toolbar.addWidget(self._nle_btn)
+
+        # SI 버튼 (서브 토글) - 기본 비활성
+        self._si_btn = QPushButton("SI")
+        self._si_btn.setFixedHeight(28)
+        self._si_btn.setCheckable(True)
+        self._si_btn.setChecked(False)
+        self._si_btn.setStyleSheet(self._get_toolbar_button_style('SI', False, True))
+        self._si_btn.toggled.connect(self._on_si_toggled)
+        self._toolbar.addWidget(self._si_btn)
+
         # 늘어나는 공간 (spacer)
         spacer = QWidget()
         spacer.setSizePolicy(
@@ -445,10 +465,12 @@ class MainWindow(QMainWindow):
         self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', checked))
         self._safety_btn.setIcon(self._get_icon_with_opacity("safety", 1.0 if checked else 0.6))
         self._ergonomic_action.setChecked(checked)
-        # RULA/REBA/OWAS 버튼 활성/비활성
+        # RULA/REBA/OWAS/NLE/SI 버튼 활성/비활성
         self._rula_btn.setEnabled(checked)
         self._reba_btn.setEnabled(checked)
         self._owas_btn.setEnabled(checked)
+        self._nle_btn.setEnabled(checked)
+        self._si_btn.setEnabled(checked)
 
     def _on_rula_toggled(self, checked: bool):
         """RULA 패널 토글"""
@@ -464,6 +486,16 @@ class MainWindow(QMainWindow):
         """OWAS 패널 토글"""
         self.status_widget.set_owas_visible(checked)
         self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', checked, True))
+
+    def _on_nle_toggled(self, checked: bool):
+        """NLE 패널 토글"""
+        self.status_widget.set_nle_visible(checked)
+        self._nle_btn.setStyleSheet(self._get_toolbar_button_style('NLE', checked, True))
+
+    def _on_si_toggled(self, checked: bool):
+        """SI 패널 토글"""
+        self.status_widget.set_si_visible(checked)
+        self._si_btn.setStyleSheet(self._get_toolbar_button_style('SI', checked, True))
 
     def _init_shortcuts(self):
         """단축키 초기화"""
@@ -493,6 +525,8 @@ class MainWindow(QMainWindow):
         rula_visible = self._settings.value("panel_rula", True, type=bool)
         reba_visible = self._settings.value("panel_reba", True, type=bool)
         owas_visible = self._settings.value("panel_owas", True, type=bool)
+        nle_visible = self._settings.value("panel_nle", False, type=bool)
+        si_visible = self._settings.value("panel_si", False, type=bool)
 
         self.status_widget.set_angle_visible(angle_visible)
         self.status_widget.set_ergonomic_visible(ergonomic_visible)
@@ -500,6 +534,8 @@ class MainWindow(QMainWindow):
         self.status_widget.set_rula_visible(rula_visible)
         self.status_widget.set_reba_visible(reba_visible)
         self.status_widget.set_owas_visible(owas_visible)
+        self.status_widget.set_nle_visible(nle_visible)
+        self.status_widget.set_si_visible(si_visible)
 
         # 메뉴 체크 상태 동기화
         self._angle_action.setChecked(angle_visible)
@@ -519,11 +555,17 @@ class MainWindow(QMainWindow):
         self._reba_btn.setStyleSheet(self._get_toolbar_button_style('REBA', reba_visible, True))
         self._owas_btn.setChecked(owas_visible)
         self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', owas_visible, True))
-        # 안전지표 비활성 시 RULA/REBA/OWAS 버튼도 비활성
+        self._nle_btn.setChecked(nle_visible)
+        self._nle_btn.setStyleSheet(self._get_toolbar_button_style('NLE', nle_visible, True))
+        self._si_btn.setChecked(si_visible)
+        self._si_btn.setStyleSheet(self._get_toolbar_button_style('SI', si_visible, True))
+        # 안전지표 비활성 시 RULA/REBA/OWAS/NLE/SI 버튼도 비활성
         if not ergonomic_visible:
             self._rula_btn.setEnabled(False)
             self._reba_btn.setEnabled(False)
             self._owas_btn.setEnabled(False)
+            self._nle_btn.setEnabled(False)
+            self._si_btn.setEnabled(False)
 
     def _save_settings(self):
         """설정 저장"""
@@ -539,6 +581,8 @@ class MainWindow(QMainWindow):
         self._settings.setValue("panel_rula", self.status_widget.is_rula_visible())
         self._settings.setValue("panel_reba", self.status_widget.is_reba_visible())
         self._settings.setValue("panel_owas", self.status_widget.is_owas_visible())
+        self._settings.setValue("panel_nle", self.status_widget.is_nle_visible())
+        self._settings.setValue("panel_si", self.status_widget.is_si_visible())
 
     def _on_visibility_changed(self, panel: str, visible: bool):
         """패널 가시성 변경 시 메뉴 및 툴바 동기화"""
@@ -1041,6 +1085,8 @@ class MainWindow(QMainWindow):
                 'rula': self.status_widget.is_rula_visible(),
                 'reba': self.status_widget.is_reba_visible(),
                 'owas': self.status_widget.is_owas_visible(),
+                'nle': self.status_widget.is_nle_visible(),
+                'si': self.status_widget.is_si_visible(),
             },
             'splitter_sizes': {
                 'main': self._splitter.sizes(),
@@ -1068,6 +1114,10 @@ class MainWindow(QMainWindow):
             self.status_widget.set_reba_visible(panels['reba'])
         if 'owas' in panels:
             self.status_widget.set_owas_visible(panels['owas'])
+        if 'nle' in panels:
+            self.status_widget.set_nle_visible(panels['nle'])
+        if 'si' in panels:
+            self.status_widget.set_si_visible(panels['si'])
 
         splitter_sizes = ui_state.get('splitter_sizes', {})
         if 'main' in splitter_sizes:
