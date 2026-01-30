@@ -1,31 +1,45 @@
 # Skeleton Analyzer 아키텍처
 
-> 📅 마지막 갱신: 2026-01-29
+> 📅 마지막 갱신: 2026-01-30
 > 🔍 소스: 코드베이스 자동 분석
 
 ## 시스템 개요
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      MainWindow                              │
-├─────────────────────────────┬───────────────────────────────┤
-│      PlayerWidget           │        StatusWidget           │
-│  ┌───────────────────┐      │  ┌─────────────┬─────────────┤
-│  │   VideoPlayer     │      │  │ SkeletonWidget│ AngleWidget│
-│  │   (OpenCV)        │      │  │             │             │
-│  └───────────────────┘      │  └─────────────┴─────────────┤
-└─────────────────────────────┴───────────────────────────────┘
-                │                           │
-                ▼                           ▼
-        ┌───────────────┐           ┌───────────────┐
-        │  VideoPlayer  │           │ PoseDetector  │
-        │   (Core)      │           │  (MediaPipe)  │
-        └───────────────┘           └───────────────┘
-                                            │
-                                            ▼
-                                    ┌───────────────┐
-                                    │AngleCalculator│
-                                    └───────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                  MainWindow                                      │
+├─────────────────────────────────┬───────────────────────────────────────────────┤
+│       PlayerWidget              │              StatusWidget                      │
+│  ┌─────────────────────────┐   │  ┌──────────────────┬──────────────────────┐  │
+│  │     VideoPlayer         │   │  │  SkeletonWidget  │    AngleWidget       │  │
+│  │     (OpenCV)            │   │  │                  │                      │  │
+│  └─────────────────────────┘   │  └──────────────────┴──────────────────────┤  │
+│                                 │  ┌────────────────────────────────────────┤  │
+│                                 │  │          ErgonomicWidget               │  │
+│                                 │  │  ┌──────────┬──────────┬──────────┐   │  │
+│                                 │  │  │RULAWidget│REBAWidget│OWASWidget│   │  │
+│                                 │  │  └──────────┴──────────┴──────────┘   │  │
+│                                 │  ├────────────────────────────────────────┤  │
+│                                 │  │     CaptureSpreadsheetWidget          │  │
+│                                 │  └────────────────────────────────────────┘  │
+└─────────────────────────────────┴───────────────────────────────────────────────┘
+                │                                        │
+                ▼                                        ▼
+        ┌───────────────┐                        ┌───────────────┐
+        │  VideoPlayer  │                        │ PoseDetector  │
+        │   (Core)      │                        │  (MediaPipe)  │
+        └───────────────┘                        └───────────────┘
+                                                         │
+                                                         ▼
+                                                 ┌───────────────┐
+                                                 │AngleCalculator│
+                                                 └───────────────┘
+                                                         │
+                          ┌──────────────────────────────┼──────────────────────────────┐
+                          ▼                              ▼                              ▼
+                   ┌──────────────┐              ┌──────────────┐              ┌──────────────┐
+                   │RULACalculator│              │REBACalculator│              │OWASCalculator│
+                   └──────────────┘              └──────────────┘              └──────────────┘
 ```
 
 ## 레이어 구조
@@ -34,11 +48,22 @@
 
 | 컴포넌트 | 파일 | 역할 |
 |----------|------|------|
-| MainWindow | `main_window.py` | 메인 윈도우, 메뉴, 단축키 |
+| MainWindow | `main_window.py` | 메인 윈도우, 메뉴, 툴바, 단축키 |
 | PlayerWidget | `player_widget.py` | 영상 재생 컨트롤 |
-| StatusWidget | `status_widget.py` | 스켈레톤 + 각도 컨테이너 |
+| StatusWidget | `status_widget.py` | 스켈레톤 + 각도 + 안전지표 컨테이너 |
 | SkeletonWidget | `skeleton_widget.py` | 스켈레톤 시각화 |
 | AngleWidget | `angle_widget.py` | 관절 각도 표시 |
+| CaptureSpreadsheetWidget | `capture_spreadsheet_widget.py` | 캡처 데이터 스프레드시트 |
+| SettingsDialog | `settings_dialog.py` | 설정 다이얼로그 |
+
+### UI Layer - Ergonomic (`src/ui/ergonomic/`)
+
+| 컴포넌트 | 파일 | 역할 |
+|----------|------|------|
+| ErgonomicWidget | `ergonomic_widget.py` | 인체공학적 평가 통합 컨테이너 (RULA/REBA/OWAS 가로 스플리터) |
+| RULAWidget | `rula_widget.py` | RULA 평가 결과 표시 |
+| REBAWidget | `reba_widget.py` | REBA 평가 결과 표시 |
+| OWASWidget | `owas_widget.py` | OWAS 자세 코드 및 결과 표시 |
 
 ### Core Layer (`src/core/`)
 
@@ -47,13 +72,25 @@
 | VideoPlayer | `video_player.py` | OpenCV 영상 재생 |
 | PoseDetector | `pose_detector.py` | MediaPipe 포즈 감지 |
 | AngleCalculator | `angle_calculator.py` | 관절 각도 계산 |
+| ProjectManager | `project_manager.py` | 프로젝트 저장/로드 |
+| CaptureModel | `capture_model.py` | 캡처 데이터 모델 |
+| Logger | `logger.py` | 로깅 유틸리티 |
+
+### Core Layer - Ergonomic (`src/core/ergonomic/`)
+
+| 컴포넌트 | 파일 | 역할 |
+|----------|------|------|
+| BaseAssessment | `base_assessment.py` | 인체공학적 평가 추상 기본 클래스 |
+| RULACalculator | `rula_calculator.py` | RULA 점수 계산 (Table A/B/C) |
+| REBACalculator | `reba_calculator.py` | REBA 점수 계산 (Table A/B/C) |
+| OWASCalculator | `owas_calculator.py` | OWAS 자세 코드 및 조치 카테고리 계산 |
 
 ### Utils Layer (`src/utils/`)
 
 | 컴포넌트 | 파일 | 역할 |
 |----------|------|------|
 | Config | `config.py` | 설정 관리 |
-| History | `history.py` | 최근 파일 이력 |
+| ImageSaver | `image_saver.py` | 캡처 이미지 저장 |
 
 ## 디렉토리 구조
 
@@ -71,19 +108,48 @@ skeleton-analyzer/
 │   ├── core/
 │   │   ├── video_player.py     # 영상 재생
 │   │   ├── pose_detector.py    # 포즈 감지
-│   │   └── angle_calculator.py # 각도 계산
+│   │   ├── angle_calculator.py # 각도 계산
+│   │   ├── project_manager.py  # 프로젝트 관리
+│   │   ├── capture_model.py    # 캡처 모델
+│   │   ├── logger.py           # 로깅
+│   │   └── ergonomic/          # 인체공학적 평가
+│   │       ├── __init__.py
+│   │       ├── base_assessment.py   # 기본 클래스
+│   │       ├── rula_calculator.py   # RULA 계산
+│   │       ├── reba_calculator.py   # REBA 계산
+│   │       └── owas_calculator.py   # OWAS 계산
 │   ├── ui/
 │   │   ├── main_window.py      # 메인 윈도우
 │   │   ├── player_widget.py    # 플레이어
 │   │   ├── status_widget.py    # 상태 컨테이너
 │   │   ├── skeleton_widget.py  # 스켈레톤
-│   │   └── angle_widget.py     # 각도 표시
-│   └── utils/
-│       ├── config.py           # 설정
-│       └── history.py          # 이력
+│   │   ├── angle_widget.py     # 각도 표시
+│   │   ├── capture_spreadsheet_widget.py  # 스프레드시트
+│   │   ├── settings_dialog.py  # 설정
+│   │   └── ergonomic/          # 인체공학적 평가 UI
+│   │       ├── __init__.py
+│   │       ├── ergonomic_widget.py  # 통합 컨테이너
+│   │       ├── rula_widget.py       # RULA 표시
+│   │       ├── reba_widget.py       # REBA 표시
+│   │       └── owas_widget.py       # OWAS 표시
+│   ├── utils/
+│   │   ├── config.py           # 설정
+│   │   └── image_saver.py      # 이미지 저장
+│   └── resources/              # 리소스 파일
+│       └── icons/              # 아이콘
 ├── tests/                  # 테스트 코드
-├── resources/              # 리소스 파일
+├── captures/               # 캡처 이미지 임시 저장
 └── docs/                   # 문서
+    ├── README.md
+    ├── architecture.md
+    ├── usage.md
+    ├── tech-stack.md
+    ├── DEPLOYMENT.md
+    └── ergonomic/          # 인체공학적 평가 문서
+        ├── README.md
+        ├── rula.md
+        ├── reba.md
+        └── owas.md
 ```
 
 ## 데이터 흐름
@@ -104,10 +170,25 @@ skeleton-analyzer/
        └── VideoPlayer.read_frame()
        └── frame_changed 시그널 발생
            └── StatusWidget.process_frame()
-               └── PoseDetector.detect()
-               └── AngleCalculator.calculate_all_angles()
-               └── SkeletonWidget.set_landmarks()
-               └── AngleWidget.set_angles()
+               ├── PoseDetector.detect()
+               │   └── 33개 랜드마크 반환
+               ├── AngleCalculator.calculate_all_angles()
+               │   └── 13개 관절 각도 계산
+               ├── SkeletonWidget.set_landmarks()
+               ├── AngleWidget.set_angles()
+               └── ErgonomicWidget.update_assessment()
+                   ├── RULACalculator.calculate()
+                   │   └── RULAWidget.update_result()
+                   ├── REBACalculator.calculate()
+                   │   └── REBAWidget.update_result()
+                   └── OWASCalculator.calculate()
+                       └── OWASWidget.update_result()
+
+4. 캡처 요청 (Enter 키)
+   └── PlayerWidget.capture_requested 시그널
+       └── MainWindow._on_capture_requested()
+           └── StatusWidget.capture_current_state()
+               └── CaptureSpreadsheetWidget.add_record()
 ```
 
 ## 주요 클래스
@@ -140,6 +221,53 @@ class AngleCalculator:
         """모든 관절 각도 계산"""
 ```
 
+### RULACalculator
+
+```python
+class RULACalculator(BaseAssessment):
+    """RULA (Rapid Upper Limb Assessment) 점수 계산"""
+
+    def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> RULAResult:
+        """
+        RULA 점수 계산
+
+        - A그룹 (상지): 상완, 전완, 손목, 손목 비틀림
+        - B그룹 (목/몸통): 목, 몸통, 다리
+        - Table A/B/C로 최종 점수 산출 (1-7점)
+        """
+```
+
+### REBACalculator
+
+```python
+class REBACalculator(BaseAssessment):
+    """REBA (Rapid Entire Body Assessment) 점수 계산"""
+
+    def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> REBAResult:
+        """
+        REBA 점수 계산
+
+        - A그룹: 목, 몸통, 다리
+        - B그룹 (상지): 상완, 전완, 손목
+        - Table A/B/C로 최종 점수 산출 (1-12점)
+        """
+```
+
+### OWASCalculator
+
+```python
+class OWASCalculator(BaseAssessment):
+    """OWAS (Ovako Working Posture Analysis System) 점수 계산"""
+
+    def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> OWASResult:
+        """
+        OWAS 자세 코드 및 조치 카테고리 계산
+
+        - 4자리 자세 코드: 등(1-4) / 팔(1-3) / 다리(1-7) / 하중(1-3)
+        - 조치 카테고리: AC1-AC4
+        """
+```
+
 ## MediaPipe 랜드마크 (33개)
 
 ```
@@ -154,6 +282,36 @@ class AngleCalculator:
 27-28: 발목
 29-32: 발
 ```
+
+## 인체공학적 평가 위험 수준
+
+### RULA
+
+| 점수 | 위험 수준 | 조치 |
+|------|-----------|------|
+| 1-2 | 허용 가능 | 현재 자세 유지 가능 |
+| 3-4 | 추가 조사 필요 | 작업 자세 검토 필요 |
+| 5-6 | 빠른 개선 필요 | 가까운 시일 내 개선 |
+| 7 | 즉시 개선 필요 | 즉시 작업 자세 변경 |
+
+### REBA
+
+| 점수 | 위험 수준 | 조치 |
+|------|-----------|------|
+| 1 | 무시 가능 | 조치 불필요 |
+| 2-3 | 낮음 | 개선 고려 |
+| 4-7 | 중간 | 개선 필요 |
+| 8-10 | 높음 | 빠른 개선 필요 |
+| 11-12 | 매우 높음 | 즉시 개선 필요 |
+
+### OWAS
+
+| AC | 위험 수준 | 조치 |
+|----|-----------|------|
+| 1 | 정상 | 조치 불필요 |
+| 2 | 약간 유해 | 가까운 시일 내 개선 |
+| 3 | 명백히 유해 | 가능한 빨리 개선 |
+| 4 | 매우 유해 | 즉시 개선 |
 
 ## CI/CD 파이프라인
 
