@@ -4,22 +4,26 @@
 
 ## 개요
 
-Skeleton Analyzer는 동영상에서 추출한 인체 자세를 기반으로 세 가지 국제 표준 인체공학적 평가 방법을 실시간으로 계산합니다:
+Skeleton Analyzer는 동영상에서 추출한 인체 자세를 기반으로 다섯 가지 국제 표준 인체공학적 평가 방법을 실시간으로 계산합니다:
 
+### 자세 기반 평가 (실시간)
 - **RULA** (Rapid Upper Limb Assessment) - 상지 중심 평가
 - **REBA** (Rapid Entire Body Assessment) - 전신 평가
 - **OWAS** (Ovako Working Posture Analysis System) - 작업 자세 분석
 
+### 작업 기반 평가 (수동 입력)
+- **NLE** (NIOSH Lifting Equation) - 들기 작업 위험도 평가
+- **SI** (Strain Index) - 상지 반복 작업 위험도 평가
+
 ## 평가 방법 비교
 
-| 항목 | RULA | REBA | OWAS |
-|------|------|------|------|
-| **목적** | 상지 작업 부하 평가 | 전신 작업 부하 평가 | 작업 자세 유해성 평가 |
-| **개발** | McAtamney & Corlett (1993) | Hignett & McAtamney (2000) | Karhu et al. (1977) |
-| **평가 부위** | 상완, 전완, 손목, 목, 몸통, 다리 | 목, 몸통, 다리, 상완, 전완, 손목 | 등, 팔, 다리 |
-| **점수 범위** | 1-7점 | 1-12점 | AC1-AC4 |
-| **그룹 구성** | A(상지) + B(목/몸통) | A(목/몸통/다리) + B(상지) | 4자리 자세 코드 |
-| **적용 상황** | 반복적 상지 작업 | 전신 부하 작업 | 다양한 산업 현장 |
+| 항목 | RULA | REBA | OWAS | NLE | SI |
+|------|------|------|------|-----|-----|
+| **목적** | 상지 부하 평가 | 전신 부하 평가 | 자세 유해성 평가 | 들기 작업 위험 | 반복 작업 위험 |
+| **개발** | McAtamney (1993) | Hignett (2000) | Karhu (1977) | NIOSH (1993) | Moore (1995) |
+| **입력 방식** | 자동 (자세) | 자동 (자세) | 자동 (자세) | 수동 입력 | 수동 입력 |
+| **점수 범위** | 1-7점 | 1-12점 | AC1-AC4 | LI (연속) | SI (연속) |
+| **적용 상황** | 반복 상지 작업 | 전신 부하 작업 | 다양한 산업 | 물체 들기 | 상지 반복 작업 |
 
 ## 위험 수준 색상 코드
 
@@ -34,11 +38,20 @@ Skeleton Analyzer는 동영상에서 추출한 인체 자세를 기반으로 세
 
 ## 문서 목록
 
+### 자세 기반 평가
+
 | 문서 | 설명 |
 |------|------|
 | [RULA](./rula.md) | RULA 평가 방법 상세 |
 | [REBA](./reba.md) | REBA 평가 방법 상세 |
 | [OWAS](./owas.md) | OWAS 평가 방법 상세 |
+
+### 작업 기반 평가
+
+| 문서 | 설명 |
+|------|------|
+| [NLE](./nle.md) | NIOSH Lifting Equation - 들기 작업 위험도 |
+| [SI](./si.md) | Strain Index - 상지 반복 작업 위험도 |
 
 ## 코드 구조
 
@@ -50,7 +63,9 @@ ergonomic/
 ├── base_assessment.py    # 추상 기본 클래스
 ├── rula_calculator.py    # RULA 점수 계산
 ├── reba_calculator.py    # REBA 점수 계산
-└── owas_calculator.py    # OWAS 점수 계산
+├── owas_calculator.py    # OWAS 점수 계산
+├── nle_calculator.py     # NLE (NIOSH) 계산
+└── si_calculator.py      # SI (Strain Index) 계산
 ```
 
 ### UI 모듈 (`src/ui/ergonomic/`)
@@ -58,13 +73,17 @@ ergonomic/
 ```
 ergonomic/
 ├── __init__.py           # 모듈 export
-├── ergonomic_widget.py   # 통합 컨테이너 (가로 스플리터)
+├── ergonomic_widget.py   # 통합 컨테이너 (탭 위젯)
 ├── rula_widget.py        # RULA 결과 표시
 ├── reba_widget.py        # REBA 결과 표시
-└── owas_widget.py        # OWAS 결과 표시
+├── owas_widget.py        # OWAS 결과 표시
+├── nle_widget.py         # NLE 입력/결과 표시
+└── si_widget.py          # SI 입력/결과 표시
 ```
 
 ## 데이터 흐름
+
+### 자세 기반 평가 (자동)
 
 ```
 PoseDetector.detect()
@@ -81,6 +100,22 @@ RULACalculator      REBACalculator      OWASCalculator
        │                  │                  │
        ▼                  ▼                  ▼
   RULAWidget         REBAWidget         OWASWidget
+```
+
+### 작업 기반 평가 (수동 입력)
+
+```
+사용자 입력 (UI)
+       │
+       ├──────────────────┐
+       ▼                  ▼
+  NLECalculator      SICalculator
+       │                  │
+       ▼                  ▼
+   NLEResult          SIResult
+       │                  │
+       ▼                  ▼
+   NLEWidget          SIWidget
 ```
 
 ## 사용 방법

@@ -15,8 +15,11 @@
 - 13개 주요 관절 각도 계산
 - 스켈레톤 오버레이 표시
 - **RULA/REBA/OWAS 인체공학적 평가** (실시간)
+- **NLE/SI 작업 기반 평가** (수동 입력)
 - 캡처 데이터 스프레드시트 저장
+- **Excel 내보내기** (수식 포함)
 - 프로젝트 저장/로드 (.skpx)
+- 도움말 시스템 (사용 방법, 프로그램 정보)
 
 ## 문서 목록
 
@@ -31,10 +34,12 @@
 
 | 문서 | 설명 |
 |------|------|
-| [인체공학적 평가 개요](./ergonomic/README.md) | RULA/REBA/OWAS 개요 및 비교 |
+| [인체공학적 평가 개요](./ergonomic/README.md) | 5가지 평가 방법 개요 및 비교 |
 | [RULA](./ergonomic/rula.md) | Rapid Upper Limb Assessment |
 | [REBA](./ergonomic/reba.md) | Rapid Entire Body Assessment |
 | [OWAS](./ergonomic/owas.md) | Ovako Working Posture Analysis System |
+| [NLE](./ergonomic/nle.md) | NIOSH Lifting Equation (들기 작업) |
+| [SI](./ergonomic/si.md) | Strain Index (반복 작업) |
 
 ## 빠른 시작
 

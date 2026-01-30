@@ -16,9 +16,9 @@
 │  └─────────────────────────┘   │  └──────────────────┴──────────────────────┤  │
 │                                 │  ┌────────────────────────────────────────┤  │
 │                                 │  │          ErgonomicWidget               │  │
-│                                 │  │  ┌──────────┬──────────┬──────────┐   │  │
-│                                 │  │  │RULAWidget│REBAWidget│OWASWidget│   │  │
-│                                 │  │  └──────────┴──────────┴──────────┘   │  │
+│                                 │  │  ┌────┬────┬────┬────┬────┐           │  │
+│                                 │  │  │RULA│REBA│OWAS│NLE │ SI │           │  │
+│                                 │  │  └────┴────┴────┴────┴────┘           │  │
 │                                 │  ├────────────────────────────────────────┤  │
 │                                 │  │     CaptureSpreadsheetWidget          │  │
 │                                 │  └────────────────────────────────────────┘  │
@@ -35,11 +35,19 @@
                                                  │AngleCalculator│
                                                  └───────────────┘
                                                          │
-                          ┌──────────────────────────────┼──────────────────────────────┐
-                          ▼                              ▼                              ▼
-                   ┌──────────────┐              ┌──────────────┐              ┌──────────────┐
-                   │RULACalculator│              │REBACalculator│              │OWASCalculator│
-                   └──────────────┘              └──────────────┘              └──────────────┘
+                          ┌──────────┬──────────┬──────────┐
+                          ▼          ▼          ▼          │
+                   ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+                   │RULA Calc │ │REBA Calc │ │OWAS Calc │ │
+                   └──────────┘ └──────────┘ └──────────┘ │
+                                                          │
+                    사용자 입력 ──────────────────────────┘
+                          │
+                          ├──────────────────┐
+                          ▼                  ▼
+                   ┌──────────────┐   ┌──────────────┐
+                   │NLE Calculator│   │ SI Calculator│
+                   └──────────────┘   └──────────────┘
 ```
 
 ## 레이어 구조
@@ -53,17 +61,20 @@
 | StatusWidget | `status_widget.py` | 스켈레톤 + 각도 + 안전지표 컨테이너 |
 | SkeletonWidget | `skeleton_widget.py` | 스켈레톤 시각화 |
 | AngleWidget | `angle_widget.py` | 관절 각도 표시 |
-| CaptureSpreadsheetWidget | `capture_spreadsheet_widget.py` | 캡처 데이터 스프레드시트 |
+| CaptureSpreadsheetWidget | `capture_spreadsheet_widget.py` | 캡처 데이터 스프레드시트 + Excel 내보내기 |
 | SettingsDialog | `settings_dialog.py` | 설정 다이얼로그 |
+| HelpDialog | `help_dialog.py` | 도움말 다이얼로그 (프로그램 정보, 사용 방법) |
 
 ### UI Layer - Ergonomic (`src/ui/ergonomic/`)
 
 | 컴포넌트 | 파일 | 역할 |
 |----------|------|------|
-| ErgonomicWidget | `ergonomic_widget.py` | 인체공학적 평가 통합 컨테이너 (RULA/REBA/OWAS 가로 스플리터) |
+| ErgonomicWidget | `ergonomic_widget.py` | 인체공학적 평가 통합 컨테이너 (5개 탭) |
 | RULAWidget | `rula_widget.py` | RULA 평가 결과 표시 |
 | REBAWidget | `reba_widget.py` | REBA 평가 결과 표시 |
 | OWASWidget | `owas_widget.py` | OWAS 자세 코드 및 결과 표시 |
+| NLEWidget | `nle_widget.py` | NLE 입력 및 결과 표시 |
+| SIWidget | `si_widget.py` | SI 입력 및 결과 표시 |
 
 ### Core Layer (`src/core/`)
 
@@ -84,6 +95,9 @@
 | RULACalculator | `rula_calculator.py` | RULA 점수 계산 (Table A/B/C) |
 | REBACalculator | `reba_calculator.py` | REBA 점수 계산 (Table A/B/C) |
 | OWASCalculator | `owas_calculator.py` | OWAS 자세 코드 및 조치 카테고리 계산 |
+| NLECalculator | `nle_calculator.py` | NIOSH Lifting Equation 계산 (RWL/LI) |
+| SICalculator | `si_calculator.py` | Strain Index 계산 |
+| ScoreCalculator | `score_calculator.py` | 공통 점수 계산 함수 |
 
 ### Utils Layer (`src/utils/`)
 
@@ -91,6 +105,9 @@
 |----------|------|------|
 | Config | `config.py` | 설정 관리 |
 | ImageSaver | `image_saver.py` | 캡처 이미지 저장 |
+| History | `history.py` | 작업 이력 관리 |
+| ExcelFormulas | `excel_formulas.py` | Excel 수식 생성 (INDEX 함수) |
+| ExcelTables | `excel_tables.py` | RULA/REBA/OWAS 조회 테이블 변환 |
 
 ## 디렉토리 구조
 
@@ -112,33 +129,45 @@ skeleton-analyzer/
 │   │   ├── project_manager.py  # 프로젝트 관리
 │   │   ├── capture_model.py    # 캡처 모델
 │   │   ├── logger.py           # 로깅
+│   │   ├── score_calculator.py # 공통 점수 계산
 │   │   └── ergonomic/          # 인체공학적 평가
 │   │       ├── __init__.py
 │   │       ├── base_assessment.py   # 기본 클래스
 │   │       ├── rula_calculator.py   # RULA 계산
 │   │       ├── reba_calculator.py   # REBA 계산
-│   │       └── owas_calculator.py   # OWAS 계산
+│   │       ├── owas_calculator.py   # OWAS 계산
+│   │       ├── nle_calculator.py    # NLE 계산
+│   │       └── si_calculator.py     # SI 계산
 │   ├── ui/
 │   │   ├── main_window.py      # 메인 윈도우
 │   │   ├── player_widget.py    # 플레이어
 │   │   ├── status_widget.py    # 상태 컨테이너
 │   │   ├── skeleton_widget.py  # 스켈레톤
 │   │   ├── angle_widget.py     # 각도 표시
-│   │   ├── capture_spreadsheet_widget.py  # 스프레드시트
+│   │   ├── capture_spreadsheet_widget.py  # 스프레드시트 + Excel
 │   │   ├── settings_dialog.py  # 설정
+│   │   ├── help_dialog.py      # 도움말
 │   │   └── ergonomic/          # 인체공학적 평가 UI
 │   │       ├── __init__.py
 │   │       ├── ergonomic_widget.py  # 통합 컨테이너
 │   │       ├── rula_widget.py       # RULA 표시
 │   │       ├── reba_widget.py       # REBA 표시
-│   │       └── owas_widget.py       # OWAS 표시
+│   │       ├── owas_widget.py       # OWAS 표시
+│   │       ├── nle_widget.py        # NLE 입력/표시
+│   │       └── si_widget.py         # SI 입력/표시
 │   ├── utils/
 │   │   ├── config.py           # 설정
-│   │   └── image_saver.py      # 이미지 저장
+│   │   ├── image_saver.py      # 이미지 저장
+│   │   ├── history.py          # 작업 이력
+│   │   ├── excel_formulas.py   # Excel 수식 생성
+│   │   └── excel_tables.py     # 조회 테이블 변환
 │   └── resources/              # 리소스 파일
-│       └── icons/              # 아이콘
+│       ├── icons/              # SVG 아이콘
+│       └── help/               # HTML 도움말
 ├── tests/                  # 테스트 코드
 ├── captures/               # 캡처 이미지 임시 저장
+├── dev/                   # 개발 작업 관리
+│   └── active/            # 진행 중 작업
 └── docs/                   # 문서
     ├── README.md
     ├── architecture.md
@@ -149,7 +178,9 @@ skeleton-analyzer/
         ├── README.md
         ├── rula.md
         ├── reba.md
-        └── owas.md
+        ├── owas.md
+        ├── nle.md
+        └── si.md
 ```
 
 ## 데이터 흐름
