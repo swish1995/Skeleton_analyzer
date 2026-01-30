@@ -122,12 +122,6 @@ class MainWindow(QMainWindow):
         # 파일 메뉴
         file_menu = menubar.addMenu("파일(&F)")
 
-        # 새 프로젝트
-        new_project_action = QAction("새 프로젝트(&N)", self)
-        new_project_action.setShortcut("Ctrl+N")
-        new_project_action.triggered.connect(self._new_project)
-        file_menu.addAction(new_project_action)
-
         # 프로젝트 열기
         open_project_action = QAction("프로젝트 열기(&P)...", self)
         open_project_action.setShortcut("Ctrl+Shift+O")
@@ -909,32 +903,6 @@ class MainWindow(QMainWindow):
         self._recent_projects.insert(0, project_path)
         self._recent_projects = self._recent_projects[:self.MAX_RECENT_FILES]
         self._update_recent_projects_menu()
-
-    def _new_project(self):
-        """새 프로젝트"""
-        # 저장되지 않은 변경사항 확인
-        if self._project_manager.is_dirty:
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("저장되지 않은 변경사항")
-            msg_box.setText("저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?")
-            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
-            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
-            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-            msg_box.setDefaultButton(save_btn)
-            msg_box.exec()
-
-            if msg_box.clickedButton() == cancel_btn:
-                return
-            elif msg_box.clickedButton() == save_btn:
-                if not self._save_project():
-                    return
-
-        # 상태 초기화
-        self._project_manager.new_project()
-        self.status_widget.spreadsheet_widget.clear_all()
-        self.player_widget.release()
-        self._update_window_title()
-        self._status_bar.showMessage("새 프로젝트")
 
     def _open_project(self):
         """프로젝트 열기 다이얼로그"""
