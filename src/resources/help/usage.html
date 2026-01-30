@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #e0e0e0;
+            background-color: #1e1e1e;
+            padding: 35px 50px 35px 80px;
+            margin: 0;
+        }
+
+        /* 헤더 */
+        .header {
+            text-align: center;
+            padding: 25px 40px;
+            background: linear-gradient(135deg, #2d4a3d 0%, #1a3328 100%);
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border: 1px solid #3d5a4d;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 8px 0;
+        }
+
+        .header-desc {
+            color: #a0c0b0;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* 목차 */
+        .toc {
+            margin-bottom: 40px;
+            padding-left: 20px;
+        }
+
+        .toc-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4a9eff;
+            margin: 0 0 16px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .toc-item {
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #d0d0d0;
+            font-size: 13px;
+            border: 1px solid #333;
+            background: transparent;
+        }
+
+        .toc-item .num {
+            color: #4a9eff;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        /* 섹션 */
+        .section {
+            margin-bottom: 45px;
+            padding-left: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #4a9eff;
+            margin: 0 0 22px 0;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 22px;
+        }
+
+        /* 서브섹션 */
+        .subsection {
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px dashed #333;
+        }
+
+        .subsection:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .subsection-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #7fbaff;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .subsection-title .sub-icon {
+            font-size: 18px;
+        }
+
+        /* 단락 */
+        p {
+            margin: 0 0 16px 0;
+            color: #d0d0d0;
+            padding-left: 5px;
+        }
+
+        /* 스텝 */
+        .steps {
+            margin: 20px 0;
+            padding-left: 5px;
+        }
+
+        .step {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 14px;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #4a9eff 0%, #2d7cd6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            padding-top: 2px;
+            flex: 1;
+        }
+
+        /* 팁 박스 */
+        .tip-box {
+            border: 1px solid #2d5a3a;
+            border-left: 4px solid #52c41a;
+            border-radius: 0 8px 8px 0;
+            padding: 14px 18px;
+            margin: 20px 0;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            background: rgba(82, 196, 26, 0.05);
+        }
+
+        .tip-box .tip-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .tip-box .tip-text {
+            color: #a0d0b0;
+            font-size: 13px;
+        }
+
+        .tip-box .tip-text strong {
+            color: #52c41a;
+        }
+
+        /* 테이블 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        th {
+            background: linear-gradient(135deg, #3d5a80 0%, #2d4a70 100%);
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid #333;
+            background-color: transparent;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background-color: transparent;
+        }
+
+        /* 키보드 키 */
+        kbd {
+            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+            border: 1px solid #555;
+            border-radius: 4px;
+            box-shadow: 0 2px 0 #2a2a2a;
+            color: #fff;
+            display: inline-block;
+            font-family: 'SF Mono', Consolas, Monaco, monospace;
+            font-size: 11px;
+            padding: 3px 7px;
+            margin: 0 2px;
+        }
+
+        /* 코드 */
+        code {
+            background-color: #2a2a2a;
+            color: #ff9f43;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Consolas, Monaco, monospace;
+            font-size: 13px;
+        }
+
+        /* 화면 구성 박스 */
+        .screen-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .screen-box {
+            border-radius: 10px;
+            padding: 18px 20px;
+            border: 1px solid #333;
+            background: transparent;
+        }
+
+        .screen-box h4 {
+            color: #ffffff;
+            font-size: 15px;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .screen-box ul {
+            margin: 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .screen-box li {
+            position: relative;
+            padding: 5px 0 5px 18px;
+            color: #b0b0b0;
+            font-size: 13px;
+        }
+
+        .screen-box li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #4a9eff;
+        }
+
+        /* 위험도 색상 */
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .risk-item {
+            border-radius: 8px;
+            padding: 14px 12px;
+            text-align: center;
+            background: transparent;
+        }
+
+        .risk-item.low {
+            border: 1px solid #52c41a;
+        }
+
+        .risk-item.medium {
+            border: 1px solid #faad14;
+        }
+
+        .risk-item.high {
+            border: 1px solid #ff7a45;
+        }
+
+        .risk-item.very-high {
+            border: 1px solid #ff4d4f;
+        }
+
+        .risk-item .risk-icon {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .risk-item .risk-level {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .risk-item.low .risk-level { color: #52c41a; }
+        .risk-item.medium .risk-level { color: #faad14; }
+        .risk-item.high .risk-level { color: #ff7a45; }
+        .risk-item.very-high .risk-level { color: #ff4d4f; }
+
+        .risk-item .risk-desc {
+            color: #888;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        /* 내보내기 옵션 */
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .export-option {
+            border-radius: 10px;
+            padding: 16px 18px;
+            border: 1px solid #333;
+            background: transparent;
+        }
+
+        .export-option h4 {
+            color: #ffffff;
+            font-size: 14px;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-option p {
+            color: #a0a0a0;
+            font-size: 13px;
+            margin: 0;
+            padding-left: 0;
+        }
+
+        /* 단축키 그리드 */
+        .shortcut-section {
+            margin: 20px 0;
+        }
+
+        .shortcut-category {
+            margin-bottom: 22px;
+        }
+
+        .shortcut-category-title {
+            color: #7fbaff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 6px;
+            padding: 10px 14px;
+            border: 1px solid #333;
+            background: transparent;
+        }
+
+        .shortcut-item .shortcut-action {
+            color: #d0d0d0;
+            font-size: 13px;
+        }
+
+        .shortcut-item .shortcut-keys {
+            display: flex;
+            gap: 3px;
+        }
+
+        /* 평가 요약 카드 */
+        .eval-summary {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .eval-card-mini {
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            border: 2px solid transparent;
+            background: transparent;
+        }
+
+        .eval-card-mini.rula { border-color: #ff9f43; }
+        .eval-card-mini.reba { border-color: #52c41a; }
+        .eval-card-mini.owas { border-color: #ff4d4f; }
+        .eval-card-mini.nle { border-color: #4a9eff; }
+        .eval-card-mini.si { border-color: #faad14; }
+
+        .eval-card-mini .eval-name {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .eval-card-mini.rula .eval-name { color: #ff9f43; }
+        .eval-card-mini.reba .eval-name { color: #52c41a; }
+        .eval-card-mini.owas .eval-name { color: #ff4d4f; }
+        .eval-card-mini.nle .eval-name { color: #4a9eff; }
+        .eval-card-mini.si .eval-name { color: #faad14; }
+
+        .eval-card-mini .eval-desc {
+            color: #888;
+            font-size: 11px;
+        }
+
+        /* 경고 박스 */
+        .warning-box {
+            border: 1px solid #5a4a2a;
+            border-left: 4px solid #faad14;
+            border-radius: 0 8px 8px 0;
+            padding: 14px 18px;
+            margin: 20px 0;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            background: rgba(250, 173, 20, 0.05);
+        }
+
+        .warning-box .warning-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .warning-box .warning-text {
+            color: #d0b080;
+            font-size: 13px;
+        }
+
+        /* 리스트 */
+        ul {
+            margin: 15px 0;
+            padding-left: 25px;
+            list-style: none;
+        }
+
+        ul li {
+            position: relative;
+            padding: 5px 0 5px 18px;
+            color: #d0d0d0;
+        }
+
+        ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #4a9eff;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <div class="header">
+        <h1>📖 사용 방법</h1>
+        <p class="header-desc">Skeleton Analyzer의 모든 기능을 상세하게 안내합니다</p>
+    </div>
+
+    <!-- 목차 -->
+    <div class="toc">
+        <h3 class="toc-title">📑 목차</h3>
+        <div class="toc-grid">
+            <div class="toc-item"><span class="num">1.</span>시작하기</div>
+            <div class="toc-item"><span class="num">2.</span>화면 구성</div>
+            <div class="toc-item"><span class="num">3.</span>메뉴 설명</div>
+            <div class="toc-item"><span class="num">4.</span>툴바 버튼</div>
+            <div class="toc-item"><span class="num">5.</span>동영상 재생</div>
+            <div class="toc-item"><span class="num">6.</span>데이터 캡처</div>
+            <div class="toc-item"><span class="num">7.</span>인체공학 평가</div>
+            <div class="toc-item"><span class="num">8.</span>데이터 내보내기</div>
+            <div class="toc-item"><span class="num">9.</span>단축키 모음</div>
+        </div>
+    </div>
+
+    <!-- 1. 시작하기 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🚀</span> 시작하기</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📁</span> 새 프로젝트 시작</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">프로그램을 실행합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content"><code>파일</code> → <code>새 프로젝트</code> 메뉴를 선택하거나 <kbd>Ctrl</kbd>+<kbd>N</kbd>을 누릅니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">분석할 동영상 파일을 엽니다</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📂</span> 기존 프로젝트 열기</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content"><code>파일</code> → <code>프로젝트 열기</code> 또는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content"><code>.skpx</code> 확장자의 프로젝트 파일을 선택합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">이전 작업 상태가 그대로 복원됩니다</div>
+                </div>
+            </div>
+            <div class="tip-box">
+                <span class="tip-icon">💡</span>
+                <span class="tip-text"><strong>팁:</strong> 최근에 작업한 프로젝트는 <code>파일</code> → <code>최근 프로젝트</code> 메뉴에서 빠르게 접근할 수 있습니다.</span>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🎬</span> 동영상 파일 열기</h3>
+            <p><kbd>Ctrl</kbd>+<kbd>O</kbd>를 누르거나 메뉴에서 <code>파일</code> → <code>동영상 파일 열기</code>를 선택합니다.</p>
+            <p><strong>지원 형식:</strong> MP4, AVI, MOV, MKV, WMV, FLV 등 대부분의 동영상 형식</p>
+        </div>
+    </div>
+
+    <!-- 2. 화면 구성 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🖥️</span> 화면 구성</h2>
+        <p>프로그램 화면은 크게 <strong>좌측 영역</strong>과 <strong>우측 영역</strong>으로 나뉩니다.</p>
+
+        <div class="screen-layout">
+            <div class="screen-box">
+                <h4>◀️ 좌측: 비디오 플레이어</h4>
+                <ul>
+                    <li>동영상과 스켈레톤 오버레이 표시</li>
+                    <li>재생, 일시정지, 정지, 탐색 버튼</li>
+                    <li>타임라인 슬라이더</li>
+                    <li>캡처 버튼</li>
+                </ul>
+            </div>
+            <div class="screen-box">
+                <h4>▶️ 우측: 분석 패널</h4>
+                <ul>
+                    <li><strong>상태 패널</strong> - 현재 프레임의 관절 각도</li>
+                    <li><strong>데이터 패널</strong> - 캡처된 데이터 스프레드시트</li>
+                    <li><strong>안전지표 패널</strong> - 인체공학 평가 결과</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <span class="tip-icon">💡</span>
+            <span class="tip-text">각 패널은 <kbd>Ctrl</kbd>+<kbd>1</kbd>, <kbd>Ctrl</kbd>+<kbd>2</kbd>, <kbd>Ctrl</kbd>+<kbd>3</kbd> 단축키로 표시/숨기기를 전환할 수 있습니다.</span>
+        </div>
+    </div>
+
+    <!-- 3. 메뉴 설명 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📋</span> 메뉴 설명</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📁</span> 파일 메뉴</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">메뉴 항목</th>
+                        <th style="width: 140px;">단축키</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>새 프로젝트</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>N</kbd></td>
+                        <td>새 프로젝트를 시작합니다</td>
+                    </tr>
+                    <tr>
+                        <td>프로젝트 열기</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td>
+                        <td>저장된 프로젝트 파일(.skpx)을 엽니다</td>
+                    </tr>
+                    <tr>
+                        <td>프로젝트 저장</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>S</kbd></td>
+                        <td>현재 프로젝트를 저장합니다</td>
+                    </tr>
+                    <tr>
+                        <td>다른 이름으로 저장</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td>
+                        <td>다른 이름이나 위치에 저장합니다</td>
+                    </tr>
+                    <tr>
+                        <td>동영상 파일 열기</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>O</kbd></td>
+                        <td>분석할 동영상 파일을 엽니다</td>
+                    </tr>
+                    <tr>
+                        <td>설정</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>,</kbd></td>
+                        <td>환경 설정 다이얼로그를 엽니다</td>
+                    </tr>
+                    <tr>
+                        <td>종료</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>Q</kbd></td>
+                        <td>프로그램을 종료합니다</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">👁️</span> 보기 메뉴</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">메뉴 항목</th>
+                        <th style="width: 140px;">단축키</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>상태</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>1</kbd></td>
+                        <td>상태 패널을 표시하거나 숨깁니다</td>
+                    </tr>
+                    <tr>
+                        <td>데이터</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>2</kbd></td>
+                        <td>데이터 패널을 표시하거나 숨깁니다</td>
+                    </tr>
+                    <tr>
+                        <td>안전지표</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>3</kbd></td>
+                        <td>안전지표 패널을 표시하거나 숨깁니다</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. 툴바 버튼 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🔘</span> 툴바 버튼</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📊</span> 평가 방법 토글</h3>
+            <p>각 평가 방법의 표시 여부를 개별적으로 조절할 수 있습니다.</p>
+            <div class="eval-summary">
+                <div class="eval-card-mini rula">
+                    <div class="eval-name">RULA</div>
+                    <div class="eval-desc">상지 평가</div>
+                </div>
+                <div class="eval-card-mini reba">
+                    <div class="eval-name">REBA</div>
+                    <div class="eval-desc">전신 평가</div>
+                </div>
+                <div class="eval-card-mini owas">
+                    <div class="eval-name">OWAS</div>
+                    <div class="eval-desc">자세 분류</div>
+                </div>
+                <div class="eval-card-mini nle">
+                    <div class="eval-name">NLE</div>
+                    <div class="eval-desc">들기 작업</div>
+                </div>
+                <div class="eval-card-mini si">
+                    <div class="eval-name">SI</div>
+                    <div class="eval-desc">반복 작업</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 동영상 재생 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">▶️</span> 동영상 재생</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🎮</span> 기본 재생 제어</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 180px;">동작</th>
+                        <th>방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>재생 / 일시정지</td>
+                        <td><kbd>Space</kbd> 키 또는 ▶/⏸ 버튼</td>
+                    </tr>
+                    <tr>
+                        <td>정지</td>
+                        <td>■ 버튼 클릭</td>
+                    </tr>
+                    <tr>
+                        <td>5초 앞으로</td>
+                        <td><kbd>→</kbd> 화살표 키</td>
+                    </tr>
+                    <tr>
+                        <td>5초 뒤로</td>
+                        <td><kbd>←</kbd> 화살표 키</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🦴</span> 스켈레톤 오버레이</h3>
+            <p>동영상 재생 중 자동으로 스켈레톤이 오버레이됩니다:</p>
+            <ul>
+                <li><strong style="color: #52c41a;">녹색 점</strong> - 감지된 관절점</li>
+                <li><strong style="color: #4a9eff;">연결선</strong> - 관절 간 연결</li>
+                <li><strong style="color: #ffffff;">각도 표시</strong> - 주요 관절의 각도 값</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 6. 데이터 캡처 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📸</span> 데이터 캡처</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">✅</span> 캡처하기</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">동영상에서 분석할 자세가 나오는 프레임으로 이동합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content"><strong>캡처</strong> 버튼을 클릭하거나 <kbd>Enter</kbd> 키를 누릅니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">현재 프레임의 모든 데이터가 스프레드시트에 추가됩니다</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📋</span> 캡처되는 데이터</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">데이터 종류</th>
+                        <th>내용</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>시간 정보</td>
+                        <td>타임스탬프, 프레임 번호, 캡처 시각</td>
+                    </tr>
+                    <tr>
+                        <td>관절 각도</td>
+                        <td>모든 측정된 관절의 각도 값</td>
+                    </tr>
+                    <tr>
+                        <td>RULA 점수</td>
+                        <td>부위별 점수, 그룹 점수, 최종 점수, 위험도</td>
+                    </tr>
+                    <tr>
+                        <td>REBA 점수</td>
+                        <td>부위별 점수, 그룹 점수, 최종 점수, 위험도</td>
+                    </tr>
+                    <tr>
+                        <td>OWAS 점수</td>
+                        <td>자세 코드, 조치 등급, 위험도</td>
+                    </tr>
+                    <tr>
+                        <td>이미지</td>
+                        <td>비디오 프레임, 스켈레톤 오버레이 이미지</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 7. 인체공학 평가 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📐</span> 인체공학 평가</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🎨</span> 위험도 색상 안내</h3>
+            <p>프로그램 전체에서 일관된 색상으로 위험도를 표시합니다:</p>
+            <div class="risk-grid">
+                <div class="risk-item low">
+                    <div class="risk-icon">🟢</div>
+                    <div class="risk-level">안전/낮음</div>
+                    <div class="risk-desc">허용 가능</div>
+                </div>
+                <div class="risk-item medium">
+                    <div class="risk-icon">🟡</div>
+                    <div class="risk-level">중간</div>
+                    <div class="risk-desc">모니터링 필요</div>
+                </div>
+                <div class="risk-item high">
+                    <div class="risk-icon">🟠</div>
+                    <div class="risk-level">높음</div>
+                    <div class="risk-desc">빨리 개선</div>
+                </div>
+                <div class="risk-item very-high">
+                    <div class="risk-icon">🔴</div>
+                    <div class="risk-level">매우 높음</div>
+                    <div class="risk-desc">즉시 개선</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📊</span> RULA 점수 체계</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>최종 점수</th>
+                        <th>위험 수준</th>
+                        <th>조치 필요성</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1-2</strong></td>
+                        <td><span style="color: #52c41a;">낮음</span></td>
+                        <td>허용 가능</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3-4</strong></td>
+                        <td><span style="color: #faad14;">중간</span></td>
+                        <td>추가 조사 필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5-6</strong></td>
+                        <td><span style="color: #ff7a45;">높음</span></td>
+                        <td>곧 개선 필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7</strong></td>
+                        <td><span style="color: #ff4d4f;">매우 높음</span></td>
+                        <td>즉시 개선 필요</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📊</span> REBA 점수 체계</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>최종 점수</th>
+                        <th>위험 수준</th>
+                        <th>조치 필요성</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td><span style="color: #52c41a;">무시</span></td>
+                        <td>조치 불필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2-3</strong></td>
+                        <td><span style="color: #52c41a;">낮음</span></td>
+                        <td>개선 필요할 수 있음</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4-7</strong></td>
+                        <td><span style="color: #faad14;">중간</span></td>
+                        <td>개선 필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>8-10</strong></td>
+                        <td><span style="color: #ff7a45;">높음</span></td>
+                        <td>곧 개선 필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>11-15</strong></td>
+                        <td><span style="color: #ff4d4f;">매우 높음</span></td>
+                        <td>즉시 개선 필요</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 8. 데이터 내보내기 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📤</span> 데이터 내보내기</h2>
+        <p>스프레드시트에서 <strong>우클릭</strong>하여 내보내기 메뉴에 접근합니다.</p>
+
+        <div class="export-options">
+            <div class="export-option">
+                <h4>📄 JSON 내보내기</h4>
+                <p>모든 캡처 데이터를 JSON 형식으로 저장합니다. 프로그래밍 방식의 데이터 처리에 적합합니다.</p>
+            </div>
+            <div class="export-option">
+                <h4>📊 Excel 내보내기</h4>
+                <p>보고서 작성에 적합한 형식입니다. 이미지, 수식 포함 옵션을 선택할 수 있습니다.</p>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">⚙️</span> Excel 내보내기 옵션</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 180px;">옵션</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>이미지 포함</strong></td>
+                        <td>비디오 프레임과 스켈레톤 이미지를 Excel에 포함합니다</td>
+                    </tr>
+                    <tr>
+                        <td><strong>이미지 크기</strong></td>
+                        <td>작게(50×50), 보통(150×150), 크게(200×200), 매우 크게(300×300)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>행 높이 자동</strong></td>
+                        <td>이미지 크기에 맞춰 행 높이가 자동 조절됩니다</td>
+                    </tr>
+                    <tr>
+                        <td><strong>수식 포함</strong></td>
+                        <td>INDEX 함수를 사용한 수식이 포함되어 값 변경 시 자동 재계산됩니다</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tip-box">
+            <span class="tip-icon">💡</span>
+            <span class="tip-text"><strong>팁:</strong> 수식 포함 시 숨겨진 시트(<code>_RULA_Tables</code>, <code>_REBA_Tables</code> 등)에 조회 테이블이 자동 생성됩니다.</span>
+        </div>
+    </div>
+
+    <!-- 9. 단축키 모음 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">⌨️</span> 단축키 모음</h2>
+
+        <div class="shortcut-section">
+            <div class="shortcut-category">
+                <div class="shortcut-category-title">📁 파일/프로젝트</div>
+                <div class="shortcut-grid">
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">새 프로젝트</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">프로젝트 열기</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">프로젝트 저장</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">다른 이름으로 저장</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">동영상 열기</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">종료</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shortcut-category">
+                <div class="shortcut-category-title">▶️ 재생 제어</div>
+                <div class="shortcut-grid">
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">재생/일시정지</span>
+                        <span class="shortcut-keys"><kbd>Space</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">5초 뒤로</span>
+                        <span class="shortcut-keys"><kbd>←</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">5초 앞으로</span>
+                        <span class="shortcut-keys"><kbd>→</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">캡처</span>
+                        <span class="shortcut-keys"><kbd>Enter</kbd></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shortcut-category">
+                <div class="shortcut-category-title">👁️ 패널 토글</div>
+                <div class="shortcut-grid">
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">상태 패널</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>1</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">데이터 패널</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>2</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">안전지표 패널</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>3</kbd></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shortcut-category">
+                <div class="shortcut-category-title">⚙️ 설정/도움말</div>
+                <div class="shortcut-grid">
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">설정</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">사용 방법</span>
+                        <span class="shortcut-keys"><kbd>F1</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">프로그램 정보</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>F1</kbd></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-text"><strong>참고:</strong> macOS에서는 <kbd>Ctrl</kbd> 대신 <kbd>Cmd</kbd>(⌘) 키를 사용합니다.</span>
+        </div>
+    </div>
+</body>
+</html>

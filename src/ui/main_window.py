@@ -14,6 +14,7 @@ from typing import Optional, List
 from .player_widget import PlayerWidget
 from .status_widget import StatusWidget
 from .settings_dialog import SettingsDialog
+from .help_dialog import HelpDialog
 from ..utils.config import Config
 from ..core.project_manager import ProjectManager, ProjectLoadError, LoadResult
 from ..core.logger import get_logger
@@ -217,6 +218,23 @@ class MainWindow(QMainWindow):
 
         # StatusWidget 가시성 변경 시 메뉴 동기화
         self.status_widget.visibility_changed.connect(self._on_visibility_changed)
+
+        # 도움말 메뉴
+        help_menu = menubar.addMenu("도움말(&H)")
+
+        # 사용 방법
+        usage_action = QAction("사용 방법(&U)...", self)
+        usage_action.setShortcut("F1")
+        usage_action.triggered.connect(self._show_help_usage)
+        help_menu.addAction(usage_action)
+
+        help_menu.addSeparator()
+
+        # 프로그램 정보
+        about_action = QAction("프로그램 정보(&A)...", self)
+        about_action.setShortcut("Ctrl+F1")
+        about_action.triggered.connect(self._show_help_about)
+        help_menu.addAction(about_action)
 
     # 툴바 버튼 색상 정의
     TOOLBAR_BUTTON_COLORS = {
@@ -1132,3 +1150,13 @@ class MainWindow(QMainWindow):
     def _video_name(self) -> Optional[str]:
         """현재 비디오 이름"""
         return self.status_widget._video_name
+
+    def _show_help_usage(self):
+        """사용 방법 도움말 표시"""
+        dialog = HelpDialog(self)
+        dialog.show_usage()
+
+    def _show_help_about(self):
+        """프로그램 정보 도움말 표시"""
+        dialog = HelpDialog(self)
+        dialog.show_about()

@@ -21,6 +21,8 @@ a = Analysis(
         (model_path, 'src/core'),  # MediaPipe 모델 포함
         ('resources/icon.ico', 'resources'),  # Windows 아이콘
         ('resources/icon.icns', 'resources'),  # macOS 아이콘
+        ('src/resources/help', 'help'),  # 도움말 파일
+        ('src/resources/icons', 'icons'),  # 아이콘 파일 (있는 경우)
     ] + mediapipe_datas,
     hiddenimports=[
         'mediapipe',

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #e0e0e0;
+            background-color: #1e1e1e;
+            padding: 35px 50px 35px 80px;
+            margin: 0;
+        }
+
+        /* 헤더 영역 */
+        .header {
+            text-align: center;
+            padding: 30px 40px;
+            background: linear-gradient(135deg, #2d3a4d 0%, #1a2332 100%);
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border: 1px solid #3d4a5d;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 12px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a9eff 0%, #2d7cd6 100%);
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .header-desc {
+            color: #a0b0c0;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        /* 섹션 */
+        .section {
+            margin-bottom: 40px;
+            padding-left: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #4a9eff;
+            margin: 0 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 22px;
+        }
+
+        /* 서브섹션 */
+        .subsection {
+            margin-top: 30px;
+        }
+
+        .subsection-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #7fbaff;
+            margin: 0 0 16px 0;
+        }
+
+        /* 단락 */
+        p {
+            margin: 0 0 16px 0;
+            color: #d0d0d0;
+            padding-left: 5px;
+        }
+
+        /* 기능 그리드 */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .feature-item {
+            background: transparent;
+            border-radius: 10px;
+            padding: 16px 18px;
+            border: 1px solid #3a4a5a;
+        }
+
+        .feature-item strong {
+            color: #ffffff;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .feature-item span {
+            color: #a0b0c0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* 리스트 */
+        ul {
+            margin: 15px 0;
+            padding-left: 25px;
+            list-style: none;
+        }
+
+        ul li {
+            position: relative;
+            padding: 6px 0 6px 20px;
+            color: #d0d0d0;
+        }
+
+        ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #4a9eff;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* 테이블 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #3a3a3a;
+        }
+
+        th {
+            background: linear-gradient(135deg, #3d5a80 0%, #2d4a70 100%);
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid #333;
+            background-color: transparent;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background-color: transparent;
+        }
+
+        /* 평가 방법 카드 */
+        .eval-card {
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin: 15px 0;
+            border-left: 4px solid #4a9eff;
+            background: transparent;
+        }
+
+        .eval-card h4 {
+            color: #ffffff;
+            font-size: 15px;
+            margin: 0 0 8px 0;
+        }
+
+        .eval-card p {
+            margin: 0;
+            font-size: 13px;
+            padding-left: 0;
+        }
+
+        .eval-card .details {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+        }
+
+        .eval-card .detail-item {
+            display: flex;
+            margin: 5px 0;
+        }
+
+        .eval-card .detail-label {
+            color: #888;
+            width: 90px;
+            flex-shrink: 0;
+            font-size: 13px;
+        }
+
+        .eval-card .detail-value {
+            color: #d0d0d0;
+            font-size: 13px;
+        }
+
+        /* 기술 스택 */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .tech-item {
+            border-radius: 8px;
+            padding: 14px 16px;
+            text-align: center;
+            border: 1px solid #333;
+            background: transparent;
+        }
+
+        .tech-item .tech-name {
+            color: #4a9eff;
+            font-weight: 600;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .tech-item .tech-desc {
+            color: #888;
+            font-size: 12px;
+        }
+
+        /* 요구사항 리스트 */
+        .req-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .req-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 8px;
+            padding: 12px 16px;
+            border: 1px solid #333;
+            background: transparent;
+        }
+
+        .req-item .req-icon {
+            font-size: 20px;
+        }
+
+        .req-item .req-text {
+            font-size: 13px;
+        }
+
+        .req-item .req-label {
+            color: #888;
+            display: block;
+        }
+
+        .req-item .req-value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        /* 푸터 노트 */
+        .footer-note {
+            border-left: 4px solid #4a9eff;
+            border-radius: 0 8px 8px 0;
+            padding: 14px 18px;
+            margin-top: 35px;
+            background: rgba(74, 158, 255, 0.08);
+        }
+
+        .footer-note p {
+            margin: 0;
+            color: #a0aec0;
+            font-size: 13px;
+            padding-left: 0;
+        }
+
+        .footer-note strong {
+            color: #4a9eff;
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <div class="header">
+        <h1>Skeleton Analyzer</h1>
+        <div class="version-badge">버전 1.0.0</div>
+        <p class="header-desc">동영상 기반 자세 분석 및 인체공학 평가 도구</p>
+    </div>
+
+    <!-- 프로그램 소개 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📋</span> 프로그램 소개</h2>
+        <p>
+            Skeleton Analyzer는 작업 현장의 동영상을 분석하여 작업자의 자세를 평가하고,
+            <strong style="color: #4a9eff;">근골격계 질환(MSD) 위험</strong>을 사전에 파악할 수 있도록 도와주는 전문 소프트웨어입니다.
+        </p>
+        <p>
+            최신 AI 기술인 <strong style="color: #ffffff;">MediaPipe Pose</strong>를 활용하여 동영상에서 실시간으로
+            인체의 33개 관절점을 추출하고, 이를 바탕으로 국제적으로 인정받는 5가지 인체공학 평가 방법을 자동으로 적용합니다.
+        </p>
+    </div>
+
+    <!-- 주요 기능 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">✨</span> 주요 기능</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title">🎯 자세 분석</h3>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <strong>실시간 스켈레톤 추출</strong>
+                    <span>MediaPipe 기반 33개 관절점 자동 감지</span>
+                </div>
+                <div class="feature-item">
+                    <strong>관절 각도 자동 계산</strong>
+                    <span>목, 몸통, 어깨, 팔꿈치, 손목, 무릎 등</span>
+                </div>
+                <div class="feature-item">
+                    <strong>프레임별 상세 분석</strong>
+                    <span>원하는 순간의 자세를 정밀하게 분석</span>
+                </div>
+                <div class="feature-item">
+                    <strong>시각적 오버레이</strong>
+                    <span>스켈레톤과 각도를 영상 위에 직접 표시</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">📊 데이터 관리</h3>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <strong>프로젝트 저장/불러오기</strong>
+                    <span>분석 작업 상태 완벽 보존</span>
+                </div>
+                <div class="feature-item">
+                    <strong>다양한 내보내기</strong>
+                    <span>JSON(데이터 분석용), Excel(보고서용)</span>
+                </div>
+                <div class="feature-item">
+                    <strong>이미지 캡처</strong>
+                    <span>비디오 프레임 및 스켈레톤 이미지 저장</span>
+                </div>
+                <div class="feature-item">
+                    <strong>수식 포함 Excel</strong>
+                    <span>자동 계산 기능이 포함된 스프레드시트</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 지원 평가 방법 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📐</span> 지원 평가 방법</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 120px;">평가 방법</th>
+                    <th style="width: 180px;">주요 용도</th>
+                    <th>평가 대상</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong style="color: #ff9f43;">RULA</strong></td>
+                    <td>상지 반복 작업</td>
+                    <td>목, 몸통, 어깨, 팔, 손목</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #52c41a;">REBA</strong></td>
+                    <td>전신 자세 및 부하</td>
+                    <td>전신 자세, 하중, 커플링</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #ff4d4f;">OWAS</strong></td>
+                    <td>작업 자세 분류</td>
+                    <td>등, 팔, 다리, 하중 조합</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #4a9eff;">NLE</strong></td>
+                    <td>들기 작업 권장 한계</td>
+                    <td>수평/수직 거리, 빈도, 손잡이</td>
+                </tr>
+                <tr>
+                    <td><strong style="color: #faad14;">SI</strong></td>
+                    <td>반복 작업 스트레인</td>
+                    <td>힘, 지속시간, 빈도, 자세</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="eval-card" style="border-left-color: #ff9f43;">
+            <h4>RULA (Rapid Upper Limb Assessment)</h4>
+            <p>상지(팔, 손목) 중심의 반복 작업에 적합한 평가 방법</p>
+            <div class="details">
+                <div class="detail-item">
+                    <span class="detail-label">점수 범위</span>
+                    <span class="detail-value">1-7점</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">평가 부위</span>
+                    <span class="detail-value">상완, 전완, 손목, 손목 비틀림, 목, 몸통, 다리</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="eval-card" style="border-left-color: #52c41a;">
+            <h4>REBA (Rapid Entire Body Assessment)</h4>
+            <p>전신 자세와 외부 부하를 종합적으로 평가</p>
+            <div class="details">
+                <div class="detail-item">
+                    <span class="detail-label">점수 범위</span>
+                    <span class="detail-value">1-15점</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">평가 부위</span>
+                    <span class="detail-value">목, 몸통, 다리, 상완, 전완, 손목</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="eval-card" style="border-left-color: #ff4d4f;">
+            <h4>OWAS (Ovako Working Posture Analysis System)</h4>
+            <p>작업 자세를 4자리 코드로 분류하는 시스템</p>
+            <div class="details">
+                <div class="detail-item">
+                    <span class="detail-label">코드 구성</span>
+                    <span class="detail-value">등(1-4), 팔(1-3), 다리(1-7), 하중(1-3)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">조치 등급</span>
+                    <span class="detail-value">AC 1-4 (즉시 조치 필요 여부)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="eval-card" style="border-left-color: #4a9eff;">
+            <h4>NLE (NIOSH Lifting Equation)</h4>
+            <p>들기 작업의 권장 무게 한계(RWL)를 산출</p>
+            <div class="details">
+                <div class="detail-item">
+                    <span class="detail-label">입력값</span>
+                    <span class="detail-value">수평거리(H), 수직높이(V), 이동거리(D), 비틀림(A), 빈도(F), 손잡이(C)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">결과값</span>
+                    <span class="detail-value">RWL(kg), 리프팅 지수(LI)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="eval-card" style="border-left-color: #faad14;">
+            <h4>SI (Strain Index)</h4>
+            <p>반복적인 손/손목 작업의 스트레인을 평가</p>
+            <div class="details">
+                <div class="detail-item">
+                    <span class="detail-label">입력값</span>
+                    <span class="detail-value">강도, 지속시간, 빈도, 손목 자세, 작업 속도, 하루 지속시간</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">결과값</span>
+                    <span class="detail-value">SI 점수 (3 미만: 안전, 7 초과: 위험)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기술 스택 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🔧</span> 기술 스택</h2>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <span class="tech-name">PyQt6</span>
+                <span class="tech-desc">UI 프레임워크</span>
+            </div>
+            <div class="tech-item">
+                <span class="tech-name">MediaPipe</span>
+                <span class="tech-desc">포즈 추정</span>
+            </div>
+            <div class="tech-item">
+                <span class="tech-name">OpenCV</span>
+                <span class="tech-desc">영상 처리</span>
+            </div>
+            <div class="tech-item">
+                <span class="tech-name">NumPy</span>
+                <span class="tech-desc">데이터 처리</span>
+            </div>
+            <div class="tech-item">
+                <span class="tech-name">openpyxl</span>
+                <span class="tech-desc">Excel 생성</span>
+            </div>
+            <div class="tech-item">
+                <span class="tech-name">Pillow</span>
+                <span class="tech-desc">이미지 처리</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 시스템 요구사항 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">💻</span> 시스템 요구사항</h2>
+        <div class="req-list">
+            <div class="req-item">
+                <span class="req-icon">🖥️</span>
+                <div class="req-text">
+                    <span class="req-label">운영체제</span>
+                    <span class="req-value">Windows 10/11, macOS 11+</span>
+                </div>
+            </div>
+            <div class="req-item">
+                <span class="req-icon">🐍</span>
+                <div class="req-text">
+                    <span class="req-label">Python</span>
+                    <span class="req-value">3.9 이상</span>
+                </div>
+            </div>
+            <div class="req-item">
+                <span class="req-icon">🧠</span>
+                <div class="req-text">
+                    <span class="req-label">메모리</span>
+                    <span class="req-value">8GB RAM 이상 권장</span>
+                </div>
+            </div>
+            <div class="req-item">
+                <span class="req-icon">💾</span>
+                <div class="req-text">
+                    <span class="req-label">저장공간</span>
+                    <span class="req-value">500MB 이상</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 푸터 노트 -->
+    <div class="footer-note">
+        <p>
+            <strong>참고:</strong> 이 프로그램의 평가 결과는 참고용이며,
+            정확한 인체공학 평가를 위해서는 전문가의 검토가 필요합니다.
+        </p>
+    </div>
+</body>
+</html>
