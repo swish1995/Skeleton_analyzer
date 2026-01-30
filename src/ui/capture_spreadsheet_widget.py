@@ -387,12 +387,21 @@ class CaptureSpreadsheetWidget(QWidget):
                 self._table.setItemDelegateForColumn(col_idx + self._thumbnail_count, delegate)
 
     def _apply_header_colors(self):
-        """헤더 배경색 적용"""
+        """헤더 배경색 및 스타일 적용"""
+        from PyQt6.QtGui import QFont
+
+        # 헤더 폰트 설정 (진하게, 약간 큰 사이즈)
+        header_font = QFont()
+        header_font.setBold(True)
+        header_font.setPointSize(10)
+
         # 썸네일 컬럼 헤더
         thumbnail_color = QColor(180, 180, 220)  # 연보라
         for col_idx, (field, header, group) in enumerate(THUMBNAIL_COLUMNS):
             item = QTableWidgetItem(header)
             item.setBackground(QBrush(thumbnail_color))
+            item.setForeground(QBrush(QColor(0, 0, 0)))  # 검은색 텍스트
+            item.setFont(header_font)
             self._table.setHorizontalHeaderItem(col_idx, item)
 
         # 데이터 컬럼 헤더
@@ -400,6 +409,8 @@ class CaptureSpreadsheetWidget(QWidget):
             color = GROUP_COLORS.get(group, QColor(200, 200, 200))
             item = QTableWidgetItem(header)
             item.setBackground(QBrush(color))
+            item.setForeground(QBrush(QColor(0, 0, 0)))  # 검은색 텍스트
+            item.setFont(header_font)
             self._table.setHorizontalHeaderItem(col_idx + self._thumbnail_count, item)
 
     def add_record(self, record: CaptureRecord) -> int:
