@@ -61,12 +61,20 @@ class ErgonomicWidget(QWidget):
 
         # 각 평가 위젯
         self._rula_widget = RULAWidget()
+        self._rula_widget.setMinimumWidth(120)  # RULA 최소 너비
         self._reba_widget = REBAWidget()
+        self._reba_widget.setMinimumWidth(120)  # REBA 최소 너비
         self._owas_widget = OWASWidget()
+        self._owas_widget.setMinimumWidth(120)  # OWAS 최소 너비
 
         self._splitter.addWidget(self._rula_widget)
         self._splitter.addWidget(self._reba_widget)
         self._splitter.addWidget(self._owas_widget)
+
+        # 스플리터로 패널이 완전히 축소되지 않도록 설정
+        self._splitter.setCollapsible(0, False)  # RULA
+        self._splitter.setCollapsible(1, False)  # REBA
+        self._splitter.setCollapsible(2, False)  # OWAS
 
         # 균등 분할
         self._splitter.setSizes([300, 300, 300])

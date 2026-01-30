@@ -174,24 +174,39 @@ class StatusWidget(QWidget):
 
         # 왼쪽: 스켈레톤 시각화
         self._skeleton_widget = SkeletonWidget()
+        self._skeleton_widget.setMinimumWidth(200)  # 스켈레톤 최소 너비
         self._top_splitter.addWidget(self._skeleton_widget)
 
         # 오른쪽: 각도 표시
         self._angle_widget = AngleWidget()
+        self._angle_widget.setMinimumWidth(150)  # 각도 패널 최소 너비
         self._top_splitter.addWidget(self._angle_widget)
+
+        # 스플리터로 패널이 완전히 축소되지 않도록 설정
+        self._top_splitter.setCollapsible(0, False)  # 스켈레톤
+        self._top_splitter.setCollapsible(1, False)  # 각도
 
         # 50:50 비율
         self._top_splitter.setSizes([400, 400])
 
+        # 상단 패널 최소 높이 설정
+        self._top_splitter.setMinimumHeight(150)
         self._main_splitter.addWidget(self._top_splitter)
 
         # 중단: 인체공학적 평가 (RULA/REBA/OWAS)
         self._ergonomic_widget = ErgonomicWidget()
+        self._ergonomic_widget.setMinimumHeight(100)  # 안전지표 최소 높이
         self._main_splitter.addWidget(self._ergonomic_widget)
 
         # 하단: 캡처 스프레드시트
         self._spreadsheet_widget = CaptureSpreadsheetWidget(config=self._config)
+        self._spreadsheet_widget.setMinimumHeight(100)  # 스프레드시트 최소 높이
         self._main_splitter.addWidget(self._spreadsheet_widget)
+
+        # 스플리터로 패널이 완전히 축소되지 않도록 설정
+        self._main_splitter.setCollapsible(0, False)  # 상단 (스켈레톤+각도)
+        self._main_splitter.setCollapsible(1, False)  # 중단 (안전지표)
+        self._main_splitter.setCollapsible(2, False)  # 하단 (스프레드시트)
 
         # 상단:중단:하단 = 35:35:30 비율
         self._main_splitter.setSizes([350, 350, 300])

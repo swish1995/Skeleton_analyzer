@@ -83,11 +83,17 @@ class MainWindow(QMainWindow):
 
         # 왼쪽: 플레이어 위젯
         self.player_widget = PlayerWidget()
+        self.player_widget.setMinimumWidth(400)  # 플레이어 최소 너비
         self._splitter.addWidget(self.player_widget)
 
         # 오른쪽: 스테이터스 위젯
         self.status_widget = StatusWidget(config=self._config)
+        self.status_widget.setMinimumWidth(500)  # 스테이터스 최소 너비
         self._splitter.addWidget(self.status_widget)
+
+        # 스플리터로 패널이 완전히 축소되지 않도록 설정
+        self._splitter.setCollapsible(0, False)  # 플레이어
+        self._splitter.setCollapsible(1, False)  # 스테이터스
 
         # 50:50 비율 설정
         self._splitter.setSizes([800, 800])
