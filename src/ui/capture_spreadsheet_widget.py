@@ -620,24 +620,23 @@ class CaptureSpreadsheetWidget(QWidget):
         # 자동 삭제 + 확인 설정인 경우
         elif auto_delete and confirm_delete:
             if has_images:
-                reply = QMessageBox.question(
-                    self,
-                    "행 삭제",
-                    f"행 {row + 1}을(를) 삭제하시겠습니까?\n\n"
-                    "연결된 이미지 파일도 함께 삭제됩니다.",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                )
-                if reply != QMessageBox.StandardButton.Yes:
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("행 삭제")
+                msg_box.setText(f"행 {row + 1}을(를) 삭제하시겠습니까?\n\n연결된 이미지 파일도 함께 삭제됩니다.")
+                yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
+                no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
+                msg_box.exec()
+                if msg_box.clickedButton() != yes_btn:
                     return
                 delete_images = True
             else:
-                reply = QMessageBox.question(
-                    self,
-                    "행 삭제",
-                    f"행 {row + 1}을(를) 삭제하시겠습니까?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                )
-                if reply != QMessageBox.StandardButton.Yes:
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("행 삭제")
+                msg_box.setText(f"행 {row + 1}을(를) 삭제하시겠습니까?")
+                yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
+                no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
+                msg_box.exec()
+                if msg_box.clickedButton() != yes_btn:
                     return
                 delete_images = False
         # 자동 삭제 안 함 설정인 경우 (기존 다이얼로그 사용)
@@ -685,13 +684,13 @@ class CaptureSpreadsheetWidget(QWidget):
 
         if not has_images:
             # 이미지가 없으면 단순 확인
-            reply = QMessageBox.question(
-                self,
-                "행 삭제",
-                f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if reply == QMessageBox.StandardButton.Yes:
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("행 삭제")
+            msg_box.setText(f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?")
+            yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
+            no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
+            msg_box.exec()
+            if msg_box.clickedButton() == yes_btn:
                 return False
             return None
 
@@ -778,14 +777,14 @@ class CaptureSpreadsheetWidget(QWidget):
         else:
             message = f"모든 캡처 데이터({len(self._model)}개)를 삭제하시겠습니까?"
 
-        reply = QMessageBox.question(
-            self,
-            "전체 삭제",
-            message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("전체 삭제")
+        msg_box.setText(message)
+        yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
+        no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
+        msg_box.exec()
 
-        if reply == QMessageBox.StandardButton.Yes:
+        if msg_box.clickedButton() == yes_btn:
             # 이미지 삭제 (설정에 따라)
             if auto_delete:
                 for record in self._model.get_all_records():
@@ -1138,9 +1137,9 @@ class CaptureSpreadsheetWidget(QWidget):
         layout.addSpacing(10)
 
         # 버튼
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        button_box = QDialogButtonBox()
+        ok_btn = button_box.addButton("확인", QDialogButtonBox.ButtonRole.AcceptRole)
+        cancel_btn = button_box.addButton("취소", QDialogButtonBox.ButtonRole.RejectRole)
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)
         layout.addWidget(button_box)

@@ -84,9 +84,9 @@ class SettingsDialog(QDialog):
         layout.addWidget(image_group)
 
         # 버튼
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        button_box = QDialogButtonBox()
+        ok_btn = button_box.addButton("확인", QDialogButtonBox.ButtonRole.AcceptRole)
+        cancel_btn = button_box.addButton("취소", QDialogButtonBox.ButtonRole.RejectRole)
         button_box.accepted.connect(self._save_and_accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)

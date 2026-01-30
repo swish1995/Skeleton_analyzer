@@ -588,17 +588,15 @@ class MainWindow(QMainWindow):
             )
             icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
             msg_box.setIconPixmap(icon.pixmap(64, 64))
-            msg_box.setStandardButtons(
-                QMessageBox.StandardButton.Save |
-                QMessageBox.StandardButton.Discard |
-                QMessageBox.StandardButton.Cancel
-            )
-            msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
-            reply = msg_box.exec()
+            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
+            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
+            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+            msg_box.setDefaultButton(save_btn)
+            msg_box.exec()
 
-            if reply == QMessageBox.StandardButton.Cancel:
+            if msg_box.clickedButton() == cancel_btn:
                 return
-            elif reply == QMessageBox.StandardButton.Save:
+            elif msg_box.clickedButton() == save_btn:
                 if not self._save_project():
                     return
 
@@ -762,22 +760,20 @@ class MainWindow(QMainWindow):
             )
             icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
             msg_box.setIconPixmap(icon.pixmap(64, 64))
-            msg_box.setStandardButtons(
-                QMessageBox.StandardButton.Save |
-                QMessageBox.StandardButton.Discard |
-                QMessageBox.StandardButton.Cancel
-            )
-            msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
-            reply = msg_box.exec()
+            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
+            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
+            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+            msg_box.setDefaultButton(save_btn)
+            msg_box.exec()
 
-            if reply == QMessageBox.StandardButton.Cancel:
+            if msg_box.clickedButton() == cancel_btn:
                 event.ignore()
                 return
-            elif reply == QMessageBox.StandardButton.Save:
+            elif msg_box.clickedButton() == save_btn:
                 if not self._save_project():
                     event.ignore()
                     return
-            # Discard: 저장 안 하고 종료 진행 (정리는 종료 시 일괄 처리)
+            # 저장 안 함: 저장 안 하고 종료 진행 (정리는 종료 시 일괄 처리)
 
         # 종료 확인 다이얼로그
         msg_box = QMessageBox(self)
@@ -785,13 +781,12 @@ class MainWindow(QMainWindow):
         msg_box.setText("앱을 종료하시겠습니까?")
         icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
         msg_box.setIconPixmap(icon.pixmap(64, 64))
-        msg_box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        reply = msg_box.exec()
+        yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
+        no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
+        msg_box.setDefaultButton(no_btn)
+        msg_box.exec()
 
-        if reply != QMessageBox.StandardButton.Yes:
+        if msg_box.clickedButton() != yes_btn:
             self._logger.debug("사용자가 종료 취소")
             event.ignore()
             return
@@ -842,19 +837,18 @@ class MainWindow(QMainWindow):
         """새 프로젝트"""
         # 저장되지 않은 변경사항 확인
         if self._project_manager.is_dirty:
-            reply = QMessageBox.question(
-                self,
-                "저장되지 않은 변경사항",
-                "저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?",
-                QMessageBox.StandardButton.Save |
-                QMessageBox.StandardButton.Discard |
-                QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Save
-            )
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("저장되지 않은 변경사항")
+            msg_box.setText("저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?")
+            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
+            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
+            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+            msg_box.setDefaultButton(save_btn)
+            msg_box.exec()
 
-            if reply == QMessageBox.StandardButton.Cancel:
+            if msg_box.clickedButton() == cancel_btn:
                 return
-            elif reply == QMessageBox.StandardButton.Save:
+            elif msg_box.clickedButton() == save_btn:
                 if not self._save_project():
                     return
 
@@ -869,19 +863,18 @@ class MainWindow(QMainWindow):
         """프로젝트 열기 다이얼로그"""
         # 저장되지 않은 변경사항 확인
         if self._project_manager.is_dirty:
-            reply = QMessageBox.question(
-                self,
-                "저장되지 않은 변경사항",
-                "저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?",
-                QMessageBox.StandardButton.Save |
-                QMessageBox.StandardButton.Discard |
-                QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Save
-            )
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("저장되지 않은 변경사항")
+            msg_box.setText("저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?")
+            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
+            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
+            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+            msg_box.setDefaultButton(save_btn)
+            msg_box.exec()
 
-            if reply == QMessageBox.StandardButton.Cancel:
+            if msg_box.clickedButton() == cancel_btn:
                 return
-            elif reply == QMessageBox.StandardButton.Save:
+            elif msg_box.clickedButton() == save_btn:
                 if not self._save_project():
                     return
 
@@ -932,15 +925,14 @@ class MainWindow(QMainWindow):
                 # 물음표 아이콘 사용
                 icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
                 msg_box.setIconPixmap(icon.pixmap(64, 64))
-                msg_box.setStandardButtons(
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel
-                )
-                msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
-                reply = msg_box.exec()
+                yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
+                cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+                msg_box.setDefaultButton(yes_btn)
+                msg_box.exec()
 
-                if reply != QMessageBox.StandardButton.Yes:
+                if msg_box.clickedButton() != yes_btn:
                     return
-                # Yes 선택 시 동영상 없이 데이터만 복원
+                # 예 선택 시 동영상 없이 데이터만 복원
 
             elif state['video_path']:
                 # 동영상 로드 (프로젝트 로드에서 호출)
