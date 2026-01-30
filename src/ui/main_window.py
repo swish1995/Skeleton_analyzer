@@ -685,6 +685,9 @@ class MainWindow(QMainWindow):
             if not from_project_load:
                 self._project_manager.new_project()
                 self._update_window_title()
+
+            # 포커스를 플레이어로 설정 (엔터키 캡처가 동작하도록)
+            self.player_widget.setFocus()
         else:
             self._logger.error(f"비디오 로드 실패: {file_path}")
             QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
@@ -1028,6 +1031,9 @@ class MainWindow(QMainWindow):
             self._update_window_title()
             self._status_bar.showMessage(f"프로젝트 로드됨: {file_path}")
             self._logger.info(f"프로젝트 로드 완료: 캡처 {info.capture_count}개, 이미지 {info.image_count}개")
+
+            # 포커스를 플레이어로 설정 (엔터키 캡처가 동작하도록)
+            self.player_widget.setFocus()
 
         except ProjectLoadError as e:
             self._logger.error(f"프로젝트 로드 실패: {file_path}, 오류: {e}")
