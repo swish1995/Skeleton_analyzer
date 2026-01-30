@@ -25,6 +25,9 @@ from .score_calculator import (
     get_owas_action_category,
     get_owas_risk_level,
 )
+from .logger import get_logger
+
+_logger = get_logger('capture_model')
 
 
 @dataclass
@@ -373,6 +376,8 @@ class CaptureDataModel:
             {'records': [...]} 형태의 딕셔너리
         """
         records = []
+        base_path_str = str(base_path)
+
         for record in self._records:
             data = record.to_dict()
 
@@ -381,9 +386,15 @@ class CaptureDataModel:
                 path = data.get(key)
                 if path:
                     try:
-                        abs_path = Path(path)
-                        if abs_path.is_absolute():
-                            data[key] = str(abs_path.relative_to(base_path))
+                        path_obj = Path(path)
+                        if path_obj.is_absolute():
+                            # 절대 경로인 경우 base_path 기준 상대 경로로 변환
+                            data[key] = str(path_obj.relative_to(base_path))
+                        else:
+                            # 상대 경로인 경우 base_path로 시작하면 제거
+                            path_str = str(path_obj)
+                            if path_str.startswith(base_path_str + '/') or path_str.startswith(base_path_str + '\\'):
+                                data[key] = path_str[len(base_path_str) + 1:]
                     except ValueError:
                         # base_path 밖의 경로인 경우 원본 유지
                         pass
@@ -410,18 +421,28 @@ class CaptureDataModel:
         Returns:
             CaptureDataModel 인스턴스
         """
+        _logger.info(f"[썸네일] from_project_dict 호출: base_path={base_path}")
         model = cls()
 
-        for record_data in data.get('records', []):
+        records_data = data.get('records', [])
+        _logger.debug(f"[썸네일] 레코드 수: {len(records_data)}")
+
+        for idx, record_data in enumerate(records_data):
             # 이미지 경로를 절대 경로로 변환
             for key in ('video_frame_path', 'skeleton_image_path'):
                 path = record_data.get(key)
                 if path:
                     rel_path = Path(path)
+                    _logger.debug(f"[썸네일] 레코드 {idx} - {key}: 원본 경로={path}, is_absolute={rel_path.is_absolute()}")
                     if not rel_path.is_absolute():
-                        record_data[key] = str(base_path / rel_path)
+                        abs_path = str(base_path / rel_path)
+                        record_data[key] = abs_path
+                        _logger.debug(f"[썸네일] 레코드 {idx} - {key}: 변환된 절대 경로={abs_path}")
+                else:
+                    _logger.debug(f"[썸네일] 레코드 {idx} - {key}: 경로 없음")
 
             record = CaptureRecord.from_dict(record_data)
             model.add_record(record)
 
+        _logger.info(f"[썸네일] from_project_dict 완료: 총 {len(model)}개 레코드 복원")
         return model

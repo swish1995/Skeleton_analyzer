@@ -339,21 +339,28 @@ class ProjectManager:
 
     def _extract_images(self, zf: zipfile.ZipFile, target_dir: Path) -> int:
         """이미지를 캡처 디렉토리로 추출"""
-        self._logger.debug(f"이미지 추출 시작: 대상 디렉토리={target_dir}")
+        self._logger.info(f"[썸네일] _extract_images 시작: 대상 디렉토리={target_dir}")
+
+        # ZIP 파일 내 모든 파일 목록 출력
+        all_names = zf.namelist()
+        self._logger.debug(f"[썸네일] ZIP 파일 내 전체 목록: {all_names}")
+
+        image_files = [n for n in all_names if n.startswith('images/') and not n.endswith('/')]
+        self._logger.info(f"[썸네일] 추출할 이미지 파일 수: {len(image_files)}")
+
         count = 0
-        for name in zf.namelist():
-            if name.startswith('images/') and not name.endswith('/'):
-                # images/ 접두사 제거
-                relative_path = name[7:]  # 'images/' 제거
-                target_path = target_dir / relative_path
-                target_path.parent.mkdir(parents=True, exist_ok=True)
+        for name in image_files:
+            # images/ 접두사 제거
+            relative_path = name[7:]  # 'images/' 제거
+            target_path = target_dir / relative_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
 
-                with zf.open(name) as src, open(target_path, 'wb') as dst:
-                    dst.write(src.read())
-                count += 1
-                self._logger.debug(f"이미지 추출: {name} -> {target_path}")
+            with zf.open(name) as src, open(target_path, 'wb') as dst:
+                dst.write(src.read())
+            count += 1
+            self._logger.debug(f"[썸네일] 이미지 추출: {name} -> {target_path} (존재: {target_path.exists()})")
 
-        self._logger.info(f"이미지 추출 완료: {count}개 파일 -> {target_dir}")
+        self._logger.info(f"[썸네일] _extract_images 완료: {count}개 파일 -> {target_dir}")
         return count
 
     # === 새 프로젝트 ===

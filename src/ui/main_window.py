@@ -905,14 +905,17 @@ class MainWindow(QMainWindow):
                 "directories.capture_save",
                 "captures"
             ))
+            self._logger.info(f"[썸네일] capture_dir 설정값: {capture_dir}, 절대경로: {capture_dir.absolute()}")
 
             info = self._project_manager.load(
                 Path(file_path),
                 check_video=True,
                 capture_dir=capture_dir,
             )
+            self._logger.info(f"[썸네일] 프로젝트 로드 결과: capture_count={info.capture_count}, image_count={info.image_count}")
 
             state = self._project_manager.get_state()
+            self._logger.info(f"[썸네일] capture_model 존재 여부: {state['capture_model'] is not None}")
 
             # 동영상 누락 시 처리
             if info.video_missing:
