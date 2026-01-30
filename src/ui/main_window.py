@@ -302,8 +302,16 @@ class MainWindow(QMainWindow):
         self._save_btn.clicked.connect(self._save_project)
         self._toolbar.addWidget(self._save_btn)
 
-        # 구분선
-        self._toolbar.addSeparator()
+        # 프로젝트 버튼과 보기 토글 버튼 사이 간격 (동영상 플레이어 최소 너비에 맞춤)
+        project_spacer = QWidget()
+        project_spacer.setFixedWidth(260)
+        self._toolbar.addWidget(project_spacer)
+
+        # 보기 라벨
+        from PyQt6.QtWidgets import QLabel
+        view_label = QLabel("보기:")
+        view_label.setStyleSheet("color: #999999; font-size: 12px; margin-right: 4px;")
+        self._toolbar.addWidget(view_label)
 
         # 상태 버튼 (토글)
         self._status_btn = QPushButton(f" 상태 ({shortcut_prefix}1)")
