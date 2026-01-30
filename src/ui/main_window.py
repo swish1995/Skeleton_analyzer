@@ -103,6 +103,7 @@ class MainWindow(QMainWindow):
         self.player_widget.frame_changed.connect(self._on_frame_changed)
         self.player_widget.capture_requested.connect(self._on_capture_requested)
         self.player_widget.video_loaded.connect(self._on_video_loaded)
+        self.player_widget.video_open_requested.connect(self._load_video)
         self.status_widget.exit_requested.connect(self.close)
         # 캡처 추가/변경 시 dirty 표시
         self.status_widget.capture_added.connect(self._mark_project_dirty)
@@ -576,32 +577,37 @@ class MainWindow(QMainWindow):
         """
         self._logger.info(f"비디오 로드 요청: {file_path} (프로젝트 로드: {from_project_load})")
 
-        # 프로젝트 로드에서 호출된 경우가 아니고, 저장되지 않은 변경사항이 있는 경우
-        if not from_project_load and self._project_manager.is_dirty:
-            from PyQt6.QtWidgets import QStyle
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("저장되지 않은 변경사항")
-            msg_box.setText(
-                "새 동영상을 로드하면 현재 캡처 데이터가 삭제됩니다.\n\n"
-                "저장되지 않은 캡처 이미지도 함께 삭제됩니다.\n"
-                "계속하시겠습니까?"
-            )
-            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-            msg_box.setIconPixmap(icon.pixmap(64, 64))
-            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
-            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
-            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-            msg_box.setDefaultButton(save_btn)
-            msg_box.exec()
+        # 프로젝트 로드에서 호출된 경우가 아닐 때 초기화 처리
+        if not from_project_load:
+            # 기존 캡처 데이터가 있는 경우 확인
+            record_count = self.status_widget.spreadsheet_widget.get_record_count()
+            if record_count > 0:
+                from PyQt6.QtWidgets import QStyle
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("기존 데이터 확인")
+                msg_box.setText(
+                    f"현재 {record_count}개의 캡처 데이터가 있습니다.\n\n"
+                    "새 동영상을 로드하면 기존 데이터가 삭제됩니다.\n"
+                    "계속하시겠습니까?"
+                )
+                icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
+                msg_box.setIconPixmap(icon.pixmap(64, 64))
+                save_btn = msg_box.addButton("저장 후 진행", QMessageBox.ButtonRole.AcceptRole)
+                discard_btn = msg_box.addButton("삭제 후 진행", QMessageBox.ButtonRole.DestructiveRole)
+                cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+                msg_box.setDefaultButton(save_btn)
+                msg_box.exec()
 
-            if msg_box.clickedButton() == cancel_btn:
-                return
-            elif msg_box.clickedButton() == save_btn:
-                if not self._save_project():
+                if msg_box.clickedButton() == cancel_btn:
                     return
+                elif msg_box.clickedButton() == save_btn:
+                    if not self._save_project():
+                        return
 
-            # 기존 캡처 이미지 정리
+            # 기존 데이터 정리
             self._cleanup_capture_images()
+            self.status_widget.spreadsheet_widget.clear_all()
+            self.player_widget.stop()
 
         if self.player_widget.load_video(file_path):
             self._add_recent_file(file_path)
@@ -610,9 +616,9 @@ class MainWindow(QMainWindow):
             # 새 동영상이므로 프로젝트 상태 초기화
             if not from_project_load:
                 self._project_manager.new_project()
-                self.status_widget.spreadsheet_widget.clear_all()
                 self._update_window_title()
         else:
+            self._logger.error(f"비디오 로드 실패: {file_path}")
             QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
 
     def _cleanup_capture_images(self, silent: bool = False):

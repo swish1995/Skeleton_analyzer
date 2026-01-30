@@ -27,6 +27,8 @@ class PlayerWidget(QWidget):
     capture_requested = pyqtSignal(float, int)
     # 동영상 로드 시그널: (video_name)
     video_loaded = pyqtSignal(str)
+    # 동영상 열기 요청 시그널: (file_path)
+    video_open_requested = pyqtSignal(str)
 
     # 버튼 스타일 (ai-generate 스타일)
     BUTTON_STYLES = {
@@ -480,7 +482,8 @@ class PlayerWidget(QWidget):
             "동영상 파일 (*.mp4 *.avi *.mov *.mkv);;모든 파일 (*.*)"
         )
         if file_path:
-            self.load_video(file_path)
+            # main_window가 처리하도록 시그널 발생
+            self.video_open_requested.emit(file_path)
 
     @staticmethod
     def _format_time(seconds: float) -> str:
