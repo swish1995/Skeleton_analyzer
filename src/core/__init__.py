@@ -1,5 +1,6 @@
 # Core modules - business logic
 
+from .logger import setup_logging, get_logger
 from .capture_model import CaptureRecord, CaptureDataModel
 from .score_calculator import (
     get_rula_table_a_score,
@@ -15,6 +16,8 @@ from .score_calculator import (
 )
 
 __all__ = [
+    'setup_logging',
+    'get_logger',
     'CaptureRecord',
     'CaptureDataModel',
     'get_rula_table_a_score',

@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List, Set
 
 from .capture_model import CaptureDataModel, CaptureRecord
+from .logger import get_logger
 
 
 class LoadResult(Enum):
@@ -54,6 +55,7 @@ class ProjectManager:
     REQUIRED_FILES = ['project.json', 'video.json', 'captures.json', 'ui_state.json']
 
     def __init__(self):
+        self._logger = get_logger('project_manager')
         self._current_path: Optional[Path] = None
         self._is_dirty: bool = False
 
@@ -143,6 +145,8 @@ class ProjectManager:
         path = Path(path)
 
         try:
+            self._logger.debug(f"프로젝트 저장 시작: {path}")
+
             # 임시 파일에 먼저 저장 (안전한 저장)
             with tempfile.NamedTemporaryFile(delete=False, suffix='.skpx') as tmp:
                 tmp_path = Path(tmp.name)
@@ -154,9 +158,11 @@ class ProjectManager:
 
             self._current_path = path
             self.mark_clean()
+            self._logger.info(f"프로젝트 저장 완료: {path}")
             return True
 
         except Exception as e:
+            self._logger.error(f"프로젝트 저장 실패: {path}, 오류: {e}")
             # 임시 파일 정리
             if 'tmp_path' in locals() and tmp_path.exists():
                 tmp_path.unlink()
@@ -221,6 +227,9 @@ class ProjectManager:
 
                         zf.write(str(img_path), archive_path)
                         copied.add(path)
+                        self._logger.debug(f"이미지 ZIP에 복사: {img_path} -> {archive_path}")
+
+        self._logger.info(f"총 {len(copied)}개 이미지 ZIP에 복사 완료")
 
     # === 로드 ===
 
@@ -247,6 +256,7 @@ class ProjectManager:
             ProjectLoadError: 로드 실패 시
         """
         path = Path(path)
+        self._logger.debug(f"프로젝트 로드 시작: {path}")
 
         if not path.exists():
             raise ProjectLoadError(f"파일을 찾을 수 없습니다: {path}")
@@ -303,6 +313,8 @@ class ProjectManager:
                 else:
                     result = LoadResult.FULL
 
+                self._logger.info(f"프로젝트 로드 완료: {path} (캡처: {len(capture_model)}, 이미지: {image_count}, 동영상 누락: {video_missing})")
+
                 return LoadInfo(
                     result=result,
                     video_path=video_path,
@@ -327,6 +339,7 @@ class ProjectManager:
 
     def _extract_images(self, zf: zipfile.ZipFile, target_dir: Path) -> int:
         """이미지를 캡처 디렉토리로 추출"""
+        self._logger.debug(f"이미지 추출 시작: 대상 디렉토리={target_dir}")
         count = 0
         for name in zf.namelist():
             if name.startswith('images/') and not name.endswith('/'):
@@ -338,7 +351,9 @@ class ProjectManager:
                 with zf.open(name) as src, open(target_path, 'wb') as dst:
                     dst.write(src.read())
                 count += 1
+                self._logger.debug(f"이미지 추출: {name} -> {target_path}")
 
+        self._logger.info(f"이미지 추출 완료: {count}개 파일 -> {target_dir}")
         return count
 
     # === 새 프로젝트 ===

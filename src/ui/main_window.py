@@ -15,6 +15,7 @@ from .status_widget import StatusWidget
 from .settings_dialog import SettingsDialog
 from ..utils.config import Config
 from ..core.project_manager import ProjectManager, ProjectLoadError, LoadResult
+from ..core.logger import get_logger
 
 # 앱 이름 (환경변수로 변경 가능)
 APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
@@ -27,6 +28,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self._logger = get_logger('main_window')
+        self._logger.debug("MainWindow 초기화 시작")
+
         self._recent_files: List[str] = []
         self._recent_projects: List[str] = []
         self._settings = QSettings("SkeletonAnalyzer", "SkeletonAnalyzer")
@@ -37,6 +41,9 @@ class MainWindow(QMainWindow):
         self._init_menu()
         self._init_shortcuts()
         self._load_settings()
+
+        # 앱 시작 시 captures 디렉토리 전체 정리 (고아 이미지 삭제)
+        self._cleanup_all_captures()
 
     def _init_ui(self):
         """UI 초기화"""
@@ -293,6 +300,8 @@ class MainWindow(QMainWindow):
             file_path: 비디오 파일 경로
             from_project_load: 프로젝트 로드에서 호출된 경우 True (경고 건너뜀)
         """
+        self._logger.info(f"비디오 로드 요청: {file_path} (프로젝트 로드: {from_project_load})")
+
         # 프로젝트 로드에서 호출된 경우가 아니고, 저장되지 않은 변경사항이 있는 경우
         if not from_project_load and self._project_manager.is_dirty:
             from PyQt6.QtWidgets import QStyle
@@ -338,22 +347,67 @@ class MainWindow(QMainWindow):
         """
         캡처 이미지 디렉토리 정리 (삭제)
 
+        프로젝트 경로 또는 비디오 이름 기반으로 캡처 디렉토리를 찾아 삭제합니다.
+
         Args:
             silent: True이면 에러 무시, False이면 상태바에 에러 표시
         """
-        if self._video_name:
-            capture_dir = Path(self._config.get(
-                "directories.capture_save",
-                "captures"
-            )) / self._video_name
+        import shutil
 
+        capture_base = Path(self._config.get(
+            "directories.capture_save",
+            "captures"
+        ))
+
+        # 정리할 디렉토리 목록
+        dirs_to_clean = []
+
+        # 1. 프로젝트 경로 기반 (captures/{project_name}/)
+        if self._project_manager.current_path:
+            project_dir = capture_base / self._project_manager.current_path.stem
+            dirs_to_clean.append(('project', project_dir))
+            self._logger.debug(f"프로젝트 기반 정리 대상: {project_dir}")
+
+        # 2. 비디오 이름 기반 (captures/{video_name}/)
+        if self._video_name:
+            video_dir = capture_base / self._video_name
+            # 프로젝트 디렉토리와 다른 경우에만 추가
+            if not dirs_to_clean or dirs_to_clean[0][1] != video_dir:
+                dirs_to_clean.append(('video', video_dir))
+                self._logger.debug(f"비디오 기반 정리 대상: {video_dir}")
+
+        # 디렉토리 정리
+        for source, capture_dir in dirs_to_clean:
             if capture_dir.exists():
-                import shutil
                 try:
                     shutil.rmtree(capture_dir)
+                    self._logger.info(f"캡처 이미지 삭제 완료 ({source}): {capture_dir}")
                 except Exception as e:
+                    self._logger.error(f"캡처 이미지 삭제 실패 ({source}): {capture_dir}, 오류: {e}")
                     if not silent:
                         self._status_bar.showMessage(f"이미지 삭제 실패: {e}")
+
+    def _cleanup_all_captures(self):
+        """
+        captures 디렉토리 전체 정리
+
+        앱 시작 시 또는 정상 종료 시 호출하여 모든 캡처 이미지를 삭제합니다.
+        - 앱 시작 시: 비정상 종료로 남은 고아 이미지 정리
+        - 정상 종료 시: 저장되지 않은 이미지 정리
+        """
+        import shutil
+
+        capture_base = Path(self._config.get(
+            "directories.capture_save",
+            "captures"
+        ))
+
+        if capture_base.exists():
+            try:
+                shutil.rmtree(capture_base)
+                self._logger.info(f"captures 전체 삭제 완료: {capture_base}")
+            except Exception as e:
+                self._logger.error(f"captures 전체 삭제 실패: {capture_base}, 오류: {e}")
 
     def _add_recent_file(self, file_path: str):
         """최근 파일 목록에 추가"""
@@ -421,6 +475,8 @@ class MainWindow(QMainWindow):
         """창 닫기 이벤트"""
         from PyQt6.QtWidgets import QStyle
 
+        self._logger.info("앱 종료 요청")
+
         # 저장되지 않은 변경사항 확인
         if self._project_manager.is_dirty:
             msg_box = QMessageBox(self)
@@ -447,9 +503,7 @@ class MainWindow(QMainWindow):
                 if not self._save_project():
                     event.ignore()
                     return
-            elif reply == QMessageBox.StandardButton.Discard:
-                # 캡처 이미지 정리
-                self._cleanup_capture_images(silent=True)
+            # Discard: 저장 안 하고 종료 진행 (정리는 종료 시 일괄 처리)
 
         # 종료 확인 다이얼로그
         msg_box = QMessageBox(self)
@@ -464,11 +518,18 @@ class MainWindow(QMainWindow):
         reply = msg_box.exec()
 
         if reply != QMessageBox.StandardButton.Yes:
+            self._logger.debug("사용자가 종료 취소")
             event.ignore()
             return
 
+        self._logger.info("앱 종료 진행")
         self._save_settings()
         self.player_widget.release()
+
+        # 정상 종료 시 captures 전체 정리
+        self._cleanup_all_captures()
+
+        self._logger.info("앱 종료 완료")
         super().closeEvent(event)
 
     # === 프로젝트 관련 메서드 ===
@@ -563,6 +624,7 @@ class MainWindow(QMainWindow):
 
     def _load_project(self, file_path: str):
         """프로젝트 로드"""
+        self._logger.info(f"프로젝트 로드 시작: {file_path}")
         try:
             # 캡처 디렉토리 설정
             capture_dir = Path(self._config.get(
@@ -622,8 +684,10 @@ class MainWindow(QMainWindow):
             self._add_recent_project(file_path)
             self._update_window_title()
             self._status_bar.showMessage(f"프로젝트 로드됨: {file_path}")
+            self._logger.info(f"프로젝트 로드 완료: 캡처 {info.capture_count}개, 이미지 {info.image_count}개")
 
         except ProjectLoadError as e:
+            self._logger.error(f"프로젝트 로드 실패: {file_path}, 오류: {e}")
             QMessageBox.critical(self, "프로젝트 로드 오류", str(e))
 
     def _save_project(self) -> bool:
@@ -656,6 +720,7 @@ class MainWindow(QMainWindow):
 
     def _do_save_project(self, path: Path) -> bool:
         """실제 프로젝트 저장 수행"""
+        self._logger.info(f"프로젝트 저장 시작: {path}")
         try:
             # 현재 상태 수집
             capture_dir = Path(self._config.get(
@@ -676,9 +741,11 @@ class MainWindow(QMainWindow):
                 self._add_recent_project(str(path))
                 self._update_window_title()
                 self._status_bar.showMessage(f"프로젝트 저장됨: {path}")
+                self._logger.info(f"프로젝트 저장 완료: {path}")
                 return True
 
         except Exception as e:
+            self._logger.error(f"프로젝트 저장 실패: {path}, 오류: {e}")
             QMessageBox.critical(self, "저장 오류", f"프로젝트 저장 실패:\n{e}")
 
         return False

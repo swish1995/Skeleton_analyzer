@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QObject, QEvent, Qt
 from PyQt6.QtGui import QIcon
 
+from src.core.logger import setup_logging, get_logger
 from src.ui.main_window import MainWindow
 
 # 앱 이름 (환경변수로 변경 가능)
@@ -83,6 +84,12 @@ class GlobalEventFilter(QObject):
 
 
 def main():
+    # 로깅 시스템 초기화 (가장 먼저)
+    setup_logging()
+    logger = get_logger('main')
+    logger.info("=" * 50)
+    logger.info("앱 시작")
+
     # macOS dock 툴팁 이름 설정 (QApplication 생성 전에 호출)
     set_process_name(APP_NAME)
 
