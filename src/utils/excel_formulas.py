@@ -355,3 +355,251 @@ def get_si_risk_formula(row: int, score_col: str) -> str:
     s = f"{score_col}{row}"
 
     return f'=IF({s}<3,"safe",IF({s}<7,"uncertain","hazardous"))'
+
+
+# =============================================================================
+# RULA 세부 항목 합산 수식
+# =============================================================================
+
+def get_rula_upper_arm_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    RULA 상박 총점 수식 생성
+
+    수식 로직:
+        base + shoulder_raised + abducted + supported
+
+    Note:
+        supported는 -1 또는 0 (팔 지지 시 감점)
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - shoulder_raised: 어깨 올림 컬럼
+            - abducted: 외전 컬럼
+            - supported: 팔 지지 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    raised = f"{cols['shoulder_raised']}{row}"
+    abducted = f"{cols['abducted']}{row}"
+    supported = f"{cols['supported']}{row}"
+
+    return f"={base}+{raised}+{abducted}+{supported}"
+
+
+def get_rula_lower_arm_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    RULA 하박 총점 수식 생성
+
+    수식 로직:
+        base + working_across
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - working_across: 중앙선 교차 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    across = f"{cols['working_across']}{row}"
+
+    return f"={base}+{across}"
+
+
+def get_rula_wrist_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    RULA 손목 총점 수식 생성
+
+    수식 로직:
+        base + bent_midline
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - bent_midline: 중립에서 꺾임 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    bent = f"{cols['bent_midline']}{row}"
+
+    return f"={base}+{bent}"
+
+
+def get_rula_neck_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    RULA 목 총점 수식 생성
+
+    수식 로직:
+        base + twisted + side_bending
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - twisted: 회전 컬럼
+            - side_bending: 측굴 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    twisted = f"{cols['twisted']}{row}"
+    side = f"{cols['side_bending']}{row}"
+
+    return f"={base}+{twisted}+{side}"
+
+
+def get_rula_trunk_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    RULA 몸통 총점 수식 생성
+
+    수식 로직:
+        base + twisted + side_bending
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - twisted: 회전 컬럼
+            - side_bending: 측굴 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    twisted = f"{cols['twisted']}{row}"
+    side = f"{cols['side_bending']}{row}"
+
+    return f"={base}+{twisted}+{side}"
+
+
+# =============================================================================
+# REBA 세부 항목 합산 수식
+# =============================================================================
+
+def get_reba_neck_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    REBA 목 총점 수식 생성
+
+    수식 로직:
+        base + twist_side
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - twist_side: 회전/측굴 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    twist_side = f"{cols['twist_side']}{row}"
+
+    return f"={base}+{twist_side}"
+
+
+def get_reba_trunk_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    REBA 몸통 총점 수식 생성
+
+    수식 로직:
+        base + twist_side
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - twist_side: 회전/측굴 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    twist_side = f"{cols['twist_side']}{row}"
+
+    return f"={base}+{twist_side}"
+
+
+def get_reba_leg_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    REBA 다리 총점 수식 생성
+
+    수식 로직:
+        base + knee_30_60 + knee_over_60
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - knee_30_60: 무릎 30-60° 컬럼
+            - knee_over_60: 무릎 60°+ 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    knee_30_60 = f"{cols['knee_30_60']}{row}"
+    knee_over_60 = f"{cols['knee_over_60']}{row}"
+
+    return f"={base}+{knee_30_60}+{knee_over_60}"
+
+
+def get_reba_upper_arm_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    REBA 상완 총점 수식 생성
+
+    수식 로직:
+        base + shoulder_raised + abducted + supported
+
+    Note:
+        supported는 -1 또는 0 (팔 지지 시 감점)
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - shoulder_raised: 어깨 올림 컬럼
+            - abducted: 외전 컬럼
+            - supported: 팔 지지 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    raised = f"{cols['shoulder_raised']}{row}"
+    abducted = f"{cols['abducted']}{row}"
+    supported = f"{cols['supported']}{row}"
+
+    return f"={base}+{raised}+{abducted}+{supported}"
+
+
+def get_reba_wrist_total_formula(row: int, cols: Dict[str, str]) -> str:
+    """
+    REBA 손목 총점 수식 생성
+
+    수식 로직:
+        base + twisted
+
+    Args:
+        row: Excel 행 번호
+        cols: 컬럼 매핑 딕셔너리
+            - base: 기본 점수 컬럼
+            - twisted: 비틀림 컬럼
+
+    Returns:
+        Excel 수식 문자열
+    """
+    base = f"{cols['base']}{row}"
+    twisted = f"{cols['twisted']}{row}"
+
+    return f"={base}+{twisted}"

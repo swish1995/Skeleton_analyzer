@@ -44,6 +44,17 @@ from ..utils.excel_formulas import (
     get_nle_risk_formula,
     get_si_score_formula,
     get_si_risk_formula,
+    # 세부 항목 합산 수식
+    get_rula_upper_arm_total_formula,
+    get_rula_lower_arm_total_formula,
+    get_rula_wrist_total_formula,
+    get_rula_neck_total_formula,
+    get_rula_trunk_total_formula,
+    get_reba_neck_total_formula,
+    get_reba_trunk_total_formula,
+    get_reba_leg_total_formula,
+    get_reba_upper_arm_total_formula,
+    get_reba_wrist_total_formula,
 )
 
 
@@ -64,91 +75,144 @@ THUMBNAIL_COLUMNS = [
 # 컬럼 정의
 # =============================================================================
 
-# 컬럼 정보: (필드명, 헤더, 그룹, 편집가능, 값범위)
+# 컬럼 정보: (필드명, 헤더, 그룹, 편집가능, 값범위, 툴팁)
 COLUMN_DEFINITIONS = [
     # 기본 정보 (3개)
-    ('timestamp', 'Time', 'info', False, None),
-    ('frame_number', 'Frame', 'info', False, None),
-    ('capture_time', 'Captured', 'info', False, None),
+    ('timestamp', 'Time', 'info', False, None, '동영상 시간\n캡처된 프레임의 타임스탬프'),
+    ('frame_number', 'Frame', 'info', False, None, '프레임 번호\n동영상의 프레임 인덱스'),
+    ('capture_time', 'Captured', 'info', False, None, '캡처 시각\n실제 캡처된 시간'),
 
     # RULA 부위 (7개)
-    ('rula_upper_arm', 'Upper Arm', 'rula_body', False, None),
-    ('rula_lower_arm', 'Lower Arm', 'rula_body', False, None),
-    ('rula_wrist', 'Wrist', 'rula_body', False, None),
-    ('rula_wrist_twist', 'Wrist Twist', 'rula_body', False, None),
-    ('rula_neck', 'Neck', 'rula_body', False, None),
-    ('rula_trunk', 'Trunk', 'rula_body', False, None),
-    ('rula_leg', 'Leg', 'rula_body', False, None),
+    ('rula_upper_arm', 'Upper Arm', 'rula_body', False, None,
+     '상박 총점\n= 기본 + 어깨올림 + 외전 + 팔지지\n어깨 굴곡/신전 각도에 따른 점수'),
+    ('rula_lower_arm', 'Lower Arm', 'rula_body', False, None,
+     '하박 총점\n= 기본 + 중앙선교차\n팔꿈치 굴곡 각도에 따른 점수'),
+    ('rula_wrist', 'Wrist', 'rula_body', False, None,
+     '손목 총점\n= 기본 + 측면꺾임\n손목 굴곡/신전 각도에 따른 점수'),
+    ('rula_wrist_twist', 'Wrist Twist', 'rula_body', False, None,
+     '손목 비틀림\n손목 회전 정도 (1-2)'),
+    ('rula_neck', 'Neck', 'rula_body', False, None,
+     '목 총점\n= 기본 + 회전 + 측굴\n목 굴곡/신전 각도에 따른 점수'),
+    ('rula_trunk', 'Trunk', 'rula_body', False, None,
+     '몸통 총점\n= 기본 + 회전 + 측굴\n몸통 굴곡 각도에 따른 점수'),
+    ('rula_leg', 'Leg', 'rula_body', False, None,
+     '다리 점수\n다리 지지 상태 (1-2)'),
 
     # RULA 수동 입력 (4개)
-    ('rula_muscle_use_a', 'Muscle A', 'rula_manual', True, (0, 1)),
-    ('rula_force_load_a', 'Force A', 'rula_manual', True, (0, 3)),
-    ('rula_muscle_use_b', 'Muscle B', 'rula_manual', True, (0, 1)),
-    ('rula_force_load_b', 'Force B', 'rula_manual', True, (0, 3)),
+    ('rula_muscle_use_a', 'Muscle A', 'rula_manual', True, (0, 1),
+     '근육 사용 A\n정적/반복 자세 유지 시 +1'),
+    ('rula_force_load_a', 'Force A', 'rula_manual', True, (0, 3),
+     '힘/하중 A\n0: 2kg 미만\n1: 2-10kg 간헐적\n2: 2-10kg 정적/반복\n3: 10kg+ 또는 충격'),
+    ('rula_muscle_use_b', 'Muscle B', 'rula_manual', True, (0, 1),
+     '근육 사용 B\n정적/반복 자세 유지 시 +1'),
+    ('rula_force_load_b', 'Force B', 'rula_manual', True, (0, 3),
+     '힘/하중 B\n0: 2kg 미만\n1: 2-10kg 간헐적\n2: 2-10kg 정적/반복\n3: 10kg+ 또는 충격'),
 
     # RULA 결과 (4개)
-    ('rula_score_a', 'Score A', 'rula_result', False, None),
-    ('rula_score_b', 'Score B', 'rula_result', False, None),
-    ('rula_score', 'Score', 'rula_result', False, None),
-    ('rula_risk', 'Risk', 'rula_result', False, None),
+    ('rula_score_a', 'Score A', 'rula_result', False, None,
+     'Wrist & Arm Score\n= Table A + Muscle A + Force A'),
+    ('rula_score_b', 'Score B', 'rula_result', False, None,
+     'Neck Trunk Leg Score\n= Table B + Muscle B + Force B'),
+    ('rula_score', 'Score', 'rula_result', False, None,
+     'RULA 최종 점수\n= Table C(Score A, Score B)'),
+    ('rula_risk', 'Risk', 'rula_result', False, None,
+     'RULA 위험 수준\n1-2: 허용 가능\n3-4: 추가 조사 필요\n5-6: 빠른 개선 필요\n7: 즉시 개선 필요'),
 
     # REBA 부위 (6개)
-    ('reba_neck', 'Neck', 'reba_body', False, None),
-    ('reba_trunk', 'Trunk', 'reba_body', False, None),
-    ('reba_leg', 'Leg', 'reba_body', False, None),
-    ('reba_upper_arm', 'Upper Arm', 'reba_body', False, None),
-    ('reba_lower_arm', 'Lower Arm', 'reba_body', False, None),
-    ('reba_wrist', 'Wrist', 'reba_body', False, None),
+    ('reba_neck', 'Neck', 'reba_body', False, None,
+     '목 총점\n= 기본 + 회전/측굴\n목 굴곡 각도에 따른 점수'),
+    ('reba_trunk', 'Trunk', 'reba_body', False, None,
+     '몸통 총점\n= 기본 + 회전/측굴\n몸통 굴곡 각도에 따른 점수'),
+    ('reba_leg', 'Leg', 'reba_body', False, None,
+     '다리 총점\n= 기본 + 무릎굴곡\n다리 지지 상태 및 무릎 각도'),
+    ('reba_upper_arm', 'Upper Arm', 'reba_body', False, None,
+     '상완 총점\n= 기본 + 어깨올림 + 외전 + 팔지지\n어깨 굴곡 각도에 따른 점수'),
+    ('reba_lower_arm', 'Lower Arm', 'reba_body', False, None,
+     '하완 점수\n팔꿈치 굴곡 각도 (1-2)'),
+    ('reba_wrist', 'Wrist', 'reba_body', False, None,
+     '손목 총점\n= 기본 + 비틀림\n손목 굴곡 각도에 따른 점수'),
 
     # REBA 수동 입력 (3개)
-    ('reba_load_force', 'Load', 'reba_manual', True, (0, 3)),
-    ('reba_coupling', 'Coupling', 'reba_manual', True, (0, 3)),
-    ('reba_activity', 'Activity', 'reba_manual', True, (0, 3)),
+    ('reba_load_force', 'Load', 'reba_manual', True, (0, 3),
+     '하중/힘\n0: 5kg 미만\n1: 5-10kg\n2: 10kg 초과\n3: 충격 또는 급격한 힘'),
+    ('reba_coupling', 'Coupling', 'reba_manual', True, (0, 3),
+     '커플링\n0: 좋음 (손잡이)\n1: 보통 (허용 가능)\n2: 나쁨 (어려움)\n3: 부적합'),
+    ('reba_activity', 'Activity', 'reba_manual', True, (0, 3),
+     '활동 점수\n정적 자세, 반복 동작,\n급격한 자세 변화 각 +1'),
 
     # REBA 결과 (4개)
-    ('reba_score_a', 'Score A', 'reba_result', False, None),
-    ('reba_score_b', 'Score B', 'reba_result', False, None),
-    ('reba_score', 'Score', 'reba_result', False, None),
-    ('reba_risk', 'Risk', 'reba_result', False, None),
+    ('reba_score_a', 'Score A', 'reba_result', False, None,
+     'Score A\n= Table A + Load/Force'),
+    ('reba_score_b', 'Score B', 'reba_result', False, None,
+     'Score B\n= Table B + Coupling'),
+    ('reba_score', 'Score', 'reba_result', False, None,
+     'REBA 최종 점수\n= Table C + Activity'),
+    ('reba_risk', 'Risk', 'reba_result', False, None,
+     'REBA 위험 수준\n1: 무시 가능\n2-3: 낮음\n4-7: 중간\n8-10: 높음\n11+: 매우 높음'),
 
     # OWAS 부위 (3개)
-    ('owas_back', 'Back', 'owas_body', False, None),
-    ('owas_arms', 'Arms', 'owas_body', False, None),
-    ('owas_legs', 'Legs', 'owas_body', False, None),
+    ('owas_back', 'Back', 'owas_body', False, None,
+     '등 자세 코드\n1: 곧은\n2: 굽힌\n3: 비튼\n4: 굽히고 비튼'),
+    ('owas_arms', 'Arms', 'owas_body', False, None,
+     '팔 자세 코드\n1: 양팔 어깨 아래\n2: 한팔 어깨 위\n3: 양팔 어깨 위'),
+    ('owas_legs', 'Legs', 'owas_body', False, None,
+     '다리 자세 코드\n1: 앉음\n2: 양다리 펴고 서기\n3: 한다리로 서기\n4: 양무릎 굽힘\n5: 한무릎 굽힘\n6: 무릎 꿇음\n7: 이동'),
 
     # OWAS 수동 입력 (1개)
-    ('owas_load', 'Load', 'owas_manual', True, (1, 3)),
+    ('owas_load', 'Load', 'owas_manual', True, (1, 3),
+     '하중 코드\n1: 10kg 미만\n2: 10-20kg\n3: 20kg 초과'),
 
     # OWAS 결과 (3개)
-    ('owas_code', 'Code', 'owas_result', False, None),
-    ('owas_ac', 'AC', 'owas_result', False, None),
-    ('owas_risk', 'Risk', 'owas_result', False, None),
+    ('owas_code', 'Code', 'owas_result', False, None,
+     '자세 코드\n등+팔+다리+하중 (4자리)'),
+    ('owas_ac', 'AC', 'owas_result', False, None,
+     'Action Category\n1: 정상\n2: 약간 유해\n3: 명백히 유해\n4: 매우 유해'),
+    ('owas_risk', 'Risk', 'owas_result', False, None,
+     'OWAS 위험 수준\nAC 1: 정상\nAC 2: 약간 유해\nAC 3: 명백히 유해\nAC 4: 매우 유해'),
 
     # NLE 입력 (7개)
-    ('nle_h', 'H (cm)', 'nle_input', True, (25, 63)),
-    ('nle_v', 'V (cm)', 'nle_input', True, (0, 175)),
-    ('nle_d', 'D (cm)', 'nle_input', True, (25, 175)),
-    ('nle_a', 'A (°)', 'nle_input', True, (0, 135)),
-    ('nle_f', 'F (/min)', 'nle_input', True, (0.2, 15)),
-    ('nle_c', 'Coupling', 'nle_input', True, (1, 3)),
-    ('nle_load', 'Load (kg)', 'nle_input', True, (0, 100)),
+    ('nle_h', 'H (cm)', 'nle_input', True, (25, 63),
+     '수평 거리 (H)\n손과 발목 사이 거리 (cm)\n범위: 25-63cm'),
+    ('nle_v', 'V (cm)', 'nle_input', True, (0, 175),
+     '수직 위치 (V)\n손의 바닥으로부터 높이 (cm)\n범위: 0-175cm'),
+    ('nle_d', 'D (cm)', 'nle_input', True, (25, 175),
+     '수직 이동 거리 (D)\n들기 시작과 끝의 높이 차이 (cm)\n범위: 25-175cm'),
+    ('nle_a', 'A (°)', 'nle_input', True, (0, 135),
+     '비대칭 각도 (A)\n몸통 비틀림 각도 (°)\n범위: 0-135°'),
+    ('nle_f', 'F (/min)', 'nle_input', True, (0.2, 15),
+     '빈도 (F)\n분당 들기 횟수\n범위: 0.2-15회/분'),
+    ('nle_c', 'Coupling', 'nle_input', True, (1, 3),
+     '커플링 (C)\n1: 좋음 (손잡이)\n2: 보통\n3: 나쁨'),
+    ('nle_load', 'Load (kg)', 'nle_input', True, (0, 100),
+     '실제 하중\n들어 올리는 물체의 무게 (kg)'),
 
     # NLE 결과 (3개)
-    ('nle_rwl', 'RWL', 'nle_result', False, None),
-    ('nle_li', 'LI', 'nle_result', False, None),
-    ('nle_risk', 'Risk', 'nle_result', False, None),
+    ('nle_rwl', 'RWL', 'nle_result', False, None,
+     '권장 중량 한계 (RWL)\nRecommended Weight Limit (kg)'),
+    ('nle_li', 'LI', 'nle_result', False, None,
+     '들기 지수 (LI)\nLifting Index = Load / RWL'),
+    ('nle_risk', 'Risk', 'nle_result', False, None,
+     'NLE 위험 수준\nLI ≤ 1: 안전\nLI 1-3: 증가된 위험\nLI > 3: 높은 위험'),
 
     # SI 입력 (6개)
-    ('si_ie', 'IE', 'si_input', True, (1, 5)),
-    ('si_de', 'DE', 'si_input', True, (1, 5)),
-    ('si_em', 'EM', 'si_input', True, (1, 5)),
-    ('si_hwp', 'HWP', 'si_input', True, (1, 5)),
-    ('si_sw', 'SW', 'si_input', True, (1, 5)),
-    ('si_dd', 'DD', 'si_input', True, (1, 5)),
+    ('si_ie', 'IE', 'si_input', True, (1, 5),
+     '힘의 강도 (IE)\nIntensity of Exertion\n1: 가벼움 ~ 5: 최대'),
+    ('si_de', 'DE', 'si_input', True, (1, 5),
+     '힘 지속시간 (DE)\nDuration of Exertion\n1: <10% ~ 5: ≥80%'),
+    ('si_em', 'EM', 'si_input', True, (1, 5),
+     '분당 힘 횟수 (EM)\nEfforts per Minute\n1: <4 ~ 5: ≥20'),
+    ('si_hwp', 'HWP', 'si_input', True, (1, 5),
+     '손/손목 자세 (HWP)\nHand/Wrist Posture\n1: 중립 ~ 5: 극심한 편향'),
+    ('si_sw', 'SW', 'si_input', True, (1, 5),
+     '작업 속도 (SW)\nSpeed of Work\n1: 매우 느림 ~ 5: 빠름'),
+    ('si_dd', 'DD', 'si_input', True, (1, 5),
+     '일일 작업시간 (DD)\nDuration per Day\n1: ≤1시간 ~ 5: ≥8시간'),
 
     # SI 결과 (2개)
-    ('si_score', 'Score', 'si_result', False, None),
-    ('si_risk', 'Risk', 'si_result', False, None),
+    ('si_score', 'Score', 'si_result', False, None,
+     'SI 점수\nStrain Index\n= IE×DE×EM×HWP×SW×DD'),
+    ('si_risk', 'Risk', 'si_result', False, None,
+     'SI 위험 수준\nSI < 3: 안전\nSI 3-7: 불확실\nSI ≥ 7: 위험'),
 ]
 
 # 그룹별 색상
@@ -195,6 +259,99 @@ RISK_COLORS = {
     # 'safe' already defined for NLE
     'uncertain': QColor(255, 165, 0),     # 주황 (SI 3-7)
     'hazardous': QColor(255, 99, 71),     # 빨강 (SI >= 7)
+}
+
+# =============================================================================
+# Excel 세부 컬럼 정의 (Excel 내보내기 전용)
+# =============================================================================
+
+# 세부 컬럼 매핑: total_field -> [(detail_field, header), ...]
+# 각 부위의 세부 컬럼들 (토탈 컬럼 앞에 삽입됨)
+RULA_DETAIL_MAP = {
+    'rula_upper_arm': [
+        ('rula_upper_arm_base', 'Base'),
+        ('rula_upper_arm_shoulder_raised', '+Raised'),
+        ('rula_upper_arm_abducted', '+Abducted'),
+        ('rula_upper_arm_supported', '-Supported'),
+    ],
+    'rula_lower_arm': [
+        ('rula_lower_arm_base', 'Base'),
+        ('rula_lower_arm_working_across', '+Across'),
+    ],
+    'rula_wrist': [
+        ('rula_wrist_base', 'Base'),
+        ('rula_wrist_bent_midline', '+Bent'),
+    ],
+    'rula_neck': [
+        ('rula_neck_base', 'Base'),
+        ('rula_neck_twisted', '+Twisted'),
+        ('rula_neck_side_bending', '+Side'),
+    ],
+    'rula_trunk': [
+        ('rula_trunk_base', 'Base'),
+        ('rula_trunk_twisted', '+Twisted'),
+        ('rula_trunk_side_bending', '+Side'),
+    ],
+}
+
+REBA_DETAIL_MAP = {
+    'reba_neck': [
+        ('reba_neck_base', 'Base'),
+        ('reba_neck_twist_side', '+Twist/Side'),
+    ],
+    'reba_trunk': [
+        ('reba_trunk_base', 'Base'),
+        ('reba_trunk_twist_side', '+Twist/Side'),
+    ],
+    'reba_leg': [
+        ('reba_leg_base', 'Base'),
+        ('reba_leg_knee_30_60', '+Knee30-60'),
+        ('reba_leg_knee_over_60', '+Knee60+'),
+    ],
+    'reba_upper_arm': [
+        ('reba_upper_arm_base', 'Base'),
+        ('reba_upper_arm_shoulder_raised', '+Raised'),
+        ('reba_upper_arm_abducted', '+Abducted'),
+        ('reba_upper_arm_supported', '-Supported'),
+    ],
+    'reba_wrist': [
+        ('reba_wrist_base', 'Base'),
+        ('reba_wrist_twisted', '+Twisted'),
+    ],
+}
+
+# 세부 컬럼 그룹 색상
+DETAIL_GROUP_COLORS = {
+    'rula_detail': QColor(200, 210, 240),   # 연파랑 (RULA 세부)
+    'reba_detail': QColor(200, 235, 210),   # 연초록 (REBA 세부)
+}
+
+# Risk Level 한글 매핑 (영어 키 → 한글 표시)
+RISK_LABELS = {
+    # RULA Risk Level
+    'acceptable': '허용 가능',
+    'investigate': '추가 조사 필요',
+    'change_soon': '빠른 개선 필요',
+    'change_now': '즉시 개선 필요',
+    # REBA Risk Level
+    'negligible': '무시 가능',
+    'low': '낮음',
+    'medium': '중간',
+    'high': '높음',
+    'very_high': '매우 높음',
+    # OWAS Risk Level
+    'normal': '정상',
+    'slight': '약간 유해',
+    'harmful': '명백히 유해',
+    'very_harmful': '매우 유해',
+    # NLE Risk Level
+    'safe': '안전',
+    'increased': '증가된 위험',
+    # 'high' already defined for REBA
+    # SI Risk Level
+    # 'safe' already defined for NLE
+    'uncertain': '불확실',
+    'hazardous': '위험',
 }
 
 # 버튼 스타일 (PlayerWidget과 동일)
@@ -420,7 +577,8 @@ class CaptureSpreadsheetWidget(QWidget):
 
     def _setup_delegates(self):
         """수동 입력 컬럼에 SpinBox delegate 설정"""
-        for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS):
+        for col_idx, col_def in enumerate(COLUMN_DEFINITIONS):
+            field, header, group, editable, value_range = col_def[:5]
             if editable and value_range:
                 min_val, max_val = value_range
                 delegate = SpinBoxDelegate(min_val, max_val, self._table)
@@ -428,7 +586,7 @@ class CaptureSpreadsheetWidget(QWidget):
                 self._table.setItemDelegateForColumn(col_idx + self._thumbnail_count, delegate)
 
     def _apply_header_colors(self):
-        """헤더 배경색 및 스타일 적용"""
+        """헤더 배경색, 스타일 및 툴팁 적용"""
         from PyQt6.QtGui import QFont
 
         # 헤더 폰트 설정 (진하게, 약간 큰 사이즈)
@@ -443,15 +601,20 @@ class CaptureSpreadsheetWidget(QWidget):
             item.setBackground(QBrush(thumbnail_color))
             item.setForeground(QBrush(QColor(0, 0, 0)))  # 검은색 텍스트
             item.setFont(header_font)
+            item.setToolTip("클릭하여 원본 이미지 보기")
             self._table.setHorizontalHeaderItem(col_idx, item)
 
         # 데이터 컬럼 헤더
-        for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS):
+        for col_idx, col_def in enumerate(COLUMN_DEFINITIONS):
+            field, header, group, editable, value_range = col_def[:5]
+            tooltip = col_def[5] if len(col_def) > 5 else ''
             color = GROUP_COLORS.get(group, QColor(200, 200, 200))
             item = QTableWidgetItem(header)
             item.setBackground(QBrush(color))
             item.setForeground(QBrush(QColor(0, 0, 0)))  # 검은색 텍스트
             item.setFont(header_font)
+            if tooltip:
+                item.setToolTip(tooltip)
             self._table.setHorizontalHeaderItem(col_idx + self._thumbnail_count, item)
 
     def add_record(self, record: CaptureRecord) -> int:
@@ -493,7 +656,8 @@ class CaptureSpreadsheetWidget(QWidget):
             self._set_thumbnail_cell(row, col_idx, image_path)
 
         # 데이터 컬럼 업데이트
-        for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS):
+        for col_idx, col_def in enumerate(COLUMN_DEFINITIONS):
+            field, header, group, editable, value_range = col_def[:5]
             value = getattr(record, field, '')
 
             # 타임스탬프 포맷팅
@@ -503,6 +667,9 @@ class CaptureSpreadsheetWidget(QWidget):
                 value = f"{minutes:02d}:{seconds:06.3f}"
             elif field == 'capture_time' and isinstance(value, datetime):
                 value = value.strftime('%H:%M:%S')
+            # Risk 컬럼 한글 변환
+            elif field in ('rula_risk', 'reba_risk', 'owas_risk', 'nle_risk', 'si_risk'):
+                value = RISK_LABELS.get(str(value), str(value) if value else '')
             else:
                 value = str(value) if value is not None else ''
 
@@ -516,7 +683,7 @@ class CaptureSpreadsheetWidget(QWidget):
             color = GROUP_COLORS.get(group, QColor(255, 255, 255))
 
             # 위험 수준 컬럼은 위험도에 따른 색상
-            if field in ('rula_risk', 'reba_risk', 'owas_risk'):
+            if field in ('rula_risk', 'reba_risk', 'owas_risk', 'nle_risk', 'si_risk'):
                 risk_value = getattr(record, field, '')
                 color = RISK_COLORS.get(risk_value, color)
 
@@ -593,7 +760,8 @@ class CaptureSpreadsheetWidget(QWidget):
         if data_col >= len(COLUMN_DEFINITIONS):
             return
 
-        field, header, group, editable, value_range = COLUMN_DEFINITIONS[data_col]
+        col_def = COLUMN_DEFINITIONS[data_col]
+        field, header, group, editable, value_range = col_def[:5]
         if not editable:
             return
 
@@ -901,7 +1069,7 @@ class CaptureSpreadsheetWidget(QWidget):
         if result is None:
             return  # 취소됨
 
-        include_images, img_size, row_height, col_width, include_formulas = result
+        include_images, img_size, row_height, col_width, include_formulas, include_details = result
 
         default_filename = self._get_default_filename("xlsx")
         file_path, _ = QFileDialog.getSaveFileName(
@@ -926,7 +1094,7 @@ class CaptureSpreadsheetWidget(QWidget):
             img_col_offset = len(THUMBNAIL_COLUMNS) if include_images else 0
 
             # 컬럼 매핑 생성 (수식용)
-            col_mapping = self._build_column_mapping(img_col_offset)
+            col_mapping = self._build_column_mapping(img_col_offset, include_details)
 
             # 이미지 헤더 작성 (포함 옵션 선택 시)
             if include_images:
@@ -939,16 +1107,26 @@ class CaptureSpreadsheetWidget(QWidget):
                     # 이미지 컬럼 너비 설정
                     ws.column_dimensions[get_column_letter(col_idx)].width = col_width
 
+            # Excel 컬럼 목록 생성 (세부 항목 포함 시 토탈 앞에 세부 컬럼 삽입)
+            excel_columns = self._build_excel_columns(include_details)
+
             # 데이터 헤더 작성
-            for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
+            for col_idx, (field, header, group, is_detail) in enumerate(excel_columns, start=1):
                 cell = ws.cell(row=1, column=col_idx + img_col_offset, value=header)
 
-                # 배경색
-                color = GROUP_COLORS.get(group, QColor(200, 200, 200))
+                # 배경색 (세부 컬럼은 DETAIL_GROUP_COLORS, 일반 컬럼은 GROUP_COLORS)
+                if is_detail:
+                    color = DETAIL_GROUP_COLORS.get(group, QColor(200, 200, 200))
+                else:
+                    color = GROUP_COLORS.get(group, QColor(200, 200, 200))
                 fill_color = f"{color.red():02X}{color.green():02X}{color.blue():02X}"
                 cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
                 cell.font = Font(bold=True)
                 cell.alignment = Alignment(horizontal='center')
+
+                # 세부 컬럼은 좁게
+                if is_detail:
+                    ws.column_dimensions[get_column_letter(col_idx + img_col_offset)].width = 10
 
             # 데이터 작성
             for row_idx, record in enumerate(self._model.get_all_records(), start=2):
@@ -969,15 +1147,15 @@ class CaptureSpreadsheetWidget(QWidget):
                                 # 이미지 로드 실패 시 빈 셀
                                 pass
 
-                # 데이터 컬럼 작성
-                for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
+                # 데이터 컬럼 작성 (세부 항목 포함 시 토탈 앞에 세부 컬럼)
+                for col_idx, (field, header, group, is_detail) in enumerate(excel_columns, start=1):
                     value = getattr(record, field, '')
                     excel_col = col_idx + img_col_offset
 
                     # 수식 적용 필드인지 확인
                     formula = None
-                    if include_formulas:
-                        formula = self._get_formula_for_field(field, row_idx, col_mapping)
+                    if include_formulas and not is_detail:
+                        formula = self._get_formula_for_field(field, row_idx, col_mapping, include_details)
 
                     if formula:
                         # 수식 삽입
@@ -990,23 +1168,31 @@ class CaptureSpreadsheetWidget(QWidget):
                             value = f"{minutes:02d}:{seconds:06.3f}"
                         elif field == 'capture_time' and isinstance(value, datetime):
                             value = value.strftime('%H:%M:%S')
+                        # Risk 컬럼 한글 변환
+                        elif field in ('rula_risk', 'reba_risk', 'owas_risk', 'nle_risk', 'si_risk'):
+                            value = RISK_LABELS.get(str(value), str(value) if value else '')
 
                         cell = ws.cell(row=row_idx, column=excel_col, value=value)
 
-                    # 수동 입력 컬럼 노랑 배경
-                    if editable:
+                    # 세부 컬럼 배경색
+                    if is_detail:
+                        color = DETAIL_GROUP_COLORS.get(group, QColor(255, 255, 255))
+                        fill_color = f"{color.red():02X}{color.green():02X}{color.blue():02X}"
+                        cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
+                    # 수동 입력 컬럼 노랑 배경 (COLUMN_DEFINITIONS에서 editable 체크)
+                    elif self._is_editable_field(field):
                         cell.fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
-
-                    # 위험 수준 셀: 수식 포함 시 조건부 서식 대신 기본 스타일만 적용
-                    # (수식 결과는 동적이므로 조건부 서식으로 처리해야 하나, 현재는 생략)
-                    if field in ('rula_risk', 'reba_risk', 'owas_risk') and not include_formulas:
-                        risk_color = RISK_COLORS.get(value, QColor(255, 255, 255))
+                    # 위험 수준 셀 색상
+                    elif field in ('rula_risk', 'reba_risk', 'owas_risk', 'nle_risk', 'si_risk') and not include_formulas:
+                        risk_key = getattr(record, field, '')
+                        risk_color = RISK_COLORS.get(risk_key, QColor(255, 255, 255))
                         fill_color = f"{risk_color.red():02X}{risk_color.green():02X}{risk_color.blue():02X}"
                         cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
 
-            # 데이터 컬럼 너비 자동 조정
-            for col_idx in range(1, len(COLUMN_DEFINITIONS) + 1):
-                ws.column_dimensions[get_column_letter(col_idx + img_col_offset)].width = 12
+            # 데이터 컬럼 너비 자동 조정 (세부 컬럼 제외)
+            for col_idx, (field, header, group, is_detail) in enumerate(excel_columns, start=1):
+                if not is_detail:
+                    ws.column_dimensions[get_column_letter(col_idx + img_col_offset)].width = 12
 
             # 수식 포함 시 조회 테이블 시트 숨김
             if include_formulas:
@@ -1020,12 +1206,51 @@ class CaptureSpreadsheetWidget(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
 
-    def _build_column_mapping(self, img_col_offset: int) -> Dict[str, str]:
+    def _is_editable_field(self, field: str) -> bool:
+        """필드가 수동 입력 가능한지 확인"""
+        for col_def in COLUMN_DEFINITIONS:
+            if col_def[0] == field:
+                return col_def[3]  # editable 필드
+        return False
+
+    def _build_excel_columns(self, include_details: bool) -> list:
+        """
+        Excel 컬럼 목록 생성 (세부 항목 포함 시 토탈 앞에 세부 컬럼 삽입)
+
+        Args:
+            include_details: 세부 컬럼 포함 여부
+
+        Returns:
+            컬럼 정보 리스트: [(field, header, group, is_detail), ...]
+        """
+        columns = []
+        detail_maps = {**RULA_DETAIL_MAP, **REBA_DETAIL_MAP}
+
+        for col_def in COLUMN_DEFINITIONS:
+            field = col_def[0]
+            header = col_def[1]
+            group = col_def[2]
+
+            # 세부 항목이 있는 부위인지 확인
+            if include_details and field in detail_maps:
+                # 세부 컬럼들 먼저 추가
+                detail_group = 'rula_detail' if field.startswith('rula_') else 'reba_detail'
+                for detail_field, detail_header in detail_maps[field]:
+                    columns.append((detail_field, detail_header, detail_group, True))
+                # 토탈 컬럼 추가 (헤더에 Total 표시)
+                columns.append((field, f"{header}", group, False))
+            else:
+                columns.append((field, header, group, False))
+
+        return columns
+
+    def _build_column_mapping(self, img_col_offset: int, include_details: bool = False) -> Dict[str, str]:
         """
         필드명 -> Excel 컬럼 문자 매핑 생성
 
         Args:
             img_col_offset: 이미지 컬럼 오프셋
+            include_details: 세부 컬럼 포함 여부
 
         Returns:
             필드명과 Excel 컬럼 문자의 매핑 딕셔너리
@@ -1033,13 +1258,17 @@ class CaptureSpreadsheetWidget(QWidget):
         from openpyxl.utils import get_column_letter
 
         mapping = {}
-        for col_idx, (field, header, group, editable, value_range) in enumerate(COLUMN_DEFINITIONS, start=1):
+        excel_columns = self._build_excel_columns(include_details)
+
+        for col_idx, (field, header, group, is_detail) in enumerate(excel_columns, start=1):
             excel_col = get_column_letter(col_idx + img_col_offset)
             mapping[field] = excel_col
 
         return mapping
 
-    def _get_formula_for_field(self, field: str, row: int, col_mapping: Dict[str, str]) -> Optional[str]:
+    def _get_formula_for_field(
+        self, field: str, row: int, col_mapping: Dict[str, str], include_details: bool = False
+    ) -> Optional[str]:
         """
         필드에 해당하는 Excel 수식 반환
 
@@ -1047,10 +1276,73 @@ class CaptureSpreadsheetWidget(QWidget):
             field: 필드명
             row: Excel 행 번호
             col_mapping: 필드 -> 컬럼 매핑
+            include_details: 세부 컬럼 포함 여부 (True면 total 컬럼에 합산 수식 적용)
 
         Returns:
             Excel 수식 문자열 또는 None (수식이 아닌 필드)
         """
+        # 세부 컬럼 포함 시 부위 total 컬럼에 합산 수식 적용
+        if include_details:
+            # RULA 부위 총점 수식
+            if field == 'rula_upper_arm':
+                return get_rula_upper_arm_total_formula(row, {
+                    'base': col_mapping['rula_upper_arm_base'],
+                    'shoulder_raised': col_mapping['rula_upper_arm_shoulder_raised'],
+                    'abducted': col_mapping['rula_upper_arm_abducted'],
+                    'supported': col_mapping['rula_upper_arm_supported'],
+                })
+            elif field == 'rula_lower_arm':
+                return get_rula_lower_arm_total_formula(row, {
+                    'base': col_mapping['rula_lower_arm_base'],
+                    'working_across': col_mapping['rula_lower_arm_working_across'],
+                })
+            elif field == 'rula_wrist':
+                return get_rula_wrist_total_formula(row, {
+                    'base': col_mapping['rula_wrist_base'],
+                    'bent_midline': col_mapping['rula_wrist_bent_midline'],
+                })
+            elif field == 'rula_neck':
+                return get_rula_neck_total_formula(row, {
+                    'base': col_mapping['rula_neck_base'],
+                    'twisted': col_mapping['rula_neck_twisted'],
+                    'side_bending': col_mapping['rula_neck_side_bending'],
+                })
+            elif field == 'rula_trunk':
+                return get_rula_trunk_total_formula(row, {
+                    'base': col_mapping['rula_trunk_base'],
+                    'twisted': col_mapping['rula_trunk_twisted'],
+                    'side_bending': col_mapping['rula_trunk_side_bending'],
+                })
+            # REBA 부위 총점 수식
+            elif field == 'reba_neck':
+                return get_reba_neck_total_formula(row, {
+                    'base': col_mapping['reba_neck_base'],
+                    'twist_side': col_mapping['reba_neck_twist_side'],
+                })
+            elif field == 'reba_trunk':
+                return get_reba_trunk_total_formula(row, {
+                    'base': col_mapping['reba_trunk_base'],
+                    'twist_side': col_mapping['reba_trunk_twist_side'],
+                })
+            elif field == 'reba_leg':
+                return get_reba_leg_total_formula(row, {
+                    'base': col_mapping['reba_leg_base'],
+                    'knee_30_60': col_mapping['reba_leg_knee_30_60'],
+                    'knee_over_60': col_mapping['reba_leg_knee_over_60'],
+                })
+            elif field == 'reba_upper_arm':
+                return get_reba_upper_arm_total_formula(row, {
+                    'base': col_mapping['reba_upper_arm_base'],
+                    'shoulder_raised': col_mapping['reba_upper_arm_shoulder_raised'],
+                    'abducted': col_mapping['reba_upper_arm_abducted'],
+                    'supported': col_mapping['reba_upper_arm_supported'],
+                })
+            elif field == 'reba_wrist':
+                return get_reba_wrist_total_formula(row, {
+                    'base': col_mapping['reba_wrist_base'],
+                    'twisted': col_mapping['reba_wrist_twisted'],
+                })
+
         # RULA 수식
         if field == 'rula_score_a':
             return get_rula_score_a_formula(row, {
@@ -1126,12 +1418,13 @@ class CaptureSpreadsheetWidget(QWidget):
 
         Returns:
             None: 취소됨
-            (include_images, img_size, row_height, col_width, include_formulas): 옵션
+            (include_images, img_size, row_height, col_width, include_formulas, include_details): 옵션
             - include_images: 이미지 포함 여부
             - img_size: 이미지 크기 (픽셀)
             - row_height: 행 높이 (포인트)
             - col_width: 열 너비
             - include_formulas: 수식 포함 여부
+            - include_details: 세부 항목 포함 여부
         """
         # 이미지 크기 옵션: (라벨, 이미지크기, 행높이, 열너비)
         SIZE_OPTIONS = [
@@ -1186,6 +1479,22 @@ class CaptureSpreadsheetWidget(QWidget):
         )
         layout.addWidget(formula_checkbox)
 
+        # 구분선
+        layout.addSpacing(10)
+
+        # 세부 항목 옵션 섹션
+        detail_section_label = QLabel("<b>세부 항목 옵션</b>")
+        layout.addWidget(detail_section_label)
+
+        detail_checkbox = QCheckBox("RULA/REBA 세부 점수 포함")
+        detail_checkbox.setChecked(True)  # 기본 선택
+        detail_checkbox.setToolTip(
+            "각 부위 점수의 세부 항목(Base, +Raised 등)을 포함합니다.\n"
+            "세부 항목은 파일 끝에 별도 컬럼으로 추가됩니다.\n"
+            "수식 포함 시 합계(Total)가 자동 계산됩니다."
+        )
+        layout.addWidget(detail_checkbox)
+
         layout.addSpacing(10)
 
         # 버튼
@@ -1201,13 +1510,14 @@ class CaptureSpreadsheetWidget(QWidget):
 
         include_images = img_checkbox.isChecked()
         include_formulas = formula_checkbox.isChecked()
+        include_details = detail_checkbox.isChecked()
 
         if include_images:
             idx = size_combo.currentIndex()
             _, img_size, row_height, col_width = SIZE_OPTIONS[idx]
-            return (True, img_size, row_height, col_width, include_formulas)
+            return (True, img_size, row_height, col_width, include_formulas, include_details)
         else:
-            return (False, 0, 0, 0, include_formulas)
+            return (False, 0, 0, 0, include_formulas, include_details)
 
     def get_model(self) -> CaptureDataModel:
         """데이터 모델 반환"""

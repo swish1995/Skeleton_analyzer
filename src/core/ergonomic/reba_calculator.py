@@ -13,13 +13,36 @@ class REBAResult(AssessmentResult):
     group_a_score: int = 0  # A그룹 점수 (목/몸통/다리)
     group_b_score: int = 0  # B그룹 점수 (상완/전완/손목)
 
-    # 상세 점수
+    # 상세 점수 (합계)
     neck_score: int = 0
     trunk_score: int = 0
     leg_score: int = 0
     upper_arm_score: int = 0
     lower_arm_score: int = 0
     wrist_score: int = 0
+
+    # 목 세부 점수
+    neck_base: int = 0                # 기본 점수 (1-2)
+    neck_twist_side: int = 0          # 회전/측굴 (+1 or 0)
+
+    # 몸통 세부 점수
+    trunk_base: int = 0               # 기본 점수 (1-4)
+    trunk_twist_side: int = 0         # 회전/측굴 (+1 or 0)
+
+    # 다리 세부 점수
+    leg_base: int = 0                 # 기본 점수 (1-2)
+    leg_knee_30_60: int = 0           # 무릎 30-60° (+1 or 0)
+    leg_knee_over_60: int = 0         # 무릎 60°+ (+2 or 0)
+
+    # 상완 세부 점수
+    upper_arm_base: int = 0           # 기본 점수 (1-4)
+    upper_arm_shoulder_raised: int = 0  # 어깨 올림 (+1 or 0)
+    upper_arm_abducted: int = 0       # 외전 (+1 or 0)
+    upper_arm_supported: int = 0      # 팔 지지 (-1 or 0)
+
+    # 손목 세부 점수
+    wrist_base: int = 0               # 기본 점수 (1-2)
+    wrist_twisted: int = 0            # 비틀림 (+1 or 0)
 
 
 class REBACalculator(BaseAssessment):
@@ -102,15 +125,22 @@ class REBACalculator(BaseAssessment):
 
     def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> REBAResult:
         """REBA 점수 계산"""
-        # A그룹 점수 계산 (목/몸통/다리)
-        neck = self._calculate_neck_score(angles, landmarks)
-        trunk = self._calculate_trunk_score(angles, landmarks)
-        leg = self._calculate_leg_score(angles, landmarks)
+        # A그룹 점수 계산 (목/몸통/다리) - 세부 점수 포함
+        neck_details = self._calculate_neck_score(angles, landmarks)
+        trunk_details = self._calculate_trunk_score(angles, landmarks)
+        leg_details = self._calculate_leg_score(angles, landmarks)
 
-        # B그룹 점수 계산 (상완/전완/손목)
-        upper_arm = self._calculate_upper_arm_score(angles, landmarks)
+        # B그룹 점수 계산 (상완/전완/손목) - 세부 점수 포함
+        upper_arm_details = self._calculate_upper_arm_score(angles, landmarks)
         lower_arm = self._calculate_lower_arm_score(angles)
-        wrist = self._calculate_wrist_score(angles)
+        wrist_details = self._calculate_wrist_score(angles)
+
+        # 합계 점수 추출
+        neck = neck_details['total']
+        trunk = trunk_details['total']
+        leg = leg_details['total']
+        upper_arm = upper_arm_details['total']
+        wrist = wrist_details['total']
 
         # Table A 점수
         group_a_score = self._get_table_a_score(neck, trunk, leg)
@@ -145,19 +175,40 @@ class REBACalculator(BaseAssessment):
             upper_arm_score=upper_arm,
             lower_arm_score=lower_arm,
             wrist_score=wrist,
+            # 목 세부 점수
+            neck_base=neck_details['base'],
+            neck_twist_side=neck_details['twist_side'],
+            # 몸통 세부 점수
+            trunk_base=trunk_details['base'],
+            trunk_twist_side=trunk_details['twist_side'],
+            # 다리 세부 점수
+            leg_base=leg_details['base'],
+            leg_knee_30_60=leg_details['knee_30_60'],
+            leg_knee_over_60=leg_details['knee_over_60'],
+            # 상완 세부 점수
+            upper_arm_base=upper_arm_details['base'],
+            upper_arm_shoulder_raised=upper_arm_details['shoulder_raised'],
+            upper_arm_abducted=upper_arm_details['abducted'],
+            upper_arm_supported=upper_arm_details['supported'],
+            # 손목 세부 점수
+            wrist_base=wrist_details['base'],
+            wrist_twisted=wrist_details['twisted'],
         )
 
-    def _calculate_neck_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> int:
-        """목 점수 계산 (1-3)"""
+    def _calculate_neck_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
+        """목 점수 계산 (세부 점수 포함)"""
         neck_angle = angles.get('neck', 180)
         flexion = 180 - neck_angle
 
+        # 기본 점수 (1-2)
         if 0 <= flexion <= 20:
-            score = 1
+            base = 1
         else:
-            score = 2
+            base = 2
 
-        # 측굴/회전 시 +1
+        # 회전/측굴 (REBA에서는 합쳐서 처리)
+        twist_side = 0
+
         if landmarks:
             nose = self._get_landmark_point(landmarks, self.NOSE)
             left_shoulder = self._get_landmark_point(landmarks, self.LEFT_SHOULDER)
@@ -165,14 +216,24 @@ class REBACalculator(BaseAssessment):
 
             shoulder_center_x = (left_shoulder[0] + right_shoulder[0]) / 2
             if abs(nose[0] - shoulder_center_x) > 0.05:
-                score += 1
+                twist_side = 1
 
-        return min(score, 3)
+        total = min(base + twist_side, 3)
 
-    def _calculate_trunk_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> int:
-        """몸통 점수 계산 (1-5)"""
+        return {
+            'base': base,
+            'twist_side': twist_side,
+            'total': total,
+        }
+
+    def _calculate_trunk_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
+        """몸통 점수 계산 (세부 점수 포함)"""
         if not landmarks:
-            return 1
+            return {
+                'base': 1,
+                'twist_side': 0,
+                'total': 1,
+            }
 
         left_shoulder = self._get_landmark_point(landmarks, self.LEFT_SHOULDER)
         right_shoulder = self._get_landmark_point(landmarks, self.RIGHT_SHOULDER)
@@ -190,65 +251,97 @@ class REBACalculator(BaseAssessment):
 
         flexion = self._calculate_angle_from_vertical(shoulder_center, hip_center)
 
+        # 기본 점수 (1-4)
         if flexion <= 5:
-            score = 1
+            base = 1
         elif flexion <= 20:
-            score = 2
+            base = 2
         elif flexion <= 60:
-            score = 3
+            base = 3
         else:
-            score = 4
+            base = 4
 
-        # 측굴/회전 시 +1
+        # 회전/측굴 (REBA에서는 합쳐서 처리)
+        twist_side = 0
         if abs(left_shoulder[1] - right_shoulder[1]) > 0.03:
-            score += 1
+            twist_side = 1
 
-        return min(score, 5)
+        total = min(base + twist_side, 5)
 
-    def _calculate_leg_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> int:
-        """다리 점수 계산 (1-4)"""
+        return {
+            'base': base,
+            'twist_side': twist_side,
+            'total': total,
+        }
+
+    def _calculate_leg_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
+        """다리 점수 계산 (세부 점수 포함)"""
         left_knee_angle = angles.get('left_knee', 180)
         right_knee_angle = angles.get('right_knee', 180)
 
         # 기본 점수: 양다리 지지 = 1, 한다리 지지 = 2
-        score = 1
+        base = 1
 
-        # 무릎 굴곡 확인
+        # 무릎 굴곡 세부 점수
+        knee_30_60 = 0
+        knee_over_60 = 0
+
         min_knee = min(left_knee_angle, right_knee_angle)
         knee_flexion = 180 - min_knee
 
         if knee_flexion > 30 and knee_flexion <= 60:
-            score += 1
+            knee_30_60 = 1
         elif knee_flexion > 60:
-            score += 2
+            knee_over_60 = 2
 
-        return min(score, 4)
+        total = min(base + knee_30_60 + knee_over_60, 4)
 
-    def _calculate_upper_arm_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> int:
-        """상완 점수 계산 (1-6)"""
+        return {
+            'base': base,
+            'knee_30_60': knee_30_60,
+            'knee_over_60': knee_over_60,
+            'total': total,
+        }
+
+    def _calculate_upper_arm_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
+        """상완 점수 계산 (세부 점수 포함)"""
         shoulder_angle = angles.get('left_shoulder', 90)
         flexion = 180 - shoulder_angle
 
+        # 기본 점수 (1-4)
         if flexion >= -20 and flexion <= 20:
-            score = 1
+            base = 1
         elif flexion > 20 and flexion <= 45:
-            score = 2
+            base = 2
         elif flexion > 45 and flexion <= 90:
-            score = 3
+            base = 3
         elif flexion > 90:
-            score = 4
+            base = 4
         else:
-            score = 2
+            base = 2
 
-        # 외전/어깨 올림 시 +1
+        # 세부 가점/감점
+        shoulder_raised = 0  # 어깨 올림: 현재 미구현
+        abducted = 0         # 외전
+        supported = 0        # 팔 지지: 현재 미구현
+
+        # 외전 확인
         if landmarks:
             left_shoulder = self._get_landmark_point(landmarks, self.LEFT_SHOULDER)
             left_elbow = self._get_landmark_point(landmarks, self.LEFT_ELBOW)
 
             if left_elbow[0] < left_shoulder[0] - 0.08:
-                score += 1
+                abducted = 1
 
-        return min(score, 6)
+        total = min(base + shoulder_raised + abducted + supported, 6)
+
+        return {
+            'base': base,
+            'shoulder_raised': shoulder_raised,
+            'abducted': abducted,
+            'supported': supported,
+            'total': total,
+        }
 
     def _calculate_lower_arm_score(self, angles: Dict[str, float]) -> int:
         """전완 점수 계산 (1-2)"""
@@ -259,17 +352,27 @@ class REBACalculator(BaseAssessment):
         else:
             return 2
 
-    def _calculate_wrist_score(self, angles: Dict[str, float]) -> int:
-        """손목 점수 계산 (1-3)"""
+    def _calculate_wrist_score(self, angles: Dict[str, float]) -> Dict[str, int]:
+        """손목 점수 계산 (세부 점수 포함)"""
         wrist_angle = angles.get('left_wrist', 180)
         deviation = abs(180 - wrist_angle)
 
+        # 기본 점수 (1-2)
         if deviation <= 15:
-            score = 1
+            base = 1
         else:
-            score = 2
+            base = 2
 
-        return min(score, 3)
+        # 비틀림: 현재 미구현 (수동 입력 필요)
+        twisted = 0
+
+        total = min(base + twisted, 3)
+
+        return {
+            'base': base,
+            'twisted': twisted,
+            'total': total,
+        }
 
     def _get_table_a_score(self, neck: int, trunk: int, leg: int) -> int:
         """Table A에서 A그룹 점수 조회"""

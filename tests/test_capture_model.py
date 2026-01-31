@@ -25,8 +25,8 @@ class TestCaptureRecordCreation:
         assert record.timestamp == 5.123
         assert record.frame_number == 154
 
-    def test_capture_record_has_58_fields(self):
-        """CaptureRecord는 58개 필드를 가짐 (3기본 + 15RULA + 13REBA + 7OWAS + 10NLE + 8SI + 2이미지)"""
+    def test_capture_record_has_85_fields(self):
+        """CaptureRecord는 85개 필드를 가짐 (58기존 + 14RULA세부 + 13REBA세부)"""
         record = CaptureRecord(
             timestamp=1.0,
             frame_number=30,
@@ -34,7 +34,7 @@ class TestCaptureRecordCreation:
         )
         # dataclass의 필드 수 확인
         from dataclasses import fields
-        assert len(fields(record)) == 58
+        assert len(fields(record)) == 85
 
     def test_capture_record_default_manual_fields(self):
         """수동 입력 필드 기본값은 0"""
@@ -71,7 +71,7 @@ class TestCaptureRecordCreation:
         assert d['frame_number'] == 150
         assert d['rula_upper_arm'] == 2
         assert d['rula_score'] == 4
-        assert len(d) == 58
+        assert len(d) == 85
 
 
 class TestCaptureRecordRecalculation:
@@ -362,7 +362,7 @@ class TestCaptureDataModel:
         dict_list = model.to_dict_list()
         assert isinstance(dict_list, list)
         assert isinstance(dict_list[0], dict)
-        assert len(dict_list[0]) == 58
+        assert len(dict_list[0]) == 85
 
 
 class TestCaptureRecordImagePaths:

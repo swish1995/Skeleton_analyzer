@@ -40,11 +40,11 @@ _logger = get_logger('capture_model')
 @dataclass
 class CaptureRecord:
     """
-    단일 캡처 레코드 (총 58개 필드)
+    단일 캡처 레코드 (총 85개 필드)
 
     - 기본 정보 (3개): timestamp, frame_number, capture_time
-    - RULA (15개): 부위 7 + 수동입력 4 + 결과 4
-    - REBA (13개): 부위 6 + 수동입력 3 + 결과 4
+    - RULA (15개 + 14개 세부): 부위 7 + 수동입력 4 + 결과 4 + 세부 14
+    - REBA (13개 + 13개 세부): 부위 6 + 수동입력 3 + 결과 4 + 세부 13
     - OWAS (7개): 부위 3 + 수동입력 1 + 결과 3
     - NLE (10개): 입력 7 + 결과 3
     - SI (8개): 입력 6 + 결과 2
@@ -57,7 +57,7 @@ class CaptureRecord:
     capture_time: datetime  # 캡처 시각 (실제 시간)
 
     # === RULA (15개) ===
-    # 이미지 분석 결과 (7개)
+    # 이미지 분석 결과 - 합계 (7개)
     rula_upper_arm: int = 0
     rula_lower_arm: int = 0
     rula_wrist: int = 0
@@ -78,8 +78,33 @@ class CaptureRecord:
     rula_score: int = 0  # Final Score
     rula_risk: str = ""  # Risk Level
 
+    # === RULA 세부 점수 (14개) ===
+    # 상박 세부 (4개): base + shoulder_raised + abducted + supported = total
+    rula_upper_arm_base: int = 0           # 기본 점수 (1-4)
+    rula_upper_arm_shoulder_raised: int = 0  # 어깨 올림 (+1 or 0)
+    rula_upper_arm_abducted: int = 0       # 외전 (+1 or 0)
+    rula_upper_arm_supported: int = 0      # 팔 지지 (-1 or 0)
+
+    # 하박 세부 (2개): base + working_across = total
+    rula_lower_arm_base: int = 0           # 기본 점수 (1-2)
+    rula_lower_arm_working_across: int = 0  # 중앙선 교차 (+1 or 0)
+
+    # 손목 세부 (2개): base + bent_midline = total
+    rula_wrist_base: int = 0               # 기본 점수 (1-3)
+    rula_wrist_bent_midline: int = 0       # 중립에서 꺾임 (+1 or 0)
+
+    # 목 세부 (3개): base + twisted + side_bending = total
+    rula_neck_base: int = 0                # 기본 점수 (1-4)
+    rula_neck_twisted: int = 0             # 회전 (+1 or 0)
+    rula_neck_side_bending: int = 0        # 측굴 (+1 or 0)
+
+    # 몸통 세부 (3개): base + twisted + side_bending = total
+    rula_trunk_base: int = 0               # 기본 점수 (1-4)
+    rula_trunk_twisted: int = 0            # 회전 (+1 or 0)
+    rula_trunk_side_bending: int = 0       # 측굴 (+1 or 0)
+
     # === REBA (13개) ===
-    # 이미지 분석 결과 (6개)
+    # 이미지 분석 결과 - 합계 (6개)
     reba_neck: int = 0
     reba_trunk: int = 0
     reba_leg: int = 0
@@ -97,6 +122,30 @@ class CaptureRecord:
     reba_score_b: int = 0  # Score B
     reba_score: int = 0  # Final Score
     reba_risk: str = ""  # Risk Level
+
+    # === REBA 세부 점수 (13개) ===
+    # 목 세부 (2개): base + twist_side = total
+    reba_neck_base: int = 0                # 기본 점수 (1-2)
+    reba_neck_twist_side: int = 0          # 회전/측굴 (+1 or 0)
+
+    # 몸통 세부 (2개): base + twist_side = total
+    reba_trunk_base: int = 0               # 기본 점수 (1-4)
+    reba_trunk_twist_side: int = 0         # 회전/측굴 (+1 or 0)
+
+    # 다리 세부 (3개): base + knee_30_60 + knee_over_60 = total
+    reba_leg_base: int = 0                 # 기본 점수 (1-2)
+    reba_leg_knee_30_60: int = 0           # 무릎 30-60° (+1 or 0)
+    reba_leg_knee_over_60: int = 0         # 무릎 60°+ (+2 or 0)
+
+    # 상완 세부 (4개): base + shoulder_raised + abducted + supported = total
+    reba_upper_arm_base: int = 0           # 기본 점수 (1-4)
+    reba_upper_arm_shoulder_raised: int = 0  # 어깨 올림 (+1 or 0)
+    reba_upper_arm_abducted: int = 0       # 외전 (+1 or 0)
+    reba_upper_arm_supported: int = 0      # 팔 지지 (-1 or 0)
+
+    # 손목 세부 (2개): base + twisted = total
+    reba_wrist_base: int = 0               # 기본 점수 (1-2)
+    reba_wrist_twisted: int = 0            # 비틀림 (+1 or 0)
 
     # === OWAS (7개) ===
     # 이미지 분석 결과 (3개)
@@ -281,7 +330,7 @@ class CaptureRecord:
             timestamp=data.get('timestamp', 0.0),
             frame_number=data.get('frame_number', 0),
             capture_time=capture_time,
-            # RULA 필드
+            # RULA 필드 (합계)
             rula_upper_arm=data.get('rula_upper_arm', 0),
             rula_lower_arm=data.get('rula_lower_arm', 0),
             rula_wrist=data.get('rula_wrist', 0),
@@ -297,7 +346,22 @@ class CaptureRecord:
             rula_score_b=data.get('rula_score_b', 0),
             rula_score=data.get('rula_score', 0),
             rula_risk=data.get('rula_risk', ''),
-            # REBA 필드
+            # RULA 세부 필드
+            rula_upper_arm_base=data.get('rula_upper_arm_base', 0),
+            rula_upper_arm_shoulder_raised=data.get('rula_upper_arm_shoulder_raised', 0),
+            rula_upper_arm_abducted=data.get('rula_upper_arm_abducted', 0),
+            rula_upper_arm_supported=data.get('rula_upper_arm_supported', 0),
+            rula_lower_arm_base=data.get('rula_lower_arm_base', 0),
+            rula_lower_arm_working_across=data.get('rula_lower_arm_working_across', 0),
+            rula_wrist_base=data.get('rula_wrist_base', 0),
+            rula_wrist_bent_midline=data.get('rula_wrist_bent_midline', 0),
+            rula_neck_base=data.get('rula_neck_base', 0),
+            rula_neck_twisted=data.get('rula_neck_twisted', 0),
+            rula_neck_side_bending=data.get('rula_neck_side_bending', 0),
+            rula_trunk_base=data.get('rula_trunk_base', 0),
+            rula_trunk_twisted=data.get('rula_trunk_twisted', 0),
+            rula_trunk_side_bending=data.get('rula_trunk_side_bending', 0),
+            # REBA 필드 (합계)
             reba_neck=data.get('reba_neck', 0),
             reba_trunk=data.get('reba_trunk', 0),
             reba_leg=data.get('reba_leg', 0),
@@ -311,6 +375,20 @@ class CaptureRecord:
             reba_score_b=data.get('reba_score_b', 0),
             reba_score=data.get('reba_score', 0),
             reba_risk=data.get('reba_risk', ''),
+            # REBA 세부 필드
+            reba_neck_base=data.get('reba_neck_base', 0),
+            reba_neck_twist_side=data.get('reba_neck_twist_side', 0),
+            reba_trunk_base=data.get('reba_trunk_base', 0),
+            reba_trunk_twist_side=data.get('reba_trunk_twist_side', 0),
+            reba_leg_base=data.get('reba_leg_base', 0),
+            reba_leg_knee_30_60=data.get('reba_leg_knee_30_60', 0),
+            reba_leg_knee_over_60=data.get('reba_leg_knee_over_60', 0),
+            reba_upper_arm_base=data.get('reba_upper_arm_base', 0),
+            reba_upper_arm_shoulder_raised=data.get('reba_upper_arm_shoulder_raised', 0),
+            reba_upper_arm_abducted=data.get('reba_upper_arm_abducted', 0),
+            reba_upper_arm_supported=data.get('reba_upper_arm_supported', 0),
+            reba_wrist_base=data.get('reba_wrist_base', 0),
+            reba_wrist_twisted=data.get('reba_wrist_twisted', 0),
             # OWAS 필드
             owas_back=data.get('owas_back', 1),
             owas_arms=data.get('owas_arms', 1),
@@ -359,7 +437,7 @@ class CaptureRecord:
             timestamp=timestamp,
             frame_number=frame_number,
             capture_time=capture_time,
-            # RULA
+            # RULA 합계
             rula_upper_arm=rula_result.get('upper_arm', 0),
             rula_lower_arm=rula_result.get('lower_arm', 0),
             rula_wrist=rula_result.get('wrist', 0),
@@ -371,7 +449,22 @@ class CaptureRecord:
             rula_score_b=rula_result.get('score_b', 0),
             rula_score=rula_result.get('score', 0),
             rula_risk=rula_result.get('risk', ''),
-            # REBA
+            # RULA 세부 점수
+            rula_upper_arm_base=rula_result.get('upper_arm_base', 0),
+            rula_upper_arm_shoulder_raised=rula_result.get('upper_arm_shoulder_raised', 0),
+            rula_upper_arm_abducted=rula_result.get('upper_arm_abducted', 0),
+            rula_upper_arm_supported=rula_result.get('upper_arm_supported', 0),
+            rula_lower_arm_base=rula_result.get('lower_arm_base', 0),
+            rula_lower_arm_working_across=rula_result.get('lower_arm_working_across', 0),
+            rula_wrist_base=rula_result.get('wrist_base', 0),
+            rula_wrist_bent_midline=rula_result.get('wrist_bent_midline', 0),
+            rula_neck_base=rula_result.get('neck_base', 0),
+            rula_neck_twisted=rula_result.get('neck_twisted', 0),
+            rula_neck_side_bending=rula_result.get('neck_side_bending', 0),
+            rula_trunk_base=rula_result.get('trunk_base', 0),
+            rula_trunk_twisted=rula_result.get('trunk_twisted', 0),
+            rula_trunk_side_bending=rula_result.get('trunk_side_bending', 0),
+            # REBA 합계
             reba_neck=reba_result.get('neck', 0),
             reba_trunk=reba_result.get('trunk', 0),
             reba_leg=reba_result.get('leg', 0),
@@ -382,6 +475,20 @@ class CaptureRecord:
             reba_score_b=reba_result.get('score_b', 0),
             reba_score=reba_result.get('score', 0),
             reba_risk=reba_result.get('risk', ''),
+            # REBA 세부 점수
+            reba_neck_base=reba_result.get('neck_base', 0),
+            reba_neck_twist_side=reba_result.get('neck_twist_side', 0),
+            reba_trunk_base=reba_result.get('trunk_base', 0),
+            reba_trunk_twist_side=reba_result.get('trunk_twist_side', 0),
+            reba_leg_base=reba_result.get('leg_base', 0),
+            reba_leg_knee_30_60=reba_result.get('leg_knee_30_60', 0),
+            reba_leg_knee_over_60=reba_result.get('leg_knee_over_60', 0),
+            reba_upper_arm_base=reba_result.get('upper_arm_base', 0),
+            reba_upper_arm_shoulder_raised=reba_result.get('upper_arm_shoulder_raised', 0),
+            reba_upper_arm_abducted=reba_result.get('upper_arm_abducted', 0),
+            reba_upper_arm_supported=reba_result.get('upper_arm_supported', 0),
+            reba_wrist_base=reba_result.get('wrist_base', 0),
+            reba_wrist_twisted=reba_result.get('wrist_twisted', 0),
             # OWAS
             owas_back=owas_result.get('back', 1),
             owas_arms=owas_result.get('arms', 1),
