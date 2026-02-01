@@ -34,6 +34,12 @@ a = Analysis(
         'cv2',
         'numpy',
         'PyQt6',
+        # Excel 내보내기용
+        'openpyxl',
+        'openpyxl.styles',
+        'openpyxl.drawing.image',
+        'openpyxl.utils',
+        'openpyxl.workbook.defined_name',
     ] + mediapipe_hiddenimports,
     hookspath=[],
     hooksconfig={},
