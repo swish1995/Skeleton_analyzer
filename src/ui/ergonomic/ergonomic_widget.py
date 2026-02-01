@@ -13,6 +13,8 @@ from ...core.ergonomic import (
     NLEResult,
     SIResult,
 )
+from ...license import LicenseManager
+from ..components.license_overlay import LicenseOverlay
 from .rula_widget import RULAWidget
 from .reba_widget import REBAWidget
 from .owas_widget import OWASWidget
@@ -39,7 +41,14 @@ class ErgonomicWidget(QWidget):
         self._current_reba_result: REBAResult = None
         self._current_owas_result: OWASResult = None
 
+        # 라이센스 매니저
+        self._license_manager = LicenseManager.instance()
+        self._license_manager.license_changed.connect(self._update_license_state)
+
         self._init_ui()
+
+        # 초기 라이센스 상태 적용
+        self._update_license_state()
 
     def _init_ui(self):
         """UI 초기화"""
@@ -84,17 +93,29 @@ class ErgonomicWidget(QWidget):
         self._owas_widget.setMinimumWidth(120)
         self._main_splitter.addWidget(self._owas_widget)
 
-        # NLE
+        # NLE (컨테이너로 감싸서 오버레이 추가)
+        self._nle_container = QWidget()
+        nle_layout = QVBoxLayout(self._nle_container)
+        nle_layout.setContentsMargins(0, 0, 0, 0)
         self._nle_widget = NLEWidget()
-        self._nle_widget.setMinimumWidth(120)
-        self._nle_widget.setVisible(False)  # 기본 숨김
-        self._main_splitter.addWidget(self._nle_widget)
+        nle_layout.addWidget(self._nle_widget)
+        self._nle_overlay = LicenseOverlay(self._nle_container, "NLE 분석")
+        self._nle_overlay.register_clicked.connect(self._show_license_dialog)
+        self._nle_container.setMinimumWidth(120)
+        self._nle_container.setVisible(False)  # 기본 숨김
+        self._main_splitter.addWidget(self._nle_container)
 
-        # SI
+        # SI (컨테이너로 감싸서 오버레이 추가)
+        self._si_container = QWidget()
+        si_layout = QVBoxLayout(self._si_container)
+        si_layout.setContentsMargins(0, 0, 0, 0)
         self._si_widget = SIWidget()
-        self._si_widget.setMinimumWidth(120)
-        self._si_widget.setVisible(False)  # 기본 숨김
-        self._main_splitter.addWidget(self._si_widget)
+        si_layout.addWidget(self._si_widget)
+        self._si_overlay = LicenseOverlay(self._si_container, "SI 분석")
+        self._si_overlay.register_clicked.connect(self._show_license_dialog)
+        self._si_container.setMinimumWidth(120)
+        self._si_container.setVisible(False)  # 기본 숨김
+        self._main_splitter.addWidget(self._si_container)
 
         # 스플리터 축소 방지
         for i in range(5):
@@ -121,11 +142,15 @@ class ErgonomicWidget(QWidget):
 
     def set_nle_visible(self, visible: bool):
         """NLE 위젯 가시성 설정"""
-        self._nle_widget.setVisible(visible)
+        self._nle_container.setVisible(visible)
+        if visible:
+            self._update_license_state()
 
     def set_si_visible(self, visible: bool):
         """SI 위젯 가시성 설정"""
-        self._si_widget.setVisible(visible)
+        self._si_container.setVisible(visible)
+        if visible:
+            self._update_license_state()
 
     def is_rula_visible(self) -> bool:
         """RULA 위젯 가시성 반환"""
@@ -141,11 +166,11 @@ class ErgonomicWidget(QWidget):
 
     def is_nle_visible(self) -> bool:
         """NLE 위젯 가시성 반환"""
-        return self._nle_widget.isVisible()
+        return self._nle_container.isVisible()
 
     def is_si_visible(self) -> bool:
         """SI 위젯 가시성 반환"""
-        return self._si_widget.isVisible()
+        return self._si_container.isVisible()
 
     def update_assessment(self, angles: Dict[str, float], landmarks: List[Dict]):
         """
@@ -249,3 +274,30 @@ class ErgonomicWidget(QWidget):
     def set_si_inputs(self, **kwargs):
         """SI 입력값 설정"""
         self._si_widget.set_inputs(**kwargs)
+
+    # === 라이센스 관련 메서드 ===
+
+    def _update_license_state(self):
+        """라이센스 상태에 따른 오버레이 표시/숨김"""
+        can_use_nle = self._license_manager.check_feature('nle_analysis')
+        can_use_si = self._license_manager.check_feature('si_analysis')
+
+        # NLE 오버레이
+        if can_use_nle:
+            self._nle_overlay.hide()
+        else:
+            self._nle_overlay.show()
+            self._nle_overlay.raise_()
+
+        # SI 오버레이
+        if can_use_si:
+            self._si_overlay.hide()
+        else:
+            self._si_overlay.show()
+            self._si_overlay.raise_()
+
+    def _show_license_dialog(self):
+        """라이센스 다이얼로그 표시"""
+        from ...license.license_dialog import LicenseDialog
+        dialog = LicenseDialog(self.window())
+        dialog.exec()

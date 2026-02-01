@@ -102,11 +102,11 @@ class RULAWidget(QWidget):
         detail_layout = QGridLayout(detail_box)
 
         # A그룹 상세
-        detail_layout.addWidget(QLabel("상완:"), 0, 0)
+        detail_layout.addWidget(QLabel("상박:"), 0, 0)
         self._upper_arm_label = QLabel("–")
         detail_layout.addWidget(self._upper_arm_label, 0, 1)
 
-        detail_layout.addWidget(QLabel("전완:"), 0, 2)
+        detail_layout.addWidget(QLabel("하박:"), 0, 2)
         self._lower_arm_label = QLabel("–")
         detail_layout.addWidget(self._lower_arm_label, 0, 3)
 

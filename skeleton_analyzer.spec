@@ -40,6 +40,12 @@ a = Analysis(
         'openpyxl.drawing.image',
         'openpyxl.utils',
         'openpyxl.workbook.defined_name',
+        # 라이센스 모듈
+        'src.license',
+        'src.license.hardware_id',
+        'src.license.license_validator',
+        'src.license.license_manager',
+        'src.license.license_dialog',
     ] + mediapipe_hiddenimports,
     hookspath=[],
     hooksconfig={},

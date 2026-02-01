@@ -18,6 +18,8 @@ from .help_dialog import HelpDialog
 from ..utils.config import Config
 from ..core.project_manager import ProjectManager, ProjectLoadError, LoadResult
 from ..core.logger import get_logger
+from ..license import LicenseManager, LicenseMode
+from ..license.license_dialog import LicenseDialog
 
 # 앱 이름 (환경변수로 변경 가능)
 APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
@@ -39,11 +41,19 @@ class MainWindow(QMainWindow):
         self._config = Config()
         self._project_manager = ProjectManager()
 
+        # 라이센스 매니저
+        self._license_manager = LicenseManager.instance()
+        self._license_manager.license_changed.connect(self._on_license_changed)
+
         self._init_ui()
         self._init_menu()
         self._init_toolbar()
         self._init_shortcuts()
         self._load_settings()
+
+        # 라이센스 상태에 따른 메뉴 업데이트
+        self._update_menu_state()
+        self._update_window_title()
 
         # 앱 시작 시 captures 디렉토리 전체 정리 (고아 이미지 삭제)
         self._cleanup_all_captures()
@@ -221,6 +231,13 @@ class MainWindow(QMainWindow):
         usage_action.setShortcut("F1")
         usage_action.triggered.connect(self._show_help_usage)
         help_menu.addAction(usage_action)
+
+        help_menu.addSeparator()
+
+        # 라이센스 등록
+        self._license_action = QAction("라이센스 등록(&L)...", self)
+        self._license_action.triggered.connect(self._show_license_dialog)
+        help_menu.addAction(self._license_action)
 
         help_menu.addSeparator()
 
@@ -877,8 +894,18 @@ class MainWindow(QMainWindow):
     def _update_window_title(self):
         """윈도우 타이틀 업데이트"""
         title = APP_NAME
+
+        # 라이센스 모드 표시
+        mode = self._license_manager.license_mode
+        if mode == LicenseMode.DEV:
+            title = f"{title} [DEV]"
+        elif mode == LicenseMode.LICENSED:
+            title = f"{title} [LICENSED]"
+        elif not self._license_manager.is_licensed:
+            title = f"{title} [FREE]"
+
         if self._project_manager.project_name:
-            title = f"{self._project_manager.project_name} - {APP_NAME}"
+            title = f"{self._project_manager.project_name} - {title}"
             if self._project_manager.is_dirty:
                 title = f"*{title}"
         self.setWindowTitle(title)
@@ -1134,3 +1161,24 @@ class MainWindow(QMainWindow):
         """프로그램 정보 도움말 표시"""
         dialog = HelpDialog(self)
         dialog.show_about()
+
+    # === 라이센스 관련 메서드 ===
+
+    def _update_menu_state(self):
+        """라이센스 상태에 따른 메뉴 활성화/비활성화"""
+        is_licensed = self._license_manager.is_licensed
+
+        # 프로젝트 관련 메뉴
+        # 참고: 프로젝트 열기/저장은 라이센스 필요
+        # 현재는 별도 제한 없이 유지 (추후 필요시 활성화)
+        # self._save_project_action.setEnabled(is_licensed)
+
+    def _on_license_changed(self):
+        """라이센스 상태 변경 시"""
+        self._update_menu_state()
+        self._update_window_title()
+
+    def _show_license_dialog(self):
+        """라이센스 다이얼로그 표시"""
+        dialog = LicenseDialog(self)
+        dialog.exec()
