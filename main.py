@@ -7,7 +7,7 @@ import sys
 import os
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QObject, QEvent, Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPalette, QColor
 
 from src.core.logger import setup_logging, get_logger
 from src.ui.main_window import MainWindow
@@ -97,6 +97,25 @@ def main():
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)  # 디스플레이 이름 설정
     app.setOrganizationName("SkeletonAnalyzer")
+
+    # 다크 테마 강제 적용 (시스템 테마 무시)
+    app.setStyle("Fusion")
+    dark_palette = QPalette()
+    dark_palette.setColor(QPalette.ColorRole.Window, QColor(30, 30, 30))
+    dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(224, 224, 224))
+    dark_palette.setColor(QPalette.ColorRole.Base, QColor(25, 25, 25))
+    dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(35, 35, 35))
+    dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(45, 45, 45))
+    dark_palette.setColor(QPalette.ColorRole.ToolTipText, QColor(224, 224, 224))
+    dark_palette.setColor(QPalette.ColorRole.Text, QColor(224, 224, 224))
+    dark_palette.setColor(QPalette.ColorRole.Button, QColor(45, 45, 45))
+    dark_palette.setColor(QPalette.ColorRole.ButtonText, QColor(224, 224, 224))
+    dark_palette.setColor(QPalette.ColorRole.BrightText, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.ColorRole.Link, QColor(74, 158, 255))
+    dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(74, 158, 255))
+    dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.ColorRole.PlaceholderText, QColor(128, 128, 128))
+    app.setPalette(dark_palette)
 
     # 앱 아이콘 설정
     icon_path = get_icon_path()
