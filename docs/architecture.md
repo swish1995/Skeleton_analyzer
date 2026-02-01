@@ -1,6 +1,6 @@
 # Skeleton Analyzer 아키텍처
 
-> 📅 마지막 갱신: 2026-01-30
+> 📅 마지막 갱신: 2026-02-01
 > 🔍 소스: 코드베이스 자동 분석
 
 ## 시스템 개요
@@ -109,6 +109,21 @@
 | ExcelFormulas | `excel_formulas.py` | Excel 수식 생성 (INDEX 함수) |
 | ExcelTables | `excel_tables.py` | RULA/REBA/OWAS 조회 테이블 변환 |
 
+### License Layer (`src/license/`)
+
+| 컴포넌트 | 파일 | 역할 |
+|----------|------|------|
+| HardwareId | `hardware_id.py` | 크로스 플랫폼 하드웨어 ID 생성 |
+| LicenseValidator | `license_validator.py` | 라이센스 키 형식/체크섬/하드웨어 검증 |
+| LicenseManager | `license_manager.py` | 라이센스 상태 관리 (싱글톤) |
+| LicenseDialog | `license_dialog.py` | 라이센스 등록 UI |
+
+### UI Components (`src/ui/components/`)
+
+| 컴포넌트 | 파일 | 역할 |
+|----------|------|------|
+| LicenseOverlay | `license_overlay.py` | 기능 제한 오버레이 표시 |
+
 ## 디렉토리 구조
 
 ```
@@ -161,10 +176,18 @@ skeleton-analyzer/
 │   │   ├── history.py          # 작업 이력
 │   │   ├── excel_formulas.py   # Excel 수식 생성
 │   │   └── excel_tables.py     # 조회 테이블 변환
+│   ├── license/                # 라이센스 시스템
+│   │   ├── hardware_id.py      # 하드웨어 ID 생성
+│   │   ├── license_validator.py # 키 검증
+│   │   ├── license_manager.py  # 상태 관리
+│   │   └── license_dialog.py   # 등록 UI
 │   └── resources/              # 리소스 파일
 │       ├── icons/              # SVG 아이콘
 │       └── help/               # HTML 도움말
 ├── tests/                  # 테스트 코드
+│   └── license/            # 라이센스 시스템 테스트
+├── tools/                  # 개발/관리 도구
+│   └── license_keygen.py   # 라이센스 키 생성 도구
 ├── captures/               # 캡처 이미지 임시 저장
 ├── dev/                   # 개발 작업 관리
 │   └── active/            # 진행 중 작업
