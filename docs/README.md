@@ -73,11 +73,12 @@ python main.py
 | 키 | 기능 |
 |----|------|
 | Ctrl+O | 동영상 파일 열기 |
-| Ctrl+Shift+O | 프로젝트 열기 |
-| Ctrl+N | 새 프로젝트 |
-| Ctrl+S | 프로젝트 저장 |
-| Ctrl+Shift+S | 다른 이름으로 저장 |
+| Ctrl+Shift+O | 프로젝트 열기 🔑 |
+| Ctrl+S | 프로젝트 저장 🔑 |
+| Ctrl+Shift+S | 다른 이름으로 저장 🔑 |
 | Ctrl+Q | 종료 |
+
+> 🔑 표시: 라이센스 등록 필요 기능
 
 ### 보기 (패널 토글)
 

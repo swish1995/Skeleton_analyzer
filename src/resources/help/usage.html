@@ -587,14 +587,15 @@
         <h3 class="toc-title">📑 목차</h3>
         <div class="toc-grid">
             <div class="toc-item"><span class="num">1.</span>시작하기</div>
-            <div class="toc-item"><span class="num">2.</span>화면 구성</div>
-            <div class="toc-item"><span class="num">3.</span>메뉴 설명</div>
-            <div class="toc-item"><span class="num">4.</span>툴바 버튼</div>
-            <div class="toc-item"><span class="num">5.</span>동영상 재생</div>
-            <div class="toc-item"><span class="num">6.</span>데이터 캡처</div>
-            <div class="toc-item"><span class="num">7.</span>인체공학 평가</div>
-            <div class="toc-item"><span class="num">8.</span>데이터 내보내기</div>
-            <div class="toc-item"><span class="num">9.</span>단축키 모음</div>
+            <div class="toc-item"><span class="num">2.</span>라이센스</div>
+            <div class="toc-item"><span class="num">3.</span>화면 구성</div>
+            <div class="toc-item"><span class="num">4.</span>메뉴 설명</div>
+            <div class="toc-item"><span class="num">5.</span>툴바 버튼</div>
+            <div class="toc-item"><span class="num">6.</span>동영상 재생</div>
+            <div class="toc-item"><span class="num">7.</span>데이터 캡처</div>
+            <div class="toc-item"><span class="num">8.</span>인체공학 평가</div>
+            <div class="toc-item"><span class="num">9.</span>데이터 내보내기</div>
+            <div class="toc-item"><span class="num">10.</span>단축키 모음</div>
         </div>
     </div>
 
@@ -603,7 +604,7 @@
         <h2 class="section-title"><span class="icon">🚀</span> 시작하기</h2>
 
         <div class="subsection">
-            <h3 class="subsection-title"><span class="sub-icon">📁</span> 새 프로젝트 시작</h3>
+            <h3 class="subsection-title"><span class="sub-icon">🎬</span> 동영상 파일 열기</h3>
             <div class="steps">
                 <div class="step">
                     <div class="step-num">1</div>
@@ -611,17 +612,17 @@
                 </div>
                 <div class="step">
                     <div class="step-num">2</div>
-                    <div class="step-content"><code>파일</code> → <code>새 프로젝트</code> 메뉴를 선택하거나 <kbd>Ctrl</kbd>+<kbd>N</kbd>을 누릅니다</div>
+                    <div class="step-content"><code>파일</code> → <code>동영상 파일 열기</code> 메뉴를 선택하거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>을 누릅니다</div>
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
-                    <div class="step-content">분석할 동영상 파일을 엽니다</div>
+                    <div class="step-content">분석할 동영상 파일을 선택합니다 (MP4, AVI, MOV 등)</div>
                 </div>
             </div>
         </div>
 
         <div class="subsection">
-            <h3 class="subsection-title"><span class="sub-icon">📂</span> 기존 프로젝트 열기</h3>
+            <h3 class="subsection-title"><span class="sub-icon">📂</span> 프로젝트 열기 (등록 기능)</h3>
             <div class="steps">
                 <div class="step">
                     <div class="step-num">1</div>
@@ -636,20 +637,86 @@
                     <div class="step-content">이전 작업 상태가 그대로 복원됩니다</div>
                 </div>
             </div>
-            <div class="tip-box">
-                <span class="tip-icon">💡</span>
-                <span class="tip-text"><strong>팁:</strong> 최근에 작업한 프로젝트는 <code>파일</code> → <code>최근 프로젝트</code> 메뉴에서 빠르게 접근할 수 있습니다.</span>
+            <div class="warning-box">
+                <span class="warning-icon">🔑</span>
+                <span class="warning-text"><strong>참고:</strong> 프로젝트 저장/열기 기능은 라이센스 등록이 필요합니다.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 라이센스 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🔑</span> 라이센스</h2>
+        <p>Skeleton Analyzer는 <strong style="color: #4a9eff;">무료 버전</strong>과 <strong style="color: #52c41a;">등록 버전</strong>으로 제공됩니다.</p>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">✅</span> 무료 기능</h3>
+            <div class="screen-layout">
+                <div class="screen-box">
+                    <h4>🎬 동영상 분석</h4>
+                    <ul>
+                        <li>다양한 동영상 형식 지원</li>
+                        <li>실시간 스켈레톤 추출</li>
+                        <li>관절 각도 자동 계산</li>
+                        <li>프레임 캡처</li>
+                    </ul>
+                </div>
+                <div class="screen-box">
+                    <h4>📊 기본 평가</h4>
+                    <ul>
+                        <li>RULA (상지 반복 작업)</li>
+                        <li>REBA (전신 자세 평가)</li>
+                        <li>OWAS (작업 자세 분류)</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
         <div class="subsection">
-            <h3 class="subsection-title"><span class="sub-icon">🎬</span> 동영상 파일 열기</h3>
-            <p><kbd>Ctrl</kbd>+<kbd>O</kbd>를 누르거나 메뉴에서 <code>파일</code> → <code>동영상 파일 열기</code>를 선택합니다.</p>
-            <p><strong>지원 형식:</strong> MP4, AVI, MOV, MKV, WMV, FLV 등 대부분의 동영상 형식</p>
+            <h3 class="subsection-title"><span class="sub-icon">🔐</span> 등록 기능</h3>
+            <div class="screen-layout">
+                <div class="screen-box" style="border-color: rgba(82, 196, 26, 0.4);">
+                    <h4 style="color: #52c41a;">📐 추가 평가</h4>
+                    <ul>
+                        <li>NLE (NIOSH 들기 작업)</li>
+                        <li>SI (반복 작업 스트레인)</li>
+                    </ul>
+                </div>
+                <div class="screen-box" style="border-color: rgba(82, 196, 26, 0.4);">
+                    <h4 style="color: #52c41a;">💾 데이터 관리</h4>
+                    <ul>
+                        <li>프로젝트 저장/열기</li>
+                        <li>Excel 내보내기</li>
+                        <li>JSON 내보내기</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📝</span> 라이센스 등록 방법</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content"><code>도움말</code> → <code>라이센스 등록</code> 메뉴를 선택합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content"><strong>하드웨어 ID</strong>를 복사하여 관리자에게 전달합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">발급받은 라이센스 키를 입력하고 <strong>등록</strong> 버튼을 클릭합니다</div>
+                </div>
+            </div>
+            <div class="tip-box">
+                <span class="tip-icon">💡</span>
+                <span class="tip-text"><strong>팁:</strong> 라이센스 키는 하드웨어에 종속됩니다. 컴퓨터를 변경하면 새 키가 필요합니다.</span>
+            </div>
         </div>
     </div>
 
-    <!-- 2. 화면 구성 -->
+    <!-- 3. 화면 구성 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">🖥️</span> 화면 구성</h2>
         <p>프로그램 화면은 크게 <strong>좌측 영역</strong>과 <strong>우측 영역</strong>으로 나뉩니다.</p>
@@ -696,29 +763,24 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>새 프로젝트</td>
-                        <td><kbd>Ctrl</kbd>+<kbd>N</kbd></td>
-                        <td>새 프로젝트를 시작합니다</td>
+                        <td>동영상 파일 열기</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>O</kbd></td>
+                        <td>분석할 동영상 파일을 엽니다</td>
                     </tr>
                     <tr>
-                        <td>프로젝트 열기</td>
+                        <td>프로젝트 열기 🔑</td>
                         <td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td>
                         <td>저장된 프로젝트 파일(.skpx)을 엽니다</td>
                     </tr>
                     <tr>
-                        <td>프로젝트 저장</td>
+                        <td>프로젝트 저장 🔑</td>
                         <td><kbd>Ctrl</kbd>+<kbd>S</kbd></td>
                         <td>현재 프로젝트를 저장합니다</td>
                     </tr>
                     <tr>
-                        <td>다른 이름으로 저장</td>
+                        <td>다른 이름으로 저장 🔑</td>
                         <td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td>
                         <td>다른 이름이나 위치에 저장합니다</td>
-                    </tr>
-                    <tr>
-                        <td>동영상 파일 열기</td>
-                        <td><kbd>Ctrl</kbd>+<kbd>O</kbd></td>
-                        <td>분석할 동영상 파일을 엽니다</td>
                     </tr>
                     <tr>
                         <td>설정</td>
@@ -1010,10 +1072,15 @@
         </div>
     </div>
 
-    <!-- 8. 데이터 내보내기 -->
+    <!-- 9. 데이터 내보내기 -->
     <div class="section">
-        <h2 class="section-title"><span class="icon">📤</span> 데이터 내보내기</h2>
+        <h2 class="section-title"><span class="icon">📤</span> 데이터 내보내기 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
         <p>스프레드시트에서 <strong>우클릭</strong>하여 내보내기 메뉴에 접근합니다.</p>
+
+        <div class="warning-box">
+            <span class="warning-icon">🔑</span>
+            <span class="warning-text"><strong>참고:</strong> 데이터 내보내기 기능은 라이센스 등록이 필요합니다.</span>
+        </div>
 
         <div class="export-options">
             <div class="export-option">
@@ -1071,24 +1138,20 @@
                 <div class="shortcut-category-title">📁 파일/프로젝트</div>
                 <div class="shortcut-grid">
                     <div class="shortcut-item">
-                        <span class="shortcut-action">새 프로젝트</span>
-                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>
+                        <span class="shortcut-action">동영상 열기</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>
                     </div>
                     <div class="shortcut-item">
-                        <span class="shortcut-action">프로젝트 열기</span>
+                        <span class="shortcut-action">프로젝트 열기 🔑</span>
                         <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>
                     </div>
                     <div class="shortcut-item">
-                        <span class="shortcut-action">프로젝트 저장</span>
+                        <span class="shortcut-action">프로젝트 저장 🔑</span>
                         <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>
                     </div>
                     <div class="shortcut-item">
-                        <span class="shortcut-action">다른 이름으로 저장</span>
+                        <span class="shortcut-action">다른 이름으로 저장 🔑</span>
                         <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-action">동영상 열기</span>
-                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>
                     </div>
                     <div class="shortcut-item">
                         <span class="shortcut-action">종료</span>
