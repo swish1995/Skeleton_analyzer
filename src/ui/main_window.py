@@ -133,10 +133,10 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu("파일(&F)")
 
         # 프로젝트 열기
-        open_project_action = QAction("프로젝트 열기(&P)...", self)
-        open_project_action.setShortcut("Ctrl+Shift+O")
-        open_project_action.triggered.connect(self._open_project)
-        file_menu.addAction(open_project_action)
+        self._open_project_action = QAction("프로젝트 열기(&P)...", self)
+        self._open_project_action.setShortcut("Ctrl+Shift+O")
+        self._open_project_action.triggered.connect(self._open_project)
+        file_menu.addAction(self._open_project_action)
 
         # 프로젝트 저장
         self._save_project_action = QAction("프로젝트 저장(&S)", self)
@@ -145,10 +145,10 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._save_project_action)
 
         # 다른 이름으로 저장
-        save_as_action = QAction("다른 이름으로 저장(&A)...", self)
-        save_as_action.setShortcut("Ctrl+Shift+S")
-        save_as_action.triggered.connect(self._save_project_as)
-        file_menu.addAction(save_as_action)
+        self._save_as_action = QAction("다른 이름으로 저장(&A)...", self)
+        self._save_as_action.setShortcut("Ctrl+Shift+S")
+        self._save_as_action.triggered.connect(self._save_project_as)
+        file_menu.addAction(self._save_as_action)
 
         file_menu.addSeparator()
 
@@ -1168,10 +1168,14 @@ class MainWindow(QMainWindow):
         """라이센스 상태에 따른 메뉴 활성화/비활성화"""
         is_licensed = self._license_manager.is_licensed
 
-        # 프로젝트 관련 메뉴
-        # 참고: 프로젝트 열기/저장은 라이센스 필요
-        # 현재는 별도 제한 없이 유지 (추후 필요시 활성화)
-        # self._save_project_action.setEnabled(is_licensed)
+        # 프로젝트 관련 메뉴 - 라이센스 필요
+        self._open_project_action.setEnabled(is_licensed)
+        self._save_project_action.setEnabled(is_licensed)
+        self._save_as_action.setEnabled(is_licensed)
+
+        # 툴바 버튼도 동기화
+        self._open_btn.setEnabled(is_licensed)
+        self._save_btn.setEnabled(is_licensed)
 
     def _on_license_changed(self):
         """라이센스 상태 변경 시"""

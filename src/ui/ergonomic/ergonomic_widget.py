@@ -1,9 +1,10 @@
 """인체공학적 평가 통합 위젯"""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QSplitter
+    QWidget, QVBoxLayout, QSplitter, QStackedWidget, QLabel, QPushButton
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
 from typing import Dict, List
 
 from ...core.ergonomic import (
@@ -14,7 +15,6 @@ from ...core.ergonomic import (
     SIResult,
 )
 from ...license import LicenseManager
-from ..components.license_overlay import LicenseOverlay
 from .rula_widget import RULAWidget
 from .reba_widget import REBAWidget
 from .owas_widget import OWASWidget
@@ -93,29 +93,25 @@ class ErgonomicWidget(QWidget):
         self._owas_widget.setMinimumWidth(120)
         self._main_splitter.addWidget(self._owas_widget)
 
-        # NLE (컨테이너로 감싸서 오버레이 추가)
-        self._nle_container = QWidget()
-        nle_layout = QVBoxLayout(self._nle_container)
-        nle_layout.setContentsMargins(0, 0, 0, 0)
+        # NLE (QStackedWidget으로 위젯/잠금화면 전환)
+        self._nle_stack = QStackedWidget()
         self._nle_widget = NLEWidget()
-        nle_layout.addWidget(self._nle_widget)
-        self._nle_overlay = LicenseOverlay(self._nle_container, "NLE 분석")
-        self._nle_overlay.register_clicked.connect(self._show_license_dialog)
-        self._nle_container.setMinimumWidth(120)
-        self._nle_container.setVisible(False)  # 기본 숨김
-        self._main_splitter.addWidget(self._nle_container)
+        self._nle_lock = self._create_lock_widget("NLE 분석")
+        self._nle_stack.addWidget(self._nle_widget)  # index 0: 실제 위젯
+        self._nle_stack.addWidget(self._nle_lock)    # index 1: 잠금 화면
+        self._nle_stack.setMinimumWidth(120)
+        self._nle_stack.setVisible(False)  # 기본 숨김
+        self._main_splitter.addWidget(self._nle_stack)
 
-        # SI (컨테이너로 감싸서 오버레이 추가)
-        self._si_container = QWidget()
-        si_layout = QVBoxLayout(self._si_container)
-        si_layout.setContentsMargins(0, 0, 0, 0)
+        # SI (QStackedWidget으로 위젯/잠금화면 전환)
+        self._si_stack = QStackedWidget()
         self._si_widget = SIWidget()
-        si_layout.addWidget(self._si_widget)
-        self._si_overlay = LicenseOverlay(self._si_container, "SI 분석")
-        self._si_overlay.register_clicked.connect(self._show_license_dialog)
-        self._si_container.setMinimumWidth(120)
-        self._si_container.setVisible(False)  # 기본 숨김
-        self._main_splitter.addWidget(self._si_container)
+        self._si_lock = self._create_lock_widget("SI 분석")
+        self._si_stack.addWidget(self._si_widget)  # index 0: 실제 위젯
+        self._si_stack.addWidget(self._si_lock)    # index 1: 잠금 화면
+        self._si_stack.setMinimumWidth(120)
+        self._si_stack.setVisible(False)  # 기본 숨김
+        self._main_splitter.addWidget(self._si_stack)
 
         # 스플리터 축소 방지
         for i in range(5):
@@ -142,13 +138,13 @@ class ErgonomicWidget(QWidget):
 
     def set_nle_visible(self, visible: bool):
         """NLE 위젯 가시성 설정"""
-        self._nle_container.setVisible(visible)
+        self._nle_stack.setVisible(visible)
         if visible:
             self._update_license_state()
 
     def set_si_visible(self, visible: bool):
         """SI 위젯 가시성 설정"""
-        self._si_container.setVisible(visible)
+        self._si_stack.setVisible(visible)
         if visible:
             self._update_license_state()
 
@@ -166,11 +162,11 @@ class ErgonomicWidget(QWidget):
 
     def is_nle_visible(self) -> bool:
         """NLE 위젯 가시성 반환"""
-        return self._nle_container.isVisible()
+        return self._nle_stack.isVisible()
 
     def is_si_visible(self) -> bool:
         """SI 위젯 가시성 반환"""
-        return self._si_container.isVisible()
+        return self._si_stack.isVisible()
 
     def update_assessment(self, angles: Dict[str, float], landmarks: List[Dict]):
         """
@@ -278,23 +274,73 @@ class ErgonomicWidget(QWidget):
     # === 라이센스 관련 메서드 ===
 
     def _update_license_state(self):
-        """라이센스 상태에 따른 오버레이 표시/숨김"""
+        """라이센스 상태에 따른 위젯/잠금화면 전환"""
         can_use_nle = self._license_manager.check_feature('nle_analysis')
         can_use_si = self._license_manager.check_feature('si_analysis')
 
-        # NLE 오버레이
-        if can_use_nle:
-            self._nle_overlay.hide()
-        else:
-            self._nle_overlay.show()
-            self._nle_overlay.raise_()
+        # NLE: 0=위젯, 1=잠금화면
+        self._nle_stack.setCurrentIndex(0 if can_use_nle else 1)
 
-        # SI 오버레이
-        if can_use_si:
-            self._si_overlay.hide()
-        else:
-            self._si_overlay.show()
-            self._si_overlay.raise_()
+        # SI: 0=위젯, 1=잠금화면
+        self._si_stack.setCurrentIndex(0 if can_use_si else 1)
+
+    def _create_lock_widget(self, feature_name: str) -> QWidget:
+        """잠금 화면 위젯 생성"""
+        widget = QWidget()
+        widget.setStyleSheet("""
+            QWidget {
+                background-color: #1a1a1a;
+            }
+        """)
+
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # 잠금 아이콘
+        icon_label = QLabel("🔒")
+        icon_font = QFont()
+        icon_font.setPointSize(36)
+        icon_label.setFont(icon_font)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_label.setStyleSheet("background: transparent;")
+        layout.addWidget(icon_label)
+
+        # 메시지
+        message_label = QLabel(f"{feature_name}은(는)\n등록 버전에서 사용할 수 있습니다")
+        message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        message_label.setStyleSheet("""
+            color: #888888;
+            font-size: 13px;
+            background: transparent;
+        """)
+        message_label.setWordWrap(True)
+        layout.addWidget(message_label)
+
+        # 등록 버튼
+        register_btn = QPushButton("라이센스 등록")
+        register_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a9eff;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 20px;
+                font-weight: 500;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #5aaeFF;
+            }
+            QPushButton:pressed {
+                background-color: #3a8eef;
+            }
+        """)
+        register_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        register_btn.clicked.connect(self._show_license_dialog)
+        register_btn.setFixedWidth(140)
+        layout.addWidget(register_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        return widget
 
     def _show_license_dialog(self):
         """라이센스 다이얼로그 표시"""

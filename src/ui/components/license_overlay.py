@@ -6,7 +6,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QGraphicsOpacityEffect
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QFont
 
 
@@ -24,6 +24,10 @@ class LicenseOverlay(QWidget):
         super().__init__(parent)
         self._feature_name = feature_name
         self._init_ui()
+
+        # 부모 위젯의 크기 변경 이벤트 감지
+        if parent:
+            parent.installEventFilter(self)
 
     def _init_ui(self):
         """UI 초기화"""
@@ -118,3 +122,10 @@ class LicenseOverlay(QWidget):
         super().resizeEvent(event)
         if self.parent():
             self.setGeometry(self.parent().rect())
+
+    def eventFilter(self, watched, event):
+        """부모 위젯의 이벤트 필터"""
+        if watched == self.parent() and event.type() == QEvent.Type.Resize:
+            # 부모 크기 변경 시 오버레이 크기 조정
+            self.setGeometry(self.parent().rect())
+        return super().eventFilter(watched, event)

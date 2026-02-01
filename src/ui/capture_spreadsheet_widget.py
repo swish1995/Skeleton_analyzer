@@ -29,6 +29,7 @@ from ..core.capture_model import CaptureRecord, CaptureDataModel
 from ..utils.excel_tables import create_all_lookup_sheets
 from ..utils.config import Config
 from ..core.logger import get_logger
+from ..license import LicenseManager
 from ..utils.excel_formulas import (
     get_rula_score_a_formula,
     get_rula_score_b_formula,
@@ -1026,6 +1027,15 @@ class CaptureSpreadsheetWidget(QWidget):
 
     def _export_json(self):
         """JSON 내보내기"""
+        # 라이센스 체크
+        if not LicenseManager.instance().check_feature('json_export'):
+            QMessageBox.warning(
+                self, "기능 제한",
+                "JSON 내보내기는 등록 버전에서 사용할 수 있습니다.\n"
+                "도움말 → 라이센스 등록 메뉴에서 등록해 주세요."
+            )
+            return
+
         if len(self._model) == 0:
             QMessageBox.warning(self, "경고", "내보낼 데이터가 없습니다.")
             return
@@ -1047,6 +1057,15 @@ class CaptureSpreadsheetWidget(QWidget):
 
     def _export_excel(self):
         """Excel 내보내기"""
+        # 라이센스 체크
+        if not LicenseManager.instance().check_feature('excel_export'):
+            QMessageBox.warning(
+                self, "기능 제한",
+                "Excel 내보내기는 등록 버전에서 사용할 수 있습니다.\n"
+                "도움말 → 라이센스 등록 메뉴에서 등록해 주세요."
+            )
+            return
+
         if len(self._model) == 0:
             QMessageBox.warning(self, "경고", "내보낼 데이터가 없습니다.")
             return
