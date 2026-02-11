@@ -15,6 +15,7 @@ from .player_widget import PlayerWidget
 from .status_widget import StatusWidget
 from .settings_dialog import SettingsDialog
 from .help_dialog import HelpDialog
+from .analysis_progress_dialog import AnalysisProgressDialog
 from ..utils.config import Config
 from ..core.project_manager import ProjectManager, ProjectLoadError, LoadResult
 from ..core.logger import get_logger
@@ -124,6 +125,10 @@ class MainWindow(QMainWindow):
         self.status_widget.exit_requested.connect(self.close)
         # 캡처 추가/변경 시 dirty 표시
         self.status_widget.capture_added.connect(self._mark_project_dirty)
+        # 분석 요청 시그널
+        self.status_widget.movement_analysis_widget.analysis_requested.connect(
+            self._on_analysis_requested
+        )
 
     def _init_menu(self):
         """메뉴 초기화"""
@@ -210,11 +215,21 @@ class MainWindow(QMainWindow):
         )
         view_menu.addAction(self._spreadsheet_action)
 
+        # 분석 결과 패널
+        self._analysis_result_action = QAction("분석 결과(&R)", self)
+        self._analysis_result_action.setCheckable(True)
+        self._analysis_result_action.setChecked(True)
+        self._analysis_result_action.setShortcut("Ctrl+3")
+        self._analysis_result_action.triggered.connect(
+            lambda checked: self.status_widget.set_analysis_visible(checked)
+        )
+        view_menu.addAction(self._analysis_result_action)
+
         # 안전지표 패널
         self._ergonomic_action = QAction("안전지표(&E)", self)
         self._ergonomic_action.setCheckable(True)
         self._ergonomic_action.setChecked(True)
-        self._ergonomic_action.setShortcut("Ctrl+3")
+        self._ergonomic_action.setShortcut("Ctrl+4")
         self._ergonomic_action.triggered.connect(
             lambda checked: self.status_widget.set_ergonomic_visible(checked)
         )
@@ -253,6 +268,7 @@ class MainWindow(QMainWindow):
         'save': ('#5ab87a', '#4aa86a', '#6ac88a'),     # 초록색
         '상태': ('#3a9a8a', '#2a8a7a', '#4aaa9a'),      # 틸색
         '데이터': ('#5a7ab8', '#4a6aa8', '#6a8ac8'),    # 파란색
+        '분석 결과': ('#5ab8b8', '#4aa8a8', '#6ac8c8'),  # 시안색
         '안전지표': ('#8a5ab8', '#7a4aa8', '#9a6ac8'),  # 보라색
         'RULA': ('#b8825a', '#a8724a', '#c8926a'),      # 주황색
         'REBA': ('#5ab87a', '#4aa86a', '#6ac88a'),      # 초록색
@@ -389,8 +405,17 @@ class MainWindow(QMainWindow):
         # 구분선
         self._toolbar.addSeparator()
 
+        # 분석 결과 버튼 (토글)
+        self._analysis_result_btn = QPushButton(f" 분석 결과 ({shortcut_prefix}3)")
+        self._analysis_result_btn.setFixedHeight(28)
+        self._analysis_result_btn.setCheckable(True)
+        self._analysis_result_btn.setChecked(True)
+        self._analysis_result_btn.setStyleSheet(self._get_toolbar_button_style('분석 결과', True))
+        self._analysis_result_btn.toggled.connect(self._on_analysis_result_toggled)
+        self._toolbar.addWidget(self._analysis_result_btn)
+
         # 안전지표 버튼 (토글)
-        self._safety_btn = QPushButton(f" 안전지표 ({shortcut_prefix}3)")
+        self._safety_btn = QPushButton(f" 안전지표 ({shortcut_prefix}4)")
         self._safety_btn.setIcon(QIcon(self._get_icon_path("safety")))
         self._safety_btn.setIconSize(QSize(14, 14))
         self._safety_btn.setFixedHeight(28)
@@ -488,6 +513,12 @@ class MainWindow(QMainWindow):
         self._data_btn.setIcon(self._get_icon_with_opacity("data", 1.0 if checked else 0.6))
         self._spreadsheet_action.setChecked(checked)
 
+    def _on_analysis_result_toggled(self, checked: bool):
+        """분석 결과 패널 토글"""
+        self.status_widget.set_analysis_visible(checked)
+        self._analysis_result_btn.setStyleSheet(self._get_toolbar_button_style('분석 결과', checked))
+        self._analysis_result_action.setChecked(checked)
+
     def _on_safety_toggled(self, checked: bool):
         """안전지표 패널 토글"""
         self.status_widget.set_ergonomic_visible(checked)
@@ -549,6 +580,7 @@ class MainWindow(QMainWindow):
 
         # 패널 가시성 로드
         angle_visible = self._settings.value("panel_angle", True, type=bool)
+        analysis_visible = self._settings.value("panel_analysis", True, type=bool)
         ergonomic_visible = self._settings.value("panel_ergonomic", True, type=bool)
         spreadsheet_visible = self._settings.value("panel_spreadsheet", True, type=bool)
         rula_visible = self._settings.value("panel_rula", True, type=bool)
@@ -558,6 +590,7 @@ class MainWindow(QMainWindow):
         si_visible = self._settings.value("panel_si", False, type=bool)
 
         self.status_widget.set_angle_visible(angle_visible)
+        self.status_widget.set_analysis_visible(analysis_visible)
         self.status_widget.set_ergonomic_visible(ergonomic_visible)
         self.status_widget.set_spreadsheet_visible(spreadsheet_visible)
         self.status_widget.set_rula_visible(rula_visible)
@@ -568,6 +601,7 @@ class MainWindow(QMainWindow):
 
         # 메뉴 체크 상태 동기화
         self._angle_action.setChecked(angle_visible)
+        self._analysis_result_action.setChecked(analysis_visible)
         self._ergonomic_action.setChecked(ergonomic_visible)
         self._spreadsheet_action.setChecked(spreadsheet_visible)
 
@@ -576,6 +610,8 @@ class MainWindow(QMainWindow):
         self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', angle_visible))
         self._data_btn.setChecked(spreadsheet_visible)
         self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', spreadsheet_visible))
+        self._analysis_result_btn.setChecked(analysis_visible)
+        self._analysis_result_btn.setStyleSheet(self._get_toolbar_button_style('분석 결과', analysis_visible))
         self._safety_btn.setChecked(ergonomic_visible)
         self._safety_btn.setStyleSheet(self._get_toolbar_button_style('안전지표', ergonomic_visible))
         self._rula_btn.setChecked(rula_visible)
@@ -605,6 +641,7 @@ class MainWindow(QMainWindow):
 
         # 패널 가시성 저장
         self._settings.setValue("panel_angle", self.status_widget.is_angle_visible())
+        self._settings.setValue("panel_analysis", self.status_widget.is_analysis_visible())
         self._settings.setValue("panel_ergonomic", self.status_widget.is_ergonomic_visible())
         self._settings.setValue("panel_spreadsheet", self.status_widget.is_spreadsheet_visible())
         self._settings.setValue("panel_rula", self.status_widget.is_rula_visible())
@@ -619,6 +656,10 @@ class MainWindow(QMainWindow):
             self._angle_action.setChecked(visible)
             self._status_btn.setChecked(visible)
             self._status_btn.setStyleSheet(self._get_toolbar_button_style('상태', visible))
+        elif panel == 'analysis':
+            self._analysis_result_action.setChecked(visible)
+            self._analysis_result_btn.setChecked(visible)
+            self._analysis_result_btn.setStyleSheet(self._get_toolbar_button_style('분석 결과', visible))
         elif panel == 'ergonomic':
             self._ergonomic_action.setChecked(visible)
             self._safety_btn.setChecked(visible)
@@ -686,6 +727,7 @@ class MainWindow(QMainWindow):
             # 기존 데이터 정리
             self._cleanup_capture_images()
             self.status_widget.spreadsheet_widget.clear_all()
+            self.status_widget.movement_analysis_widget.reset_to_ready()
             self.player_widget.stop()
 
         if self.player_widget.load_video(file_path):
@@ -797,6 +839,14 @@ class MainWindow(QMainWindow):
     def _on_video_loaded(self, video_name: str):
         """동영상 로드 시 호출"""
         self.status_widget.set_video_name(video_name)
+
+        # 분석 위젯에 동영상 정보 전달
+        video_path = self.player_widget.get_video_path()
+        total_frames = self.player_widget._video_player.frame_count
+        if video_path and total_frames > 0:
+            self.status_widget.movement_analysis_widget.set_video_info(
+                video_path, total_frames
+            )
 
     def _on_frame_changed(self, frame, frame_number: int):
         """프레임 변경 시 호출"""
@@ -1022,6 +1072,13 @@ class MainWindow(QMainWindow):
             # UI 상태 복원
             self._restore_ui_state(state['ui_state'])
 
+            # 분석 결과 복원
+            movement_result = state.get('movement_analysis_result')
+            if movement_result:
+                self.status_widget.movement_analysis_widget.set_result(
+                    movement_result, video_missing=info.video_missing
+                )
+
             self._add_recent_project(file_path)
             self._update_window_title()
             self._status_bar.showMessage(f"프로젝트 로드됨: {file_path}")
@@ -1079,6 +1136,7 @@ class MainWindow(QMainWindow):
                 capture_model=self.status_widget.spreadsheet_widget.get_model(),
                 ui_state=self._collect_ui_state(),
                 capture_dir=capture_dir,
+                movement_analysis_result=self.status_widget.movement_analysis_widget.get_result(),
             )
 
             if self._project_manager.save(path):
@@ -1099,6 +1157,7 @@ class MainWindow(QMainWindow):
         return {
             'panels': {
                 'angle': self.status_widget.is_angle_visible(),
+                'analysis': self.status_widget.is_analysis_visible(),
                 'ergonomic': self.status_widget.is_ergonomic_visible(),
                 'spreadsheet': self.status_widget.is_spreadsheet_visible(),
                 'rula': self.status_widget.is_rula_visible(),
@@ -1121,6 +1180,9 @@ class MainWindow(QMainWindow):
         if 'angle' in panels:
             self.status_widget.set_angle_visible(panels['angle'])
             self._angle_action.setChecked(panels['angle'])
+        if 'analysis' in panels:
+            self.status_widget.set_analysis_visible(panels['analysis'])
+            self._analysis_result_action.setChecked(panels['analysis'])
         if 'ergonomic' in panels:
             self.status_widget.set_ergonomic_visible(panels['ergonomic'])
             self._ergonomic_action.setChecked(panels['ergonomic'])
@@ -1161,6 +1223,59 @@ class MainWindow(QMainWindow):
         """프로그램 정보 도움말 표시"""
         dialog = HelpDialog(self)
         dialog.show_about()
+
+    # === 분석 관련 메서드 ===
+
+    def _on_analysis_requested(self, sample_interval: int):
+        """분석 위젯에서 분석 요청 시"""
+        video_path = self.player_widget.get_video_path()
+        if not video_path:
+            return
+
+        # 재개 데이터 확인
+        resume_data = self.status_widget.movement_analysis_widget.get_resume_data()
+        if resume_data:
+            self._run_analysis(
+                video_path, sample_interval,
+                resume_state=resume_data['analyzer_state'],
+                resume_frame=resume_data['frame_index'],
+                resume_skipped=resume_data['skipped_frames'],
+                resume_elapsed=resume_data.get('elapsed_seconds', 0.0),
+            )
+        else:
+            self._run_analysis(video_path, sample_interval)
+
+    def _run_analysis(self, video_path: str, sample_interval: int,
+                      resume_state: dict = None, resume_frame: int = 0,
+                      resume_skipped: int = 0, resume_elapsed: float = 0.0):
+        """분석 모달 실행"""
+        dialog = AnalysisProgressDialog(
+            video_path=video_path,
+            sample_interval=sample_interval,
+            resume_state=resume_state,
+            resume_frame=resume_frame,
+            resume_skipped=resume_skipped,
+            resume_elapsed=resume_elapsed,
+            parent=self,
+        )
+        dialog.start_analysis()
+        accepted = dialog.exec()
+
+        if accepted:
+            result = dialog.get_result()
+            if result:
+                self.status_widget.movement_analysis_widget.set_result(result)
+                self.status_widget.switch_to_analysis_tab()
+                self._status_bar.showMessage(
+                    f"분석 완료: {result.analyzed_frames:,}프레임 분석, "
+                    f"{result.duration_seconds:.1f}초 소요"
+                )
+        else:
+            # 취소 시 부분 상태 저장
+            partial_state = dialog.get_partial_state()
+            if partial_state:
+                self.status_widget.movement_analysis_widget.save_resume_state(partial_state)
+                self._status_bar.showMessage("분석 취소됨 - 진행 상태가 저장되었습니다.")
 
     # === 라이센스 관련 메서드 ===
 

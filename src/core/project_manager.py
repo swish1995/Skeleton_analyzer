@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List, Set
 
 from .capture_model import CaptureDataModel, CaptureRecord
+from .movement_analyzer import MovementAnalysisResult
 from .logger import get_logger
 
 
@@ -66,6 +67,7 @@ class ProjectManager:
         self._capture_model: Optional[CaptureDataModel] = None
         self._ui_state: Dict[str, Any] = {}
         self._capture_dir: Optional[Path] = None
+        self._movement_analysis_result: Optional[MovementAnalysisResult] = None
 
     # === 속성 ===
 
@@ -106,6 +108,7 @@ class ProjectManager:
         capture_model: CaptureDataModel,
         ui_state: Dict[str, Any],
         capture_dir: Optional[Path] = None,
+        movement_analysis_result: Optional[MovementAnalysisResult] = None,
     ) -> None:
         """저장할 상태 설정"""
         self._video_path = video_path
@@ -114,6 +117,7 @@ class ProjectManager:
         self._capture_model = capture_model
         self._ui_state = ui_state
         self._capture_dir = capture_dir
+        self._movement_analysis_result = movement_analysis_result
 
     def get_state(self) -> Dict[str, Any]:
         """현재 상태 반환"""
@@ -123,6 +127,7 @@ class ProjectManager:
             'fps': self._fps,
             'capture_model': self._capture_model,
             'ui_state': self._ui_state,
+            'movement_analysis_result': self._movement_analysis_result,
         }
 
     # === 저장 ===
@@ -201,6 +206,13 @@ class ProjectManager:
             # ui_state.json
             zf.writestr('ui_state.json', json.dumps(self._ui_state, indent=2))
 
+            # movement_analysis.json (옵션)
+            if self._movement_analysis_result:
+                movement_data = self._movement_analysis_result.to_dict()
+            else:
+                movement_data = {}
+            zf.writestr('movement_analysis.json', json.dumps(movement_data, indent=2, ensure_ascii=False))
+
             # 이미지 복사
             if self._capture_model and self._capture_dir:
                 self._copy_images_to_zip(zf)
@@ -275,6 +287,13 @@ class ProjectManager:
                 captures_data = json.loads(zf.read('captures.json'))
                 ui_state = json.loads(zf.read('ui_state.json'))
 
+                # 움직임 분석 결과 로드 (옵션 - 이전 버전 호환)
+                movement_analysis_result = None
+                if 'movement_analysis.json' in zf.namelist():
+                    movement_data = json.loads(zf.read('movement_analysis.json'))
+                    if movement_data and 'body_parts' in movement_data:
+                        movement_analysis_result = MovementAnalysisResult.from_dict(movement_data)
+
                 # 동영상 존재 확인
                 video_path = video_data.get('path')
                 video_missing = False
@@ -302,6 +321,7 @@ class ProjectManager:
                 self._fps = video_data.get('fps', 30.0)
                 self._capture_model = capture_model
                 self._ui_state = ui_state
+                self._movement_analysis_result = movement_analysis_result
                 self._current_path = path
                 self.mark_clean()
 
@@ -375,3 +395,4 @@ class ProjectManager:
         self._capture_model = CaptureDataModel()
         self._ui_state = {}
         self._capture_dir = None
+        self._movement_analysis_result = None

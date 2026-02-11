@@ -314,3 +314,72 @@ def create_all_lookup_sheets(wb):
     create_reba_sheets(wb)
     create_owas_sheet(wb)
     create_si_sheets(wb)
+
+
+def create_movement_analysis_sheet(wb, result):
+    """
+    Movement Analysis 결과 시트 생성
+
+    Args:
+        wb: openpyxl Workbook 객체
+        result: MovementAnalysisResult 객체
+    """
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+
+    ws = wb.create_sheet("Movement Analysis")
+
+    # 스타일 정의
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="2D5A88", end_color="1D3A58", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin', color='444444'),
+        right=Side(style='thin', color='444444'),
+        top=Side(style='thin', color='444444'),
+        bottom=Side(style='thin', color='444444'),
+    )
+
+    # 메타 정보
+    ws.cell(row=1, column=1, value="분석 요약")
+    ws['A1'].font = Font(bold=True, size=13)
+    ws.cell(row=2, column=1, value="분석 프레임")
+    ws.cell(row=2, column=2, value=result.analyzed_frames)
+    ws.cell(row=3, column=1, value="감지 실패 프레임")
+    ws.cell(row=3, column=2, value=result.skipped_frames)
+    ws.cell(row=4, column=1, value="전체 프레임")
+    ws.cell(row=4, column=2, value=result.total_frames)
+    ws.cell(row=5, column=1, value="샘플링 간격")
+    ws.cell(row=5, column=2, value=result.sample_interval)
+    ws.cell(row=6, column=1, value="소요 시간(초)")
+    ws.cell(row=6, column=2, value=round(result.duration_seconds, 1))
+
+    # 테이블 헤더 (row 8)
+    headers = [
+        "부위", "관절명", "프레임 수", "움직임 횟수",
+        "고위험 프레임", "고위험 비율(%)", "최대 각도",
+        "최소 각도", "평균 각도", "누적 점수",
+    ]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws.cell(row=8, column=col_idx, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+        cell.border = thin_border
+
+    # 데이터 행
+    for row_idx, stats in enumerate(result.get_sorted_by_movement(), start=9):
+        ws.cell(row=row_idx, column=1, value=stats.display_name).border = thin_border
+        ws.cell(row=row_idx, column=2, value=stats.joint_name).border = thin_border
+        ws.cell(row=row_idx, column=3, value=stats.total_frames).border = thin_border
+        ws.cell(row=row_idx, column=4, value=stats.movement_count).border = thin_border
+        ws.cell(row=row_idx, column=5, value=stats.high_risk_frames).border = thin_border
+        ws.cell(row=row_idx, column=6, value=round(stats.high_risk_ratio * 100, 1)).border = thin_border
+        ws.cell(row=row_idx, column=7, value=round(stats.max_angle, 1)).border = thin_border
+        ws.cell(row=row_idx, column=8, value=round(stats.min_angle, 1)).border = thin_border
+        ws.cell(row=row_idx, column=9, value=round(stats.avg_angle, 1)).border = thin_border
+        ws.cell(row=row_idx, column=10, value=round(stats.cumulative_score, 2)).border = thin_border
+
+    # 컬럼 너비 조정
+    col_widths = [12, 16, 12, 12, 12, 14, 10, 10, 10, 12]
+    for i, width in enumerate(col_widths, start=1):
+        ws.column_dimensions[chr(64 + i)].width = width

@@ -1,7 +1,7 @@
 """스테이터스 위젯 모듈 (스켈레톤 + 각도 + 인체공학적 평가 + 캡처 스프레드시트)"""
 import platform
 from PyQt6.QtWidgets import (
-    QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, QMenu, QSizePolicy
+    QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, QMenu, QSizePolicy,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QAction
@@ -12,6 +12,7 @@ from typing import Optional
 from .skeleton_widget import SkeletonWidget
 from .angle_widget import AngleWidget
 from .ergonomic import ErgonomicWidget
+from .movement_analysis_widget import MovementAnalysisWidget
 from .capture_spreadsheet_widget import CaptureSpreadsheetWidget
 from .settings_dialog import SettingsDialog
 from ..core.pose_detector import PoseDetector
@@ -129,6 +130,7 @@ class StatusWidget(QWidget):
         self._angle_visible = True
         self._spreadsheet_visible = True
         self._ergonomic_visible = True
+        self._analysis_visible = True
         self._rula_visible = True
         self._reba_visible = True
         self._owas_visible = True
@@ -197,10 +199,30 @@ class StatusWidget(QWidget):
         self._top_splitter.setMinimumHeight(150)
         self._main_splitter.addWidget(self._top_splitter)
 
-        # 중단: 인체공학적 평가 (RULA/REBA/OWAS)
+        # 중단: 분석 결과(좌) + 안전 지표(우) (좌/우 분할)
+        self._middle_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._middle_splitter.setHandleWidth(8)
+        self._middle_splitter.setStyleSheet(horizontal_splitter_style)
+        self._middle_splitter.setMinimumHeight(100)
+
+        # 좌: 분석 결과
+        self._movement_analysis_widget = MovementAnalysisWidget()
+        self._movement_analysis_widget.setMinimumWidth(200)
+        self._middle_splitter.addWidget(self._movement_analysis_widget)
+
+        # 우: 안전 지표
         self._ergonomic_widget = ErgonomicWidget()
-        self._ergonomic_widget.setMinimumHeight(100)  # 안전지표 최소 높이
-        self._main_splitter.addWidget(self._ergonomic_widget)
+        self._ergonomic_widget.setMinimumWidth(200)
+        self._middle_splitter.addWidget(self._ergonomic_widget)
+
+        # 스플리터로 패널이 완전히 축소되지 않도록 설정
+        self._middle_splitter.setCollapsible(0, False)  # 분석 결과
+        self._middle_splitter.setCollapsible(1, False)  # 안전 지표
+
+        # 50:50 비율
+        self._middle_splitter.setSizes([400, 400])
+
+        self._main_splitter.addWidget(self._middle_splitter)
 
         # 하단: 캡처 스프레드시트
         self._spreadsheet_widget = CaptureSpreadsheetWidget(config=self._config)
@@ -209,7 +231,7 @@ class StatusWidget(QWidget):
 
         # 스플리터로 패널이 완전히 축소되지 않도록 설정
         self._main_splitter.setCollapsible(0, False)  # 상단 (스켈레톤+각도)
-        self._main_splitter.setCollapsible(1, False)  # 중단 (안전지표)
+        self._main_splitter.setCollapsible(1, False)  # 중단 (분석 결과+안전지표)
         self._main_splitter.setCollapsible(2, False)  # 하단 (스프레드시트)
 
         # 상단:중단:하단 = 35:35:30 비율
@@ -234,7 +256,21 @@ class StatusWidget(QWidget):
         """안전지표 패널 가시성 설정"""
         self._ergonomic_visible = visible
         self._ergonomic_widget.setVisible(visible)
+        self._update_middle_visibility()
         self.visibility_changed.emit('ergonomic', visible)
+
+    def set_analysis_visible(self, visible: bool):
+        """분석 결과 패널 가시성 설정"""
+        self._analysis_visible = visible
+        self._movement_analysis_widget.setVisible(visible)
+        self._update_middle_visibility()
+        self.visibility_changed.emit('analysis', visible)
+
+    def _update_middle_visibility(self):
+        """분석 결과와 안전 지표 둘 다 숨김일 때만 중단 패널 숨김"""
+        self._middle_splitter.setVisible(
+            self._analysis_visible or self._ergonomic_visible
+        )
 
     def set_spreadsheet_visible(self, visible: bool):
         """스프레드시트 패널 가시성 설정"""
@@ -264,6 +300,10 @@ class StatusWidget(QWidget):
     def is_ergonomic_visible(self) -> bool:
         """안전지표 패널 가시성 반환"""
         return self._ergonomic_visible
+
+    def is_analysis_visible(self) -> bool:
+        """분석 결과 패널 가시성 반환"""
+        return self._analysis_visible
 
     def is_spreadsheet_visible(self) -> bool:
         """스프레드시트 패널 가시성 반환"""
@@ -470,6 +510,16 @@ class StatusWidget(QWidget):
     def ergonomic_widget(self) -> ErgonomicWidget:
         """인체공학적 평가 위젯 반환"""
         return self._ergonomic_widget
+
+    @property
+    def movement_analysis_widget(self) -> MovementAnalysisWidget:
+        """분석 결과 위젯 반환"""
+        return self._movement_analysis_widget
+
+    def switch_to_analysis_tab(self):
+        """분석 결과 패널 표시"""
+        if not self._analysis_visible:
+            self.set_analysis_visible(True)
 
     def _open_settings(self):
         """설정 다이얼로그 열기"""

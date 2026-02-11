@@ -594,8 +594,9 @@
             <div class="toc-item"><span class="num">6.</span>동영상 재생</div>
             <div class="toc-item"><span class="num">7.</span>데이터 캡처</div>
             <div class="toc-item"><span class="num">8.</span>인체공학 평가</div>
-            <div class="toc-item"><span class="num">9.</span>데이터 내보내기</div>
-            <div class="toc-item"><span class="num">10.</span>단축키 모음</div>
+            <div class="toc-item"><span class="num">9.</span>움직임 빈도 분석</div>
+            <div class="toc-item"><span class="num">10.</span>데이터 내보내기</div>
+            <div class="toc-item"><span class="num">11.</span>단축키 모음</div>
         </div>
     </div>
 
@@ -1075,9 +1076,159 @@
         </div>
     </div>
 
-    <!-- 9. 데이터 내보내기 -->
+    <!-- 9. 움직임 빈도 분석 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📊</span> 움직임 빈도 분석</h2>
+        <p>
+            동영상 전체를 순차 스캔하여 <strong>신체 부위별 움직임 횟수</strong>와
+            <strong>고위험 자세 노출 비율</strong>을 분석합니다.
+            실시간 평가(안전 지표)와 달리, 전체 영상에 대한 종합 통계를 제공합니다.
+        </p>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🚀</span> 분석 시작하기</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">동영상을 로드합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content"><strong>분석 결과</strong> 탭을 클릭하거나 툴바의 <strong>분석</strong> 버튼을 클릭합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">프레임 샘플링 옵션을 선택합니다 (전체 / 매 2프레임 / 매 3프레임)</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content"><strong>분석 시작</strong> 버튼을 클릭합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">5</div>
+                    <div class="step-content">분석이 완료되면 결과 테이블이 자동으로 표시됩니다</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">⏱️</span> 프레임 샘플링</h3>
+            <p>긴 동영상의 경우 프레임 샘플링으로 분석 시간을 줄일 수 있습니다.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">옵션</th>
+                        <th>설명</th>
+                        <th style="width: 140px;">분석 시간</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>전체 프레임</strong></td>
+                        <td>모든 프레임을 분석 (가장 정확)</td>
+                        <td>기본</td>
+                    </tr>
+                    <tr>
+                        <td><strong>매 2프레임</strong></td>
+                        <td>2프레임마다 1프레임 분석</td>
+                        <td>~50% 단축</td>
+                    </tr>
+                    <tr>
+                        <td><strong>매 3프레임</strong></td>
+                        <td>3프레임마다 1프레임 분석</td>
+                        <td>~67% 단축</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="tip-box">
+                <span class="tip-icon">💡</span>
+                <span class="tip-text"><strong>팁:</strong> 30분 이상의 동영상은 "매 2프레임" 또는 "매 3프레임"을 권장합니다. 샘플링 시에도 이전 분석 프레임 대비 각도 변화를 비교하므로 정확도가 크게 떨어지지 않습니다.</span>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📋</span> 결과 테이블 읽기</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">컬럼</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>부위</strong></td>
+                        <td>13개 관절 부위 (목, 어깨, 팔꿈치, 손목, 엉덩이, 무릎, 발목)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>움직임</strong></td>
+                        <td>인라인 바 + 횟수. 이전 프레임 대비 각도 변화가 15° 초과인 경우 카운트</td>
+                    </tr>
+                    <tr>
+                        <td><strong>고위험 비율</strong></td>
+                        <td>RULA/REBA 부위별 점수가 4점 이상인 프레임의 비율</td>
+                    </tr>
+                    <tr>
+                        <td><strong>평균 각도</strong></td>
+                        <td>분석된 프레임 전체의 평균 관절 각도</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🎨</span> 고위험 비율 색상 코드</h3>
+            <div class="risk-grid">
+                <div class="risk-item very-high">
+                    <div class="risk-icon">🔴</div>
+                    <div class="risk-level">60% 이상</div>
+                    <div class="risk-desc">즉시 개선 필요</div>
+                </div>
+                <div class="risk-item high">
+                    <div class="risk-icon">🟠</div>
+                    <div class="risk-level">40% 이상</div>
+                    <div class="risk-desc">개선 필요</div>
+                </div>
+                <div class="risk-item medium">
+                    <div class="risk-icon">🟡</div>
+                    <div class="risk-level">20% 이상</div>
+                    <div class="risk-desc">모니터링 필요</div>
+                </div>
+                <div class="risk-item low">
+                    <div class="risk-icon">🟢</div>
+                    <div class="risk-level">20% 미만</div>
+                    <div class="risk-desc">허용 가능</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">⚠️</span> 감지 실패 경고</h3>
+            <p>
+                포즈 감지 실패율이 <strong>30%를 초과</strong>하면 결과 상단에 경고 배너가 표시됩니다.
+                화질이 낮거나 사람이 가려진 구간이 많은 경우 발생할 수 있습니다.
+            </p>
+            <div class="warning-box">
+                <span class="warning-icon">⚠️</span>
+                <span class="warning-text"><strong>참고:</strong> 감지 실패 프레임은 분석에서 제외되므로, 실패율이 높을수록 결과의 대표성이 낮아질 수 있습니다.</span>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🔄</span> 추가 안내</h3>
+            <ul>
+                <li>새 동영상을 로드하면 이전 분석 결과가 자동으로 초기화됩니다</li>
+                <li>분석 중 <strong>취소</strong>하면 부분 결과는 폐기되고, 이전 결과가 있었다면 유지됩니다</li>
+                <li>컬럼 헤더를 클릭하여 움직임 횟수순 또는 고위험 비율순으로 정렬할 수 있습니다</li>
+                <li>분석은 재생 상태와 독립적으로 동작합니다 (재생 속도, 시크 등에 영향 없음)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 10. 데이터 내보내기 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">📤</span> 데이터 내보내기 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
+
         <p>스프레드시트에서 <strong>우클릭</strong>하여 내보내기 메뉴에 접근합니다.</p>
 
         <div class="warning-box">
@@ -1132,7 +1283,7 @@
         </div>
     </div>
 
-    <!-- 9. 단축키 모음 -->
+    <!-- 11. 단축키 모음 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">⌨️</span> 단축키 모음</h2>
 
