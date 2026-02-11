@@ -129,6 +129,10 @@ class MainWindow(QMainWindow):
         self.status_widget.movement_analysis_widget.analysis_requested.connect(
             self._on_analysis_requested
         )
+        # 분석 위젯 라이센스 등록 요청
+        self.status_widget.movement_analysis_widget.register_requested.connect(
+            self._show_license_dialog
+        )
 
     def _init_menu(self):
         """메뉴 초기화"""

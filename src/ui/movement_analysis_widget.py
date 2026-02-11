@@ -9,6 +9,8 @@ from PyQt6.QtGui import QColor
 
 from src.core.movement_analyzer import MovementAnalysisResult, BodyPartStats
 from src.ui.bar_item_delegate import BarItemDelegate, get_risk_color
+from src.ui.components.license_overlay import LicenseOverlay
+from src.license import LicenseManager
 
 
 # 테이블 컬럼 인덱스
@@ -47,6 +49,9 @@ class MovementAnalysisWidget(QWidget):
     STATE_READY = 1
     STATE_RESULT = 2
 
+    # 라이센스 등록 요청 시그널
+    register_requested = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._result: MovementAnalysisResult = None
@@ -55,6 +60,7 @@ class MovementAnalysisWidget(QWidget):
         self._resume_data: dict = None  # 재개용 상태 저장
         self._init_ui()
         self._apply_style()
+        self._setup_license_overlay()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
@@ -342,6 +348,27 @@ class MovementAnalysisWidget(QWidget):
                 font-weight: bold;
             }
         """)
+
+    def _setup_license_overlay(self):
+        """라이센스 오버레이 설정"""
+        self._license_overlay = LicenseOverlay(self, feature_name="움직임 빈도 분석")
+        self._license_overlay.register_clicked.connect(
+            lambda: self.register_requested.emit()
+        )
+
+        # 라이센스 상태에 따라 오버레이 표시/숨김
+        license_manager = LicenseManager.instance()
+        license_manager.license_changed.connect(self._update_license_overlay)
+        self._update_license_overlay()
+
+    def _update_license_overlay(self):
+        """라이센스 상태에 따라 오버레이 표시/숨김"""
+        is_licensed = LicenseManager.instance().is_licensed
+        if is_licensed:
+            self._license_overlay.hide()
+        else:
+            self._license_overlay.show()
+            self._license_overlay.raise_()
 
     # === 공개 API ===
 
