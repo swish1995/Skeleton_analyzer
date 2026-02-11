@@ -740,6 +740,7 @@
                 <ul>
                     <li><strong>상태 패널</strong> - 현재 프레임의 관절 각도</li>
                     <li><strong>데이터 패널</strong> - 캡처된 데이터 스프레드시트</li>
+                    <li><strong>분석 결과 패널</strong> - 움직임 빈도 분석 결과</li>
                     <li><strong>안전지표 패널</strong> - 인체공학 평가 결과</li>
                 </ul>
             </div>
@@ -747,7 +748,7 @@
 
         <div class="tip-box">
             <span class="tip-icon">💡</span>
-            <span class="tip-text">각 패널은 <kbd>Ctrl</kbd>+<kbd>1</kbd>, <kbd>Ctrl</kbd>+<kbd>2</kbd>, <kbd>Ctrl</kbd>+<kbd>3</kbd> 단축키로 표시/숨기기를 전환할 수 있습니다.</span>
+            <span class="tip-text">각 패널은 <kbd>Ctrl</kbd>+<kbd>1</kbd>, <kbd>Ctrl</kbd>+<kbd>2</kbd>, <kbd>Ctrl</kbd>+<kbd>3</kbd>, <kbd>Ctrl</kbd>+<kbd>4</kbd> 단축키로 표시/숨기기를 전환할 수 있습니다.</span>
         </div>
     </div>
 
@@ -822,8 +823,13 @@
                         <td>데이터 패널을 표시하거나 숨깁니다</td>
                     </tr>
                     <tr>
-                        <td>안전지표</td>
+                        <td>분석 결과</td>
                         <td><kbd>Ctrl</kbd>+<kbd>3</kbd></td>
+                        <td>분석 결과 패널을 표시하거나 숨깁니다</td>
+                    </tr>
+                    <tr>
+                        <td>안전지표</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>4</kbd></td>
                         <td>안전지표 패널을 표시하거나 숨깁니다</td>
                     </tr>
                 </tbody>
@@ -1098,7 +1104,7 @@
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
-                    <div class="step-content">프레임 샘플링 옵션을 선택합니다 (전체 / 매 2프레임 / 매 3프레임)</div>
+                    <div class="step-content">프레임 샘플링 옵션을 선택합니다 (전체 / 매 2프레임 / 매 3프레임, 기본: 매 2프레임)</div>
                 </div>
                 <div class="step">
                     <div class="step-num">4</div>
@@ -1215,12 +1221,24 @@
         </div>
 
         <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">⏸️</span> 분석 취소 및 재개</h3>
+            <ul>
+                <li>분석 중 <strong>취소</strong>하면 현재까지의 진행 상태가 저장됩니다</li>
+                <li>취소 후 <strong>이어서 분석</strong> 버튼을 클릭하면 중단된 지점부터 다시 시작합니다</li>
+                <li>재개 시 이전 분석 시간이 누적되어 정확한 총 소요 시간이 표시됩니다</li>
+                <li><strong>처음부터 시작</strong> 버튼을 클릭하면 저장된 진행 상태를 삭제하고 처음부터 다시 분석합니다</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
             <h3 class="subsection-title"><span class="sub-icon">🔄</span> 추가 안내</h3>
             <ul>
                 <li>새 동영상을 로드하면 이전 분석 결과가 자동으로 초기화됩니다</li>
-                <li>분석 중 <strong>취소</strong>하면 부분 결과는 폐기되고, 이전 결과가 있었다면 유지됩니다</li>
+                <li>분석이 시작되면 프레임 샘플링 옵션이 잠기며, <strong>다시 분석</strong> 버튼으로 초기화해야 변경할 수 있습니다</li>
+                <li><strong>다시 분석</strong> 버튼을 누르면 결과가 초기화되고 프레임 옵션 선택 화면으로 돌아갑니다</li>
                 <li>컬럼 헤더를 클릭하여 움직임 횟수순 또는 고위험 비율순으로 정렬할 수 있습니다</li>
                 <li>분석은 재생 상태와 독립적으로 동작합니다 (재생 속도, 시크 등에 영향 없음)</li>
+                <li>분석 결과는 프로젝트 저장 시 함께 저장되며, 프로젝트를 열면 복원됩니다</li>
             </ul>
         </div>
     </div>
@@ -1348,8 +1366,12 @@
                         <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>2</kbd></span>
                     </div>
                     <div class="shortcut-item">
-                        <span class="shortcut-action">안전지표 패널</span>
+                        <span class="shortcut-action">분석 결과 패널</span>
                         <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>3</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">안전지표 패널</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>4</kbd></span>
                     </div>
                 </div>
             </div>
