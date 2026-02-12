@@ -15,28 +15,52 @@ from src.license import LicenseManager
 
 # 테이블 컬럼 인덱스
 COL_BODY_PART = 0
-COL_MOVEMENT = 1
-COL_RISK = 2
-COL_AVG_ANGLE = 3
+COL_GRADE = 1
+COL_MOVEMENT = 2
+COL_RISK = 3
+COL_AVG_ANGLE = 4
 
-# 색상 코드 이모지
-RISK_EMOJI = {
-    'red': '\U0001f534',      # 🔴
-    'orange': '\U0001f7e0',   # 🟠
-    'yellow': '\U0001f7e1',   # 🟡
-    'green': '\U0001f7e2',    # 🟢
+# 부위별 부담도 판정 기준
+GRADE_OVERLOAD = 'overload'   # 과부하
+GRADE_CAUTION = 'caution'     # 주의
+GRADE_NORMAL = 'normal'       # 정상
+
+GRADE_INFO = {
+    GRADE_OVERLOAD: {
+        'label': '과부하',
+        'emoji': '\U0001f534',   # 🔴
+        'color': '#F44336',
+        'threshold': 0.5,
+    },
+    GRADE_CAUTION: {
+        'label': '주의',
+        'emoji': '\U0001f7e0',   # 🟠
+        'color': '#FF9800',
+        'threshold': 0.2,
+    },
+    GRADE_NORMAL: {
+        'label': '정상',
+        'emoji': '\U0001f7e2',   # 🟢
+        'color': '#4CAF50',
+        'threshold': 0.0,
+    },
 }
 
 
-def _risk_emoji(ratio: float) -> str:
-    if ratio >= 0.6:
-        return RISK_EMOJI['red']
-    elif ratio >= 0.4:
-        return RISK_EMOJI['orange']
-    elif ratio >= 0.2:
-        return RISK_EMOJI['yellow']
+def _get_grade(ratio: float) -> str:
+    """고위험 비율에 따른 부담도 등급 반환"""
+    if ratio >= GRADE_INFO[GRADE_OVERLOAD]['threshold']:
+        return GRADE_OVERLOAD
+    elif ratio >= GRADE_INFO[GRADE_CAUTION]['threshold']:
+        return GRADE_CAUTION
     else:
-        return RISK_EMOJI['green']
+        return GRADE_NORMAL
+
+
+def _grade_sort_key(grade: str) -> int:
+    """판정 등급 정렬 키 (과부하=0, 주의=1, 정상=2)"""
+    order = {GRADE_OVERLOAD: 0, GRADE_CAUTION: 1, GRADE_NORMAL: 2}
+    return order.get(grade, 9)
 
 
 class MovementAnalysisWidget(QWidget):
@@ -194,6 +218,24 @@ class MovementAnalysisWidget(QWidget):
         self._summary_label.setWordWrap(True)
         layout.addWidget(self._summary_label)
 
+        # 종합 소견
+        self._assessment_frame = QFrame()
+        self._assessment_frame.setObjectName("assessmentFrame")
+        assessment_layout = QVBoxLayout(self._assessment_frame)
+        assessment_layout.setContentsMargins(10, 8, 10, 8)
+        assessment_layout.setSpacing(6)
+
+        self._assessment_summary = QLabel()
+        self._assessment_summary.setObjectName("assessmentSummary")
+        assessment_layout.addWidget(self._assessment_summary)
+
+        self._assessment_detail = QLabel()
+        self._assessment_detail.setObjectName("assessmentDetail")
+        self._assessment_detail.setWordWrap(True)
+        assessment_layout.addWidget(self._assessment_detail)
+
+        layout.addWidget(self._assessment_frame)
+
         # 구분선
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
@@ -203,8 +245,8 @@ class MovementAnalysisWidget(QWidget):
 
         # 결과 테이블
         self._table = QTableWidget()
-        self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(["부위", "움직임", "고위험 비율", "평균 각도"])
+        self._table.setColumnCount(5)
+        self._table.setHorizontalHeaderLabels(["부위", "판정", "움직임", "고위험 비율", "평균 각도"])
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.setAlternatingRowColors(False)
@@ -214,6 +256,7 @@ class MovementAnalysisWidget(QWidget):
         # 컬럼 헤더 크기
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(COL_BODY_PART, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(COL_GRADE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(COL_MOVEMENT, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(COL_RISK, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(COL_AVG_ANGLE, QHeaderView.ResizeMode.ResizeToContents)
@@ -270,6 +313,26 @@ class MovementAnalysisWidget(QWidget):
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 12px;
+            }
+            QFrame#assessmentFrame {
+                background-color: #252530;
+                border: 1px solid #3a3a4a;
+                border-radius: 6px;
+                margin: 4px 0px;
+            }
+            QLabel#assessmentSummary {
+                font-size: 13px;
+                font-weight: bold;
+                color: #e0e0e0;
+                padding: 0px;
+                background-color: transparent;
+            }
+            QLabel#assessmentDetail {
+                font-size: 12px;
+                color: #bbbbbb;
+                padding: 0px;
+                background-color: transparent;
+                line-height: 1.4;
             }
             QFrame#separator {
                 background-color: #3a3a3a;
@@ -524,18 +587,71 @@ class MovementAnalysisWidget(QWidget):
             f"샘플링: {'전체' if result.sample_interval == 1 else f'매 {result.sample_interval}프레임'}"
         )
 
-        # 테이블 데이터
+        # 부위별 판정 계산
         body_parts = list(result.body_parts.values())
+        graded = []
+        for bp in body_parts:
+            grade = _get_grade(bp.high_risk_ratio)
+            graded.append((bp, grade))
+
+        # 등급별 집계
+        grade_counts = {GRADE_OVERLOAD: 0, GRADE_CAUTION: 0, GRADE_NORMAL: 0}
+        for _, grade in graded:
+            grade_counts[grade] += 1
+
+        # 종합 소견 - 등급 요약
+        summary_parts = []
+        for g in [GRADE_OVERLOAD, GRADE_CAUTION, GRADE_NORMAL]:
+            info = GRADE_INFO[g]
+            count = grade_counts[g]
+            summary_parts.append(f"{info['emoji']} {info['label']} {count}")
+        self._assessment_summary.setText("  ".join(summary_parts))
+
+        # 종합 소견 - 개선 필요 부위 상세
+        needs_improvement = [
+            (bp, grade) for bp, grade in graded
+            if grade in (GRADE_OVERLOAD, GRADE_CAUTION)
+        ]
+        needs_improvement.sort(key=lambda x: x[0].high_risk_ratio, reverse=True)
+
+        if needs_improvement:
+            lines = ["가장 개선이 필요한 부위:"]
+            for i, (bp, grade) in enumerate(needs_improvement[:5]):
+                info = GRADE_INFO[grade]
+                lines.append(
+                    f"  {i + 1}. {bp.display_name} — "
+                    f"고위험 비율 {bp.high_risk_ratio:.0%}, "
+                    f"움직임 {bp.movement_count}회 ({info['label']})"
+                )
+            self._assessment_detail.setText("\n".join(lines))
+            self._assessment_detail.setVisible(True)
+        else:
+            self._assessment_detail.setText("모든 부위가 정상 범위입니다.")
+            self._assessment_detail.setVisible(True)
+
+        self._assessment_frame.setVisible(True)
+
+        # 테이블 데이터 (고위험 비율 순 정렬)
         max_movement = max((bp.movement_count for bp in body_parts), default=1) or 1
+        graded.sort(key=lambda x: (_grade_sort_key(x[1]), -x[0].high_risk_ratio))
 
         self._table.setSortingEnabled(False)
-        self._table.setRowCount(len(body_parts))
+        self._table.setRowCount(len(graded))
 
-        for row, bp in enumerate(sorted(body_parts, key=lambda x: x.movement_count, reverse=True)):
+        for row, (bp, grade) in enumerate(graded):
+            info = GRADE_INFO[grade]
+
             # 부위명
             name_item = QTableWidgetItem(bp.display_name)
             name_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self._table.setItem(row, COL_BODY_PART, name_item)
+
+            # 판정
+            grade_item = QTableWidgetItem(f"{info['emoji']} {info['label']}")
+            grade_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            grade_item.setForeground(QColor(info['color']))
+            grade_item.setData(Qt.ItemDataRole.DisplayRole, _grade_sort_key(grade))
+            self._table.setItem(row, COL_GRADE, grade_item)
 
             # 움직임 바 + 횟수
             movement_item = QTableWidgetItem()
@@ -545,7 +661,6 @@ class MovementAnalysisWidget(QWidget):
                 'max_value': float(max_movement),
                 'display': str(bp.movement_count),
             })
-            # 정렬용 데이터
             movement_item.setData(Qt.ItemDataRole.DisplayRole, bp.movement_count)
             self._table.setItem(row, COL_MOVEMENT, movement_item)
 
@@ -555,7 +670,7 @@ class MovementAnalysisWidget(QWidget):
                 'type': 'risk',
                 'value': bp.high_risk_ratio,
                 'max_value': 1.0,
-                'display': f"{bp.high_risk_ratio:.1%} {_risk_emoji(bp.high_risk_ratio)}",
+                'display': f"{bp.high_risk_ratio:.1%}",
             })
             risk_item.setData(Qt.ItemDataRole.DisplayRole, bp.high_risk_ratio)
             self._table.setItem(row, COL_RISK, risk_item)
@@ -567,4 +682,3 @@ class MovementAnalysisWidget(QWidget):
             self._table.setItem(row, COL_AVG_ANGLE, angle_item)
 
         self._table.setSortingEnabled(True)
-        self._table.setRowCount(len(body_parts))
