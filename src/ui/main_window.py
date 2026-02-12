@@ -582,6 +582,15 @@ class MainWindow(QMainWindow):
         if splitter_state:
             self._splitter.restoreState(splitter_state)
 
+        # 내부 스플리터 상태 복원
+        internal_states = {}
+        for key in ('main', 'top', 'middle'):
+            state = self._settings.value(f"status_splitter_{key}")
+            if state:
+                internal_states[key] = state
+        if internal_states:
+            self.status_widget.restore_splitter_states(internal_states)
+
         # 패널 가시성 로드
         angle_visible = self._settings.value("panel_angle", True, type=bool)
         analysis_visible = self._settings.value("panel_analysis", True, type=bool)
@@ -642,6 +651,11 @@ class MainWindow(QMainWindow):
         self._settings.setValue("recent_projects", self._recent_projects)
         self._settings.setValue("geometry", self.saveGeometry())
         self._settings.setValue("splitter_state", self._splitter.saveState())
+
+        # 내부 스플리터 상태 저장
+        internal_states = self.status_widget.save_splitter_states()
+        for key, state in internal_states.items():
+            self._settings.setValue(f"status_splitter_{key}", state)
 
         # 패널 가시성 저장
         self._settings.setValue("panel_angle", self.status_widget.is_angle_visible())
@@ -1167,6 +1181,7 @@ class MainWindow(QMainWindow):
             'splitter_sizes': {
                 'main': self._splitter.sizes(),
             },
+            'status_splitter_states': self.status_widget.save_splitter_states(),
         }
 
     def _restore_ui_state(self, ui_state: dict):
@@ -1201,6 +1216,10 @@ class MainWindow(QMainWindow):
         splitter_sizes = ui_state.get('splitter_sizes', {})
         if 'main' in splitter_sizes:
             self._splitter.setSizes(splitter_sizes['main'])
+
+        status_states = ui_state.get('status_splitter_states', {})
+        if status_states:
+            self.status_widget.restore_splitter_states(status_states)
 
     def _mark_project_dirty(self):
         """프로젝트를 dirty로 표시"""

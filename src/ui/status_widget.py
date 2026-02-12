@@ -244,6 +244,27 @@ class StatusWidget(QWidget):
         # 버튼이 메인 툴바로 이동하여 시그널 연결 불필요
         pass
 
+    # === 스플리터 상태 저장/복원 ===
+
+    def save_splitter_states(self) -> dict:
+        """내부 스플리터 상태를 딕셔너리로 반환"""
+        return {
+            'main': self._main_splitter.saveState(),
+            'top': self._top_splitter.saveState(),
+            'middle': self._middle_splitter.saveState(),
+        }
+
+    def restore_splitter_states(self, states: dict):
+        """딕셔너리로부터 내부 스플리터 상태 복원"""
+        if not states:
+            return
+        if 'main' in states and states['main']:
+            self._main_splitter.restoreState(states['main'])
+        if 'top' in states and states['top']:
+            self._top_splitter.restoreState(states['top'])
+        if 'middle' in states and states['middle']:
+            self._middle_splitter.restoreState(states['middle'])
+
     # === 외부에서 패널 가시성 제어 ===
 
     def set_angle_visible(self, visible: bool):
