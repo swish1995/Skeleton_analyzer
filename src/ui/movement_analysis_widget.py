@@ -222,8 +222,8 @@ class MovementAnalysisWidget(QWidget):
         self._assessment_frame = QFrame()
         self._assessment_frame.setObjectName("assessmentFrame")
         assessment_layout = QVBoxLayout(self._assessment_frame)
-        assessment_layout.setContentsMargins(10, 8, 10, 8)
-        assessment_layout.setSpacing(6)
+        assessment_layout.setContentsMargins(14, 10, 14, 4)
+        assessment_layout.setSpacing(2)
 
         self._assessment_summary = QLabel()
         self._assessment_summary.setObjectName("assessmentSummary")
@@ -318,21 +318,20 @@ class MovementAnalysisWidget(QWidget):
                 background-color: #252530;
                 border: 1px solid #3a3a4a;
                 border-radius: 6px;
-                margin: 4px 0px;
+                margin: 8px 2px 0px 2px;
             }
             QLabel#assessmentSummary {
-                font-size: 13px;
+                font-size: 16px;
                 font-weight: bold;
                 color: #e0e0e0;
-                padding: 0px;
+                padding: 2px 0px;
                 background-color: transparent;
             }
             QLabel#assessmentDetail {
-                font-size: 12px;
+                font-size: 13px;
                 color: #bbbbbb;
-                padding: 0px;
+                padding: 2px 0px;
                 background-color: transparent;
-                line-height: 1.4;
             }
             QFrame#separator {
                 background-color: #3a3a3a;
@@ -615,17 +614,26 @@ class MovementAnalysisWidget(QWidget):
         needs_improvement.sort(key=lambda x: x[0].high_risk_ratio, reverse=True)
 
         if needs_improvement:
-            lines = ["가장 개선이 필요한 부위:"]
+            items = []
             for i, (bp, grade) in enumerate(needs_improvement[:5]):
                 info = GRADE_INFO[grade]
-                lines.append(
-                    f"  {i + 1}. {bp.display_name} — "
+                items.append(
+                    f"&nbsp;&nbsp;{i + 1}. {bp.display_name} — "
                     f"고위험 비율 {bp.high_risk_ratio:.0%}, "
-                    f"움직임 {bp.movement_count}회 ({info['label']})"
+                    f"움직임 {bp.movement_count}회 "
+                    f"(<span style='color:{info['color']}'>{info['label']}</span>)"
                 )
-            self._assessment_detail.setText("\n".join(lines))
+            html = (
+                "<div style='line-height:1.7;'>"
+                "가장 개선이 필요한 부위:<br>"
+                + "<br>".join(items)
+                + "</div>"
+            )
+            self._assessment_detail.setTextFormat(Qt.TextFormat.RichText)
+            self._assessment_detail.setText(html)
             self._assessment_detail.setVisible(True)
         else:
+            self._assessment_detail.setTextFormat(Qt.TextFormat.PlainText)
             self._assessment_detail.setText("모든 부위가 정상 범위입니다.")
             self._assessment_detail.setVisible(True)
 
@@ -646,11 +654,10 @@ class MovementAnalysisWidget(QWidget):
             name_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self._table.setItem(row, COL_BODY_PART, name_item)
 
-            # 판정
+            # 판정 (이모지 유니코드 순서가 과부하<주의<정상이므로 자연 정렬 가능)
             grade_item = QTableWidgetItem(f"{info['emoji']} {info['label']}")
             grade_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             grade_item.setForeground(QColor(info['color']))
-            grade_item.setData(Qt.ItemDataRole.DisplayRole, _grade_sort_key(grade))
             self._table.setItem(row, COL_GRADE, grade_item)
 
             # 움직임 바 + 횟수
@@ -676,9 +683,11 @@ class MovementAnalysisWidget(QWidget):
             self._table.setItem(row, COL_RISK, risk_item)
 
             # 평균 각도
-            angle_item = QTableWidgetItem(f"{bp.avg_angle:.1f}°")
+            angle_item = QTableWidgetItem(f"{bp.avg_angle:.0f}°")
             angle_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            angle_item.setData(Qt.ItemDataRole.DisplayRole, bp.avg_angle)
+            angle_item.setData(Qt.ItemDataRole.UserRole, bp.avg_angle)
             self._table.setItem(row, COL_AVG_ANGLE, angle_item)
 
         self._table.setSortingEnabled(True)
+        self._table.clearSelection()
+        self._table.setCurrentItem(None)
