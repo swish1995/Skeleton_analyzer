@@ -85,20 +85,20 @@ REBA_TABLE_A = [
 ]
 
 # REBA Table B: 상완/전완/손목 조합
-# [upper_arm][lower_arm][wrist]
+# [upper_arm 1-6][lower_arm 1-2][wrist 1-3]
 REBA_TABLE_B = [
     # Upper Arm 1
-    [[1, 2], [1, 2], [3, 4]],
+    [[1, 2, 2], [1, 2, 3]],
     # Upper Arm 2
-    [[1, 2], [2, 3], [4, 5]],
+    [[1, 2, 3], [2, 3, 4]],
     # Upper Arm 3
-    [[3, 4], [4, 5], [5, 6]],
+    [[3, 4, 5], [4, 5, 5]],
     # Upper Arm 4
-    [[4, 5], [5, 6], [7, 8]],
+    [[4, 5, 5], [5, 6, 7]],
     # Upper Arm 5
-    [[6, 7], [7, 8], [8, 9]],
+    [[6, 7, 8], [7, 8, 8]],
     # Upper Arm 6
-    [[7, 8], [8, 9], [9, 9]],
+    [[7, 8, 8], [8, 9, 9]],
 ]
 
 # REBA Table C: A그룹/B그룹 → 최종 점수
@@ -272,8 +272,8 @@ def get_reba_table_b_score(upper_arm: int, lower_arm: int, wrist: int) -> int:
         B그룹 점수
     """
     ua = min(max(upper_arm - 1, 0), 5)
-    la = min(max(lower_arm - 1, 0), 2)
-    w = min(max(wrist - 1, 0), 1)
+    la = min(max(lower_arm - 1, 0), 1)
+    w = min(max(wrist - 1, 0), 2)
 
     try:
         return REBA_TABLE_B[ua][la][w]

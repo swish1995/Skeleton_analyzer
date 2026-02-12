@@ -148,7 +148,7 @@ def get_reba_score_b_formula(row: int, cols: Dict[str, str]) -> str:
     REBA Score B 수식 생성
 
     수식 로직:
-        INDEX(REBA_B, (upper_arm-1)*3 + lower_arm, wrist) + coupling
+        INDEX(REBA_B, (upper_arm-1)*2 + lower_arm, wrist) + coupling
 
     Args:
         row: Excel 행 번호
@@ -166,8 +166,8 @@ def get_reba_score_b_formula(row: int, cols: Dict[str, str]) -> str:
     w = f"{cols['wrist']}{row}"
     cp = f"{cols['coupling']}{row}"
 
-    # 행 인덱스: (upper_arm-1)*3 + lower_arm
-    row_idx = f"({ua}-1)*3+{la}"
+    # 행 인덱스: (upper_arm-1)*2 + lower_arm
+    row_idx = f"({ua}-1)*2+{la}"
 
     return f"=INDEX(REBA_B,{row_idx},{w})+{cp}"
 

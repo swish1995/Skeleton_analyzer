@@ -168,18 +168,18 @@ class TestREBATableB:
     """REBA Table B 변환 테스트"""
 
     def test_reba_table_b_dimensions(self):
-        """REBA Table B 변환 결과 차원 검증: 18행 × 2열"""
+        """REBA Table B 변환 결과 차원 검증: 12행 × 3열"""
         table_2d = convert_reba_table_b()
 
-        assert len(table_2d) == 18, f"Expected 18 rows, got {len(table_2d)}"
-        assert all(len(row) == 2 for row in table_2d), "All rows should have 2 columns"
+        assert len(table_2d) == 12, f"Expected 12 rows, got {len(table_2d)}"
+        assert all(len(row) == 3 for row in table_2d), "All rows should have 3 columns"
 
     def test_reba_table_b_first_case(self):
         """REBA Table B 변환 검증: upper_arm=1, lower_arm=1, wrist=1"""
         table_2d = convert_reba_table_b()
 
         # 원본: TABLE_B[0][0][0] = 1
-        # 변환: row = (1-1)*3 + (1-1) = 0, col = 0
+        # 변환: row = (1-1)*2 + (1-1) = 0, col = 0
         assert table_2d[0][0] == 1
 
     def test_reba_table_b_all_values_match(self):
@@ -188,10 +188,10 @@ class TestREBATableB:
         original = REBACalculator.TABLE_B
 
         for ua in range(6):  # upper_arm 1-6
-            for la in range(3):  # lower_arm 1-3
-                for w in range(2):  # wrist 1-2
+            for la in range(2):  # lower_arm 1-2
+                for w in range(3):  # wrist 1-3
                     expected = original[ua][la][w]
-                    row_idx = ua * 3 + la
+                    row_idx = ua * 2 + la
                     col_idx = w
                     actual = table_2d[row_idx][col_idx]
                     assert actual == expected, \

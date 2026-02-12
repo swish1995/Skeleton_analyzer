@@ -106,21 +106,21 @@ def convert_reba_table_b() -> List[List[int]]:
     """
     REBA Table B를 3차원에서 2차원으로 변환
 
-    원본 구조: [upper_arm 0-5][lower_arm 0-2][wrist 0-1]
-    변환 구조: 18행 × 2열
-        - 행 인덱스 = upper_arm*3 + lower_arm (0-17)
-        - 열 인덱스 = wrist (0-1)
+    원본 구조: [upper_arm 1-6][lower_arm 1-2][wrist 1-3]
+    변환 구조: 12행 × 3열
+        - 행 인덱스 = upper_arm*2 + lower_arm (0-11)
+        - 열 인덱스 = wrist (0-2)
 
     Returns:
-        18행 × 2열 2차원 리스트
+        12행 × 3열 2차원 리스트
     """
     original = REBACalculator.TABLE_B
     table_2d = []
 
     for ua in range(6):  # upper_arm 0-5
-        for la in range(3):  # lower_arm 0-2
+        for la in range(2):  # lower_arm 0-1
             row = []
-            for w in range(2):  # wrist 0-1
+            for w in range(3):  # wrist 0-2
                 row.append(original[ua][la][w])
             table_2d.append(row)
 
@@ -237,7 +237,7 @@ def create_reba_sheets(wb):
     ws_b = wb.create_sheet("REBA_B")
     table_b = convert_reba_table_b()
     _write_table_to_sheet(ws_b, table_b)
-    _create_named_range(wb, "REBA_B", "REBA_B", 18, 2)
+    _create_named_range(wb, "REBA_B", "REBA_B", 12, 3)
 
     # REBA_C 시트
     ws_c = wb.create_sheet("REBA_C")
