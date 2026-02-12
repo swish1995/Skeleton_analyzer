@@ -666,7 +666,7 @@ class MovementAnalysisWidget(QWidget):
                 'type': 'movement',
                 'value': float(bp.movement_count),
                 'max_value': float(max_movement),
-                'display': str(bp.movement_count),
+                'display': f"{bp.movement_count}회",
             })
             movement_item.setData(Qt.ItemDataRole.DisplayRole, bp.movement_count)
             self._table.setItem(row, COL_MOVEMENT, movement_item)
