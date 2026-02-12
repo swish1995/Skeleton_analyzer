@@ -44,9 +44,7 @@ class PoseDetector:
     def _download_model(self):
         """모델 파일 다운로드"""
         if not os.path.exists(self.MODEL_PATH):
-            print(f"Downloading pose landmarker model...")
             urllib.request.urlretrieve(self.MODEL_URL, self.MODEL_PATH)
-            print(f"Model downloaded to {self.MODEL_PATH}")
 
     def _initialize(self):
         """MediaPipe PoseLandmarker 초기화"""

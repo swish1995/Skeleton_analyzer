@@ -621,11 +621,9 @@ class CaptureDataModel:
         Returns:
             CaptureDataModel 인스턴스
         """
-        _logger.info(f"[썸네일] from_project_dict 호출: base_path={base_path}")
         model = cls()
 
         records_data = data.get('records', [])
-        _logger.debug(f"[썸네일] 레코드 수: {len(records_data)}")
 
         for idx, record_data in enumerate(records_data):
             # 이미지 경로를 절대 경로로 변환
@@ -633,16 +631,10 @@ class CaptureDataModel:
                 path = record_data.get(key)
                 if path:
                     rel_path = Path(path)
-                    _logger.debug(f"[썸네일] 레코드 {idx} - {key}: 원본 경로={path}, is_absolute={rel_path.is_absolute()}")
                     if not rel_path.is_absolute():
                         abs_path = str(base_path / rel_path)
                         record_data[key] = abs_path
-                        _logger.debug(f"[썸네일] 레코드 {idx} - {key}: 변환된 절대 경로={abs_path}")
-                else:
-                    _logger.debug(f"[썸네일] 레코드 {idx} - {key}: 경로 없음")
 
             record = CaptureRecord.from_dict(record_data)
             model.add_record(record)
-
-        _logger.info(f"[썸네일] from_project_dict 완료: 총 {len(model)}개 레코드 복원")
         return model

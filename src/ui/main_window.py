@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self._logger = get_logger('main_window')
-        self._logger.debug("MainWindow 초기화 시작")
+        self._logger.info("MainWindow 초기화")
 
         self._recent_files: List[str] = []
         self._recent_projects: List[str] = []
@@ -772,7 +772,6 @@ class MainWindow(QMainWindow):
         if self._project_manager.current_path:
             project_dir = capture_base / self._project_manager.current_path.stem
             dirs_to_clean.append(('project', project_dir))
-            self._logger.debug(f"프로젝트 기반 정리 대상: {project_dir}")
 
         # 2. 비디오 이름 기반 (captures/{video_name}/)
         if self._video_name:
@@ -780,7 +779,6 @@ class MainWindow(QMainWindow):
             # 프로젝트 디렉토리와 다른 경우에만 추가
             if not dirs_to_clean or dirs_to_clean[0][1] != video_dir:
                 dirs_to_clean.append(('video', video_dir))
-                self._logger.debug(f"비디오 기반 정리 대상: {video_dir}")
 
         # 디렉토리 정리
         for source, capture_dir in dirs_to_clean:
@@ -929,7 +927,7 @@ class MainWindow(QMainWindow):
         msg_box.exec()
 
         if msg_box.clickedButton() != yes_btn:
-            self._logger.debug("사용자가 종료 취소")
+            self._logger.info("사용자가 종료 취소")
             event.ignore()
             return
 
@@ -1024,17 +1022,13 @@ class MainWindow(QMainWindow):
                 "directories.capture_save",
                 "captures"
             ))
-            self._logger.info(f"[썸네일] capture_dir 설정값: {capture_dir}, 절대경로: {capture_dir.absolute()}")
-
             info = self._project_manager.load(
                 Path(file_path),
                 check_video=True,
                 capture_dir=capture_dir,
             )
-            self._logger.info(f"[썸네일] 프로젝트 로드 결과: capture_count={info.capture_count}, image_count={info.image_count}")
 
             state = self._project_manager.get_state()
-            self._logger.info(f"[썸네일] capture_model 존재 여부: {state['capture_model'] is not None}")
 
             # 동영상 누락 시 처리
             if info.video_missing:

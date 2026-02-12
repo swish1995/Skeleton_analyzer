@@ -702,19 +702,12 @@ class CaptureSpreadsheetWidget(QWidget):
 
     def _set_thumbnail_cell(self, row: int, col: int, image_path: Optional[str]):
         """썸네일 셀 설정"""
-        self._logger.debug(f"[썸네일] _set_thumbnail_cell 호출: row={row}, col={col}, image_path={image_path}")
-
         label = QLabel()
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
 
         if image_path and os.path.exists(image_path):
-            self._logger.debug(f"[썸네일] 이미지 파일 존재: {image_path}")
             pixmap = QPixmap(image_path)
-            if pixmap.isNull():
-                self._logger.warning(f"[썸네일] QPixmap 로드 실패: {image_path}")
-            else:
-                self._logger.debug(f"[썸네일] QPixmap 로드 성공: {pixmap.width()}x{pixmap.height()}")
             pixmap = pixmap.scaled(
                 THUMBNAIL_SIZE, THUMBNAIL_SIZE,
                 Qt.AspectRatioMode.KeepAspectRatio,
@@ -723,10 +716,6 @@ class CaptureSpreadsheetWidget(QWidget):
             label.setPixmap(pixmap)
             label.setToolTip(f"클릭하여 원본 보기\n{image_path}")
         else:
-            if image_path:
-                self._logger.warning(f"[썸네일] 이미지 파일 없음: {image_path}")
-            else:
-                self._logger.debug(f"[썸네일] 이미지 경로 None: row={row}, col={col}")
             label.setText("-")
             label.setStyleSheet("color: #888;")
 
@@ -1549,10 +1538,8 @@ class CaptureSpreadsheetWidget(QWidget):
 
     def load_from_model(self, model: CaptureDataModel):
         """CaptureDataModel에서 데이터 로드"""
-        self._logger.info(f"[썸네일] load_from_model 호출: 레코드 수={len(model)}")
         self.clear_all()
-        for idx, record in enumerate(model.get_all_records()):
-            self._logger.debug(f"[썸네일] 레코드 {idx}: video_frame_path={record.video_frame_path}, skeleton_image_path={record.skeleton_image_path}")
+        for record in model.get_all_records():
             self.add_record(record)
 
     def get_record_count(self) -> int:
