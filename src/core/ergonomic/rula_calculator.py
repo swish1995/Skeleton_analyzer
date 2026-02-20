@@ -124,17 +124,17 @@ class RULACalculator(BaseAssessment):
     ]
 
     RISK_LEVELS = {
-        'acceptable': '허용 가능',
-        'investigate': '추가 조사 필요',
-        'change_soon': '빠른 개선 필요',
-        'change_now': '즉시 개선 필요',
+        'acceptable': '개선 필요 없음',
+        'investigate': '부분적 개선',
+        'change_soon': '곧 개선 필요',
+        'change_now': '즉시 개선',
     }
 
     ACTION_MESSAGES = {
-        'acceptable': '현재 자세는 허용 가능한 수준입니다.',
-        'investigate': '작업 자세에 대한 추가 조사가 필요합니다.',
-        'change_soon': '가까운 시일 내에 작업 자세 개선이 필요합니다.',
-        'change_now': '즉시 작업 자세를 변경해야 합니다.',
+        'acceptable': '개선 필요 없음',
+        'investigate': '부분적 개선',
+        'change_soon': '곧 개선 필요',
+        'change_now': '즉시 개선',
     }
 
     def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> RULAResult:
@@ -219,15 +219,18 @@ class RULACalculator(BaseAssessment):
         flexion = shoulder_angle
 
         # 기본 점수 (1-4)
-        if flexion <= 20 and flexion >= -20:
+        t1 = self._get_threshold('upper_arm_flexion_1')
+        t2 = self._get_threshold('upper_arm_flexion_2')
+        t3 = self._get_threshold('upper_arm_flexion_3')
+        if -t1 <= flexion <= t1:
             base = 1
-        elif flexion > 20 and flexion <= 45:
+        elif flexion > t1 and flexion <= t2:
             base = 2
-        elif flexion > 45 and flexion <= 90:
+        elif flexion > t2 and flexion <= t3:
             base = 3
-        elif flexion > 90:
+        elif flexion > t3:
             base = 4
-        elif flexion < -20:  # 신전
+        elif flexion < -t1:  # 신전
             base = 2
         else:
             base = 1
@@ -285,9 +288,11 @@ class RULACalculator(BaseAssessment):
         flexion = angles.get('left_wrist_flexion', 0)
 
         # 기본 점수 (1-3)
-        if flexion <= 5:
+        w1 = self._get_threshold('wrist_flexion_1')
+        w2 = self._get_threshold('wrist_flexion_2')
+        if flexion <= w1:
             base = 1
-        elif flexion <= 15:
+        elif flexion <= w2:
             base = 2
         else:
             base = 3
@@ -378,11 +383,14 @@ class RULACalculator(BaseAssessment):
         flexion = self._calculate_angle_from_vertical(shoulder_center, hip_center)
 
         # 기본 점수 (1-4)
-        if flexion <= 5:
+        tt1 = self._get_threshold('trunk_flexion_1')
+        tt2 = self._get_threshold('trunk_flexion_2')
+        tt3 = self._get_threshold('trunk_flexion_3')
+        if flexion <= tt1:
             base = 1
-        elif flexion <= 20:
+        elif flexion <= tt2:
             base = 2
-        elif flexion <= 60:
+        elif flexion <= tt3:
             base = 3
         else:
             base = 4
@@ -410,8 +418,9 @@ class RULACalculator(BaseAssessment):
         left_knee_flexion = angles.get('left_knee_flexion', 0)
         right_knee_flexion = angles.get('right_knee_flexion', 0)
 
-        # 양다리가 균형 잡혀 있고 서 있으면 1 (굴곡 20° 이하)
-        if left_knee_flexion <= 20 and right_knee_flexion <= 20:
+        # 양다리가 균형 잡혀 있고 서 있으면 1
+        leg_thresh = self._get_threshold('leg_flexion')
+        if left_knee_flexion <= leg_thresh and right_knee_flexion <= leg_thresh:
             return 1
         else:
             return 2

@@ -41,6 +41,10 @@ class ErgonomicWidget(QWidget):
         self._current_reba_result: REBAResult = None
         self._current_owas_result: OWASResult = None
 
+        # 마지막 입력 데이터 저장 (민감도 변경 시 재계산용)
+        self._last_angles: Dict[str, float] = None
+        self._last_landmarks: List[Dict] = None
+
         # 라이센스 매니저
         self._license_manager = LicenseManager.instance()
         self._license_manager.license_changed.connect(self._update_license_state)
@@ -180,6 +184,10 @@ class ErgonomicWidget(QWidget):
             self.clear_image_based()
             return
 
+        # 마지막 입력 데이터 저장
+        self._last_angles = angles
+        self._last_landmarks = landmarks
+
         # RULA 계산 및 업데이트
         self._current_rula_result = self._rula_calculator.calculate(angles, landmarks)
         self._rula_widget.update_result(self._current_rula_result)
@@ -191,6 +199,11 @@ class ErgonomicWidget(QWidget):
         # OWAS 계산 및 업데이트
         self._current_owas_result = self._owas_calculator.calculate(angles, landmarks)
         self._owas_widget.update_result(self._current_owas_result)
+
+    def recalculate(self):
+        """저장된 마지막 데이터로 재계산 (민감도 변경 시 호출)"""
+        if self._last_angles and self._last_landmarks:
+            self.update_assessment(self._last_angles, self._last_landmarks)
 
     def clear_image_based(self):
         """영상 분석 기반 위젯 초기화 (RULA/REBA/OWAS)"""

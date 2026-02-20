@@ -5,7 +5,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QSplitter, QVBoxLayout,
     QMenuBar, QMenu, QStatusBar, QFileDialog, QMessageBox,
-    QToolBar, QToolButton
+    QToolBar, QToolButton, QSlider, QLabel, QHBoxLayout
 )
 from PyQt6.QtCore import Qt, QSettings, QSize
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QPainter
@@ -373,13 +373,51 @@ class MainWindow(QMainWindow):
         self._save_btn.clicked.connect(self._save_project)
         self._toolbar.addWidget(self._save_btn)
 
+        # ── 민감도 슬라이더 ──
+        sensitivity_container = QWidget()
+        sensitivity_layout = QHBoxLayout(sensitivity_container)
+        sensitivity_layout.setContentsMargins(8, 0, 8, 0)
+        sensitivity_layout.setSpacing(4)
+
+        sensitivity_label = QLabel("민감도:")
+        sensitivity_label.setStyleSheet("color: #999999; font-size: 11px;")
+        sensitivity_layout.addWidget(sensitivity_label)
+
+        self._sensitivity_slider = QSlider(Qt.Orientation.Horizontal)
+        self._sensitivity_slider.setRange(0, 100)
+        self._sensitivity_slider.setValue(0)
+        self._sensitivity_slider.setFixedWidth(100)
+        self._sensitivity_slider.setFixedHeight(20)
+        self._sensitivity_slider.setToolTip("감지 민감도 보정\n0 = 기본, 100 = 최소 점수")
+        self._sensitivity_slider.setStyleSheet("""
+            QSlider::groove:horizontal {
+                height: 4px;
+                background: #555;
+                border-radius: 2px;
+            }
+            QSlider::handle:horizontal {
+                width: 12px;
+                margin: -4px 0;
+                background: #aaa;
+                border-radius: 6px;
+            }
+        """)
+        sensitivity_layout.addWidget(self._sensitivity_slider)
+
+        self._sensitivity_value_label = QLabel("0.0")
+        self._sensitivity_value_label.setFixedWidth(60)
+        self._sensitivity_value_label.setStyleSheet("color: #cccccc; font-size: 11px;")
+        sensitivity_layout.addWidget(self._sensitivity_value_label)
+
+        self._sensitivity_slider.valueChanged.connect(self._on_sensitivity_changed)
+        self._toolbar.addWidget(sensitivity_container)
+
         # 프로젝트 버튼과 보기 토글 버튼 사이 간격 (동영상 플레이어 최소 너비에 맞춤)
         project_spacer = QWidget()
-        project_spacer.setFixedWidth(260)
+        project_spacer.setFixedWidth(20)
         self._toolbar.addWidget(project_spacer)
 
         # 보기 라벨
-        from PyQt6.QtWidgets import QLabel
         view_label = QLabel("보기:")
         view_label.setStyleSheet("color: #999999; font-size: 12px; margin-right: 4px;")
         self._toolbar.addWidget(view_label)
@@ -572,6 +610,11 @@ class MainWindow(QMainWindow):
         self._recent_files = self._settings.value("recent_files", [], type=list)
         self._recent_projects = self._settings.value("recent_projects", [], type=list)
 
+        # 민감도 슬라이더
+        sensitivity = self._settings.value("detection_sensitivity", 0, type=int)
+        self._sensitivity_slider.setValue(sensitivity)
+        self._on_sensitivity_changed(sensitivity)
+
         # 윈도우 크기/위치
         geometry = self._settings.value("geometry")
         if geometry:
@@ -649,6 +692,7 @@ class MainWindow(QMainWindow):
         """설정 저장"""
         self._settings.setValue("recent_files", self._recent_files)
         self._settings.setValue("recent_projects", self._recent_projects)
+        self._settings.setValue("detection_sensitivity", self._sensitivity_slider.value())
         self._settings.setValue("geometry", self.saveGeometry())
         self._settings.setValue("splitter_state", self._splitter.saveState())
 
@@ -1102,6 +1146,21 @@ class MainWindow(QMainWindow):
         except ProjectLoadError as e:
             self._logger.error(f"프로젝트 로드 실패: {file_path}, 오류: {e}")
             QMessageBox.critical(self, "프로젝트 로드 오류", str(e))
+
+    def _on_sensitivity_changed(self, value: int):
+        """민감도 슬라이더 변경"""
+        # 표시값: 0→0.0, 100→1.0 (현재값/최대값)
+        display_value = value / 100.0
+        self._sensitivity_value_label.setText(f"{display_value:.1f}")
+        # 슬라이더 0→100 을 sensitivity 1.0→10.0 으로 매핑
+        sensitivity = 1.0 + (value / 100.0) * 9.0
+        # 모든 계산기에 적용
+        ergonomic = self.status_widget._ergonomic_widget
+        ergonomic._rula_calculator.detection_sensitivity = sensitivity
+        ergonomic._reba_calculator.detection_sensitivity = sensitivity
+        ergonomic._owas_calculator.detection_sensitivity = sensitivity
+        # 실시간 재계산
+        ergonomic.recalculate()
 
     def _save_project(self) -> bool:
         """프로젝트 저장"""

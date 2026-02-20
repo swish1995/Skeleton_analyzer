@@ -50,16 +50,16 @@ class SICalculator:
 
     # 위험 수준 정의
     RISK_LEVELS = {
-        'safe': 'SI < 3: 안전',
-        'uncertain': '3 ≤ SI < 7: 불확실/주의',
-        'hazardous': 'SI ≥ 7: 위험',
+        'safe': '안전',
+        'uncertain': '불확실',
+        'hazardous': '위험',
     }
 
     # 조치 사항
     ACTIONS = {
-        'safe': '현재 작업 조건 유지',
-        'uncertain': '작업 조건 재검토 권고',
-        'hazardous': '작업 조건 즉시 개선 필요',
+        'safe': '안전',
+        'uncertain': '불확실',
+        'hazardous': '위험',
     }
 
     # 파라미터 설명

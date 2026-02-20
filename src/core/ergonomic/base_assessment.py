@@ -17,6 +17,27 @@ DEFAULT_DETECTION_THRESHOLDS = {
     'neck_flexion_high': 35,       # 목 2→3점 경계 (RULA 표준: 20°)
     'elbow_flexion_low': 0,        # 하박 1점 하한 (RULA 표준: 60°, 2D 과소측정 보정)
     'elbow_flexion_high': 110,     # 하박 1점 상한 (RULA 표준: 100°)
+    # ── 상박 (Shoulder Flexion) ──
+    'upper_arm_flexion_1': 20,     # 1→2점 경계
+    'upper_arm_flexion_2': 45,     # 2→3점 경계
+    'upper_arm_flexion_3': 90,     # 3→4점 경계
+    # ── 몸통 (Trunk Flexion) ──
+    'trunk_flexion_1': 5,          # 1→2점 경계
+    'trunk_flexion_2': 20,         # 2→3점 경계
+    'trunk_flexion_3': 60,         # 3→4점 경계
+    # ── 손목 (Wrist Flexion) ──
+    'wrist_flexion_1': 5,          # RULA 1→2점 경계
+    'wrist_flexion_2': 15,         # RULA 2→3점 / REBA 1→2점 경계
+    # ── 다리 (Leg/Knee) ──
+    'leg_flexion': 20,             # RULA 1→2점 경계
+    'leg_knee_mid': 30,            # REBA +1 경계
+    'leg_knee_high': 60,           # REBA +2 경계
+    # ── OWAS 임계값 ──
+    'owas_back_bent': 20,          # 등 굴곡 판정 (도)
+    'owas_back_twisted': 0.04,     # 등 회전/측굴 판정 (좌표 차이)
+    'owas_knee_bent': 150,         # 무릎 굴곡 판정 (raw 각도, 미만)
+    'owas_sitting': 120,           # 앉기 판정 (고관절 raw 각도, 미만)
+    'owas_kneeling': 90,           # 무릎꿇기 판정 (raw 각도, 미만)
 }
 
 

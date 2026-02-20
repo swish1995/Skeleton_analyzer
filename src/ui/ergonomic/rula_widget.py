@@ -22,10 +22,10 @@ class RULAWidget(QWidget):
     }
 
     RISK_LABELS = {
-        'acceptable': '허용 가능',
-        'investigate': '추가 조사 필요',
-        'change_soon': '빠른 개선 필요',
-        'change_now': '즉시 개선 필요',
+        'acceptable': '개선 필요 없음',
+        'investigate': '부분적 개선',
+        'change_soon': '곧 개선 필요',
+        'change_now': '즉시 개선',
     }
 
     def __init__(self, parent=None):
@@ -133,12 +133,6 @@ class RULAWidget(QWidget):
 
         layout.addWidget(detail_box)
 
-        # 조치 권고
-        self._action_label = QLabel("")
-        self._action_label.setWordWrap(True)
-        self._action_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self._action_label)
-
         layout.addStretch()
 
     def update_result(self, result: RULAResult):
@@ -170,10 +164,6 @@ class RULAWidget(QWidget):
         self._trunk_label.setText(str(result.trunk_score))
         self._leg_label.setText(str(result.leg_score))
 
-        # 조치 권고
-        self._action_label.setText(result.action_required)
-        self._action_label.setStyleSheet(f"color: {color}; font-weight: bold;")
-
     def clear(self):
         """초기화"""
         self._score_label.setText("–")
@@ -189,4 +179,3 @@ class RULAWidget(QWidget):
         self._neck_label.setText("–")
         self._trunk_label.setText("–")
         self._leg_label.setText("–")
-        self._action_label.setText("")

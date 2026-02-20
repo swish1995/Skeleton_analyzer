@@ -108,19 +108,19 @@ class REBACalculator(BaseAssessment):
     ]
 
     RISK_LEVELS = {
-        'negligible': '무시 가능',
-        'low': '낮음',
-        'medium': '중간',
-        'high': '높음',
-        'very_high': '매우 높음',
+        'negligible': '개선 필요 없음',
+        'low': '부분적 개선',
+        'medium': '개선 필요',
+        'high': '곧 개선 필요',
+        'very_high': '즉시 개선',
     }
 
     ACTION_MESSAGES = {
-        'negligible': '조치 불필요',
-        'low': '개선 고려',
+        'negligible': '개선 필요 없음',
+        'low': '부분적 개선',
         'medium': '개선 필요',
-        'high': '빠른 개선 필요',
-        'very_high': '즉시 개선 필요',
+        'high': '곧 개선 필요',
+        'very_high': '즉시 개선',
     }
 
     def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> REBAResult:
@@ -253,11 +253,14 @@ class REBACalculator(BaseAssessment):
         flexion = self._calculate_angle_from_vertical(shoulder_center, hip_center)
 
         # 기본 점수 (1-4)
-        if flexion <= 5:
+        tt1 = self._get_threshold('trunk_flexion_1')
+        tt2 = self._get_threshold('trunk_flexion_2')
+        tt3 = self._get_threshold('trunk_flexion_3')
+        if flexion <= tt1:
             base = 1
-        elif flexion <= 20:
+        elif flexion <= tt2:
             base = 2
-        elif flexion <= 60:
+        elif flexion <= tt3:
             base = 3
         else:
             base = 4
@@ -290,9 +293,11 @@ class REBACalculator(BaseAssessment):
 
         knee_flexion = max(left_knee_flexion, right_knee_flexion)
 
-        if knee_flexion > 30 and knee_flexion <= 60:
+        lk_mid = self._get_threshold('leg_knee_mid')
+        lk_high = self._get_threshold('leg_knee_high')
+        if knee_flexion > lk_mid and knee_flexion <= lk_high:
             knee_30_60 = 1
-        elif knee_flexion > 60:
+        elif knee_flexion > lk_high:
             knee_over_60 = 2
 
         total = min(base + knee_30_60 + knee_over_60, 4)
@@ -312,13 +317,16 @@ class REBACalculator(BaseAssessment):
         flexion = shoulder_angle
 
         # 기본 점수 (1-4)
-        if flexion >= -20 and flexion <= 20:
+        t1 = self._get_threshold('upper_arm_flexion_1')
+        t2 = self._get_threshold('upper_arm_flexion_2')
+        t3 = self._get_threshold('upper_arm_flexion_3')
+        if -t1 <= flexion <= t1:
             base = 1
-        elif flexion > 20 and flexion <= 45:
+        elif flexion > t1 and flexion <= t2:
             base = 2
-        elif flexion > 45 and flexion <= 90:
+        elif flexion > t2 and flexion <= t3:
             base = 3
-        elif flexion > 90:
+        elif flexion > t3:
             base = 4
         else:
             base = 2
@@ -365,7 +373,8 @@ class REBACalculator(BaseAssessment):
         flexion = angles.get('left_wrist_flexion', 0)
 
         # 기본 점수 (1-2) — REBA 기준: 15° 이내 → 1점
-        if flexion <= 15:
+        w2 = self._get_threshold('wrist_flexion_2')
+        if flexion <= w2:
             base = 1
         else:
             base = 2

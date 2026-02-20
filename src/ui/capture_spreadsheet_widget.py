@@ -117,7 +117,7 @@ COLUMN_DEFINITIONS = [
     ('rula_score', 'Score', 'rula_result', False, None,
      'RULA 최종 점수\n= Table C(Score A, Score B)'),
     ('rula_risk', 'Risk', 'rula_result', False, None,
-     'RULA 위험 수준\n1-2: 허용 가능\n3-4: 추가 조사 필요\n5-6: 빠른 개선 필요\n7: 즉시 개선 필요'),
+     'RULA 위험 수준\n1-2: 개선 필요 없음\n3-4: 부분적 개선\n5-6: 곧 개선 필요\n7: 즉시 개선'),
 
     # REBA 부위 (6개)
     ('reba_neck', 'Neck', 'reba_body', False, None,
@@ -149,7 +149,7 @@ COLUMN_DEFINITIONS = [
     ('reba_score', 'Score', 'reba_result', False, None,
      'REBA 최종 점수\n= Table C + Activity'),
     ('reba_risk', 'Risk', 'reba_result', False, None,
-     'REBA 위험 수준\n1: 무시 가능\n2-3: 낮음\n4-7: 중간\n8-10: 높음\n11+: 매우 높음'),
+     'REBA 위험 수준\n1: 개선 필요 없음\n2-3: 부분적 개선\n4-7: 개선 필요\n8-10: 곧 개선 필요\n11+: 즉시 개선'),
 
     # OWAS 부위 (3개)
     ('owas_back', 'Back', 'owas_body', False, None,
@@ -167,9 +167,9 @@ COLUMN_DEFINITIONS = [
     ('owas_code', 'Code', 'owas_result', False, None,
      '자세 코드\n등+팔+다리+하중 (4자리)'),
     ('owas_ac', 'AC', 'owas_result', False, None,
-     'Action Category\n1: 정상\n2: 약간 유해\n3: 명백히 유해\n4: 매우 유해'),
+     'Action Category\n1: 개선 필요 없음\n2: 부분적 개선\n3: 곧 개선 필요\n4: 즉시 개선'),
     ('owas_risk', 'Risk', 'owas_result', False, None,
-     'OWAS 위험 수준\nAC 1: 정상\nAC 2: 약간 유해\nAC 3: 명백히 유해\nAC 4: 매우 유해'),
+     'OWAS 위험 수준\nAC 1: 개선 필요 없음\nAC 2: 부분적 개선\nAC 3: 곧 개선 필요\nAC 4: 즉시 개선'),
 
     # NLE 입력 (7개)
     ('nle_h', 'H (cm)', 'nle_input', True, (25, 63),
@@ -330,24 +330,24 @@ DETAIL_GROUP_COLORS = {
 # Risk Level 한글 매핑 (영어 키 → 한글 표시)
 RISK_LABELS = {
     # RULA Risk Level
-    'acceptable': '허용 가능',
-    'investigate': '추가 조사 필요',
-    'change_soon': '빠른 개선 필요',
-    'change_now': '즉시 개선 필요',
+    'acceptable': '개선 필요 없음',
+    'investigate': '부분적 개선',
+    'change_soon': '곧 개선 필요',
+    'change_now': '즉시 개선',
     # REBA Risk Level
-    'negligible': '무시 가능',
-    'low': '낮음',
-    'medium': '중간',
-    'high': '높음',
-    'very_high': '매우 높음',
+    'negligible': '개선 필요 없음',
+    'low': '부분적 개선',
+    'medium': '개선 필요',
+    'high': '곧 개선 필요',
+    'very_high': '즉시 개선',
     # OWAS Risk Level
-    'normal': '정상',
-    'slight': '약간 유해',
-    'harmful': '명백히 유해',
-    'very_harmful': '매우 유해',
+    'normal': '개선 필요 없음',
+    'slight': '부분적 개선',
+    'harmful': '곧 개선 필요',
+    'very_harmful': '즉시 개선',
     # NLE Risk Level
     'safe': '안전',
-    'increased': '증가된 위험',
+    'increased': '주의',
     # 'high' already defined for REBA
     # SI Risk Level
     # 'safe' already defined for NLE

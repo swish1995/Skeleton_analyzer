@@ -29,10 +29,10 @@ class OWASWidget(QWidget):
     }
 
     RISK_LABELS = {
-        'normal': '정상',
-        'slight': '약간 유해',
-        'harmful': '명백히 유해',
-        'very_harmful': '매우 유해',
+        'normal': '개선 필요 없음',
+        'slight': '부분적 개선',
+        'harmful': '곧 개선 필요',
+        'very_harmful': '즉시 개선',
     }
 
     BACK_DESCRIPTIONS = {
@@ -147,12 +147,6 @@ class OWASWidget(QWidget):
 
         layout.addWidget(code_box)
 
-        # 조치 권고
-        self._action_label = QLabel("")
-        self._action_label.setWordWrap(True)
-        self._action_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self._action_label)
-
         layout.addStretch()
 
     def update_result(self, result: OWASResult):
@@ -191,10 +185,6 @@ class OWASWidget(QWidget):
         self._load_code_label.setText(str(result.load_code))
         self._load_desc_label.setText("기본값" if result.load_code == 1 else "")
 
-        # 조치 권고
-        self._action_label.setText(result.action_required)
-        self._action_label.setStyleSheet(f"color: {color}; font-weight: bold;")
-
     def clear(self):
         """초기화"""
         self._posture_code_label.setText("–,–,–,–")
@@ -211,4 +201,3 @@ class OWASWidget(QWidget):
         self._legs_desc_label.setText("")
         self._load_code_label.setText("–")
         self._load_desc_label.setText("")
-        self._action_label.setText("")

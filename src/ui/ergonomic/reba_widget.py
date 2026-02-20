@@ -23,11 +23,11 @@ class REBAWidget(QWidget):
     }
 
     RISK_LABELS = {
-        'negligible': '무시 가능',
-        'low': '낮음',
-        'medium': '중간',
-        'high': '높음',
-        'very_high': '매우 높음',
+        'negligible': '개선 필요 없음',
+        'low': '부분적 개선',
+        'medium': '개선 필요',
+        'high': '곧 개선 필요',
+        'very_high': '즉시 개선',
     }
 
     def __init__(self, parent=None):
@@ -131,12 +131,6 @@ class REBAWidget(QWidget):
 
         layout.addWidget(detail_box)
 
-        # 조치 권고
-        self._action_label = QLabel("")
-        self._action_label.setWordWrap(True)
-        self._action_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self._action_label)
-
         layout.addStretch()
 
     def update_result(self, result: REBAResult):
@@ -167,10 +161,6 @@ class REBAWidget(QWidget):
         self._lower_arm_label.setText(str(result.lower_arm_score))
         self._wrist_label.setText(str(result.wrist_score))
 
-        # 조치 권고
-        self._action_label.setText(result.action_required)
-        self._action_label.setStyleSheet(f"color: {color}; font-weight: bold;")
-
     def clear(self):
         """초기화"""
         self._score_label.setText("–")
@@ -185,4 +175,3 @@ class REBAWidget(QWidget):
         self._upper_arm_label.setText("–")
         self._lower_arm_label.setText("–")
         self._wrist_label.setText("–")
-        self._action_label.setText("")

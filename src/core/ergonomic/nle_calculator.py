@@ -63,16 +63,16 @@ class NLECalculator:
 
     # 위험 수준 정의
     RISK_LEVELS = {
-        'safe': 'LI ≤ 1.0: 안전',
-        'increased': '1.0 < LI ≤ 3.0: 주의 필요',
-        'high': 'LI > 3.0: 즉시 개선 필요',
+        'safe': '안전',
+        'increased': '주의',
+        'high': '위험',
     }
 
     # 조치 사항
     ACTIONS = {
-        'safe': '현재 작업 조건 유지',
-        'increased': '작업 조건 검토 및 개선 권고',
-        'high': '즉각적인 작업 조건 개선 필요',
+        'safe': '안전',
+        'increased': '주의',
+        'high': '위험',
     }
 
     def calculate_hm(self, h: float) -> float:

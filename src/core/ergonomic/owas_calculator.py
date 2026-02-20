@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Any
 import math
 
-from .base_assessment import BaseAssessment, AssessmentResult
+from .base_assessment import BaseAssessment, AssessmentResult, DEFAULT_DETECTION_THRESHOLDS
 
 
 @dataclass
@@ -58,17 +58,17 @@ class OWASCalculator(BaseAssessment):
     }
 
     RISK_LEVELS = {
-        'normal': '정상',
-        'slight': '약간 유해',
-        'harmful': '명백히 유해',
-        'very_harmful': '매우 유해',
+        'normal': '개선 필요 없음',
+        'slight': '부분적 개선',
+        'harmful': '곧 개선 필요',
+        'very_harmful': '즉시 개선',
     }
 
     ACTION_MESSAGES = {
-        'normal': '조치 불필요 - 정상적인 작업 자세',
-        'slight': '가까운 시일 내 개선 필요',
-        'harmful': '가능한 빨리 개선 필요',
-        'very_harmful': '즉시 개선 필요',
+        'normal': '개선 필요 없음',
+        'slight': '부분적 개선',
+        'harmful': '곧 개선 필요',
+        'very_harmful': '즉시 개선',
     }
 
     AC_DESCRIPTIONS = {
@@ -143,12 +143,13 @@ class OWASCalculator(BaseAssessment):
         )
 
         flexion = self._calculate_angle_from_vertical(shoulder_center, hip_center)
-        is_bent = flexion > 20
+        is_bent = flexion > self._get_threshold('owas_back_bent')
 
         # 회전/측굴 확인
         shoulder_diff = abs(left_shoulder[1] - right_shoulder[1])
         hip_diff = abs(left_hip[1] - right_hip[1])
-        is_twisted = shoulder_diff > 0.04 or hip_diff > 0.04
+        twisted_thresh = self._get_threshold('owas_back_twisted')
+        is_twisted = shoulder_diff > twisted_thresh or hip_diff > twisted_thresh
 
         if is_bent and is_twisted:
             return 4
@@ -177,8 +178,12 @@ class OWASCalculator(BaseAssessment):
         right_wrist = self._get_landmark_point(landmarks, self.RIGHT_WRIST)
 
         # 손목이 어깨보다 위에 있는지 확인 (y좌표가 작을수록 위)
-        left_raised = left_wrist[1] < left_shoulder[1] or left_elbow[1] < left_shoulder[1]
-        right_raised = right_wrist[1] < right_shoulder[1] or right_elbow[1] < right_shoulder[1]
+        # 민감도 적용: 민감도↑ → 마진↑ → 트리거 어려움
+        arm_margin = 0.02 * self.detection_sensitivity
+        left_raised = (left_wrist[1] < left_shoulder[1] - arm_margin
+                       or left_elbow[1] < left_shoulder[1] - arm_margin)
+        right_raised = (right_wrist[1] < right_shoulder[1] - arm_margin
+                        or right_elbow[1] < right_shoulder[1] - arm_margin)
 
         if left_raised and right_raised:
             return 3
@@ -203,18 +208,24 @@ class OWASCalculator(BaseAssessment):
         left_hip_angle = angles.get('left_hip', 180)
         right_hip_angle = angles.get('right_hip', 180)
 
+        # 민감도 적용 (raw 각도 "미만" 비교: 민감도↑ → 임계값↓ → 트리거 어려움)
+        s = self.detection_sensitivity
+        knee_bent_thresh = DEFAULT_DETECTION_THRESHOLDS['owas_knee_bent'] / s if s > 0 else 150
+        sitting_thresh = DEFAULT_DETECTION_THRESHOLDS['owas_sitting'] / s if s > 0 else 120
+        kneeling_thresh = DEFAULT_DETECTION_THRESHOLDS['owas_kneeling'] / s if s > 0 else 90
+
         # 무릎 굴곡 판단 (180도 = 곧음, 작을수록 굴곡)
-        left_knee_bent = left_knee_angle < 150
-        right_knee_bent = right_knee_angle < 150
+        left_knee_bent = left_knee_angle < knee_bent_thresh
+        right_knee_bent = right_knee_angle < knee_bent_thresh
 
         # 고관절 굴곡으로 앉기 판단
-        is_sitting = left_hip_angle < 120 and right_hip_angle < 120
+        is_sitting = left_hip_angle < sitting_thresh and right_hip_angle < sitting_thresh
 
         if is_sitting:
             return 1
         elif left_knee_bent and right_knee_bent:
             # 양무릎 굴곡 정도에 따라
-            if left_knee_angle < 90 and right_knee_angle < 90:
+            if left_knee_angle < kneeling_thresh and right_knee_angle < kneeling_thresh:
                 return 6  # 무릎꿇기
             else:
                 return 4  # 쪼그려 앉기
