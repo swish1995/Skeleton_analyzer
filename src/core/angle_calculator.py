@@ -1,4 +1,5 @@
 """각도 계산 모듈"""
+import math
 import numpy as np
 from typing import Tuple, Dict, List, Union
 
@@ -124,4 +125,63 @@ class AngleCalculator:
             except (IndexError, KeyError, TypeError):
                 angles[angle_name] = 0.0
 
+        # 수직선 기준 굴곡 각도 추가 (RULA/REBA에서 사용하는 실제 값)
+        try:
+            flexion_angles = self._calculate_flexion_angles(landmarks)
+            angles.update(flexion_angles)
+        except (IndexError, KeyError, TypeError):
+            pass
+
         return angles
+
+    def _calculate_flexion_angles(self, landmarks: List) -> Dict[str, float]:
+        """
+        수직선 기준 굴곡 각도 계산 (RULA/REBA 평가에 사용되는 값)
+
+        Args:
+            landmarks: 33개의 랜드마크 리스트
+
+        Returns:
+            굴곡 각도 딕셔너리
+        """
+        flexion_angles = {}
+
+        # 어깨 중심, 골반 중심 계산
+        ls = self._get_point(landmarks, 'left_shoulder')
+        rs = self._get_point(landmarks, 'right_shoulder')
+        lh = self._get_point(landmarks, 'left_hip')
+        rh = self._get_point(landmarks, 'right_hip')
+        nose = self._get_point(landmarks, 'nose')
+
+        shoulder_center = ((ls[0] + rs[0]) / 2, (ls[1] + rs[1]) / 2)
+        hip_center = ((lh[0] + rh[0]) / 2, (lh[1] + rh[1]) / 2)
+
+        # 몸통 굴곡: 어깨중심 → 골반중심 방향과 수직선의 각도
+        flexion_angles['trunk_flexion'] = self._angle_from_vertical(
+            shoulder_center, hip_center
+        )
+
+        # 목 굴곡: 코 → 어깨중심 방향과 수직선의 각도
+        flexion_angles['neck_flexion'] = self._angle_from_vertical(
+            nose, shoulder_center
+        )
+
+        return flexion_angles
+
+    @staticmethod
+    def _angle_from_vertical(p_top: tuple, p_bottom: tuple) -> float:
+        """
+        상단점에서 하단점 방향이 수직선과 이루는 각도
+
+        Args:
+            p_top: 상단 점 (x, y)
+            p_bottom: 하단 점 (x, y)
+
+        Returns:
+            각도 (도, 0=수직, 90=수평)
+        """
+        dx = p_bottom[0] - p_top[0]
+        dy = p_bottom[1] - p_top[1]
+        if dy == 0:
+            return 90.0
+        return math.degrees(math.atan(abs(dx) / abs(dy)))
