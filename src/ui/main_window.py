@@ -1139,6 +1139,7 @@ class MainWindow(QMainWindow):
             self._update_window_title()
             self._status_bar.showMessage(f"프로젝트 로드됨: {file_path}")
             self._logger.info(f"프로젝트 로드 완료: 캡처 {info.capture_count}개, 이미지 {info.image_count}개")
+            QMessageBox.information(self, "프로젝트 불러오기", f"프로젝트를 불러왔습니다.\n캡처 {info.capture_count}개, 이미지 {info.image_count}개")
 
             # 포커스를 플레이어로 설정 (엔터키 캡처가 동작하도록)
             self.player_widget.setFocus()
@@ -1215,6 +1216,7 @@ class MainWindow(QMainWindow):
                 self._update_window_title()
                 self._status_bar.showMessage(f"프로젝트 저장됨: {path}")
                 self._logger.info(f"프로젝트 저장 완료: {path}")
+                QMessageBox.information(self, "프로젝트 저장", f"프로젝트가 저장되었습니다.\n{path}")
                 return True
 
         except Exception as e:
@@ -1241,6 +1243,7 @@ class MainWindow(QMainWindow):
                 'main': self._splitter.sizes(),
             },
             'status_splitter_states': self.status_widget.save_splitter_states(),
+            'sensitivity': self._sensitivity_slider.value(),
         }
 
     def _restore_ui_state(self, ui_state: dict):
@@ -1279,6 +1282,11 @@ class MainWindow(QMainWindow):
         status_states = ui_state.get('status_splitter_states', {})
         if status_states:
             self.status_widget.restore_splitter_states(status_states)
+
+        # 민감도 복원
+        sensitivity = ui_state.get('sensitivity')
+        if sensitivity is not None:
+            self._sensitivity_slider.setValue(int(sensitivity))
 
     def _mark_project_dirty(self):
         """프로젝트를 dirty로 표시"""

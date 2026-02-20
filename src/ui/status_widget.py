@@ -1,9 +1,10 @@
 """스테이터스 위젯 모듈 (스켈레톤 + 각도 + 인체공학적 평가 + 캡처 스프레드시트)"""
+import base64
 import platform
 from PyQt6.QtWidgets import (
     QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, QMenu, QSizePolicy,
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, QByteArray, pyqtSignal
 from PyQt6.QtGui import QAction
 import numpy as np
 from datetime import datetime
@@ -247,23 +248,29 @@ class StatusWidget(QWidget):
     # === 스플리터 상태 저장/복원 ===
 
     def save_splitter_states(self) -> dict:
-        """내부 스플리터 상태를 딕셔너리로 반환"""
-        return {
-            'main': self._main_splitter.saveState(),
-            'top': self._top_splitter.saveState(),
-            'middle': self._middle_splitter.saveState(),
-        }
+        """내부 스플리터 상태를 딕셔너리로 반환 (JSON 직렬화 가능한 base64 문자열)"""
+        result = {}
+        for key, splitter in [('main', self._main_splitter),
+                               ('top', self._top_splitter),
+                               ('middle', self._middle_splitter)]:
+            state = splitter.saveState()
+            result[key] = base64.b64encode(bytes(state)).decode('ascii')
+        return result
 
     def restore_splitter_states(self, states: dict):
-        """딕셔너리로부터 내부 스플리터 상태 복원"""
+        """딕셔너리로부터 내부 스플리터 상태 복원 (base64 문자열 → QByteArray)"""
         if not states:
             return
-        if 'main' in states and states['main']:
-            self._main_splitter.restoreState(states['main'])
-        if 'top' in states and states['top']:
-            self._top_splitter.restoreState(states['top'])
-        if 'middle' in states and states['middle']:
-            self._middle_splitter.restoreState(states['middle'])
+        for key, splitter in [('main', self._main_splitter),
+                               ('top', self._top_splitter),
+                               ('middle', self._middle_splitter)]:
+            if key in states and states[key]:
+                data = states[key]
+                if isinstance(data, str):
+                    byte_array = QByteArray(base64.b64decode(data))
+                else:
+                    byte_array = data
+                splitter.restoreState(byte_array)
 
     # === 외부에서 패널 가시성 제어 ===
 
