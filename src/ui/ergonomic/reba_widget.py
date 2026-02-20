@@ -88,9 +88,9 @@ class REBAWidget(QWidget):
         a_group.addWidget(self._a_score_label)
         group_layout.addLayout(a_group)
 
-        # B그룹 (상지)
+        # B그룹 (윗팔/아래팔/손목)
         b_group = QVBoxLayout()
-        b_group.addWidget(QLabel("B그룹 (상지)"))
+        b_group.addWidget(QLabel("B그룹 (윗팔/아래팔/손목)"))
         self._b_score_label = QLabel("–")
         self._b_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._b_score_label.setFont(a_font)

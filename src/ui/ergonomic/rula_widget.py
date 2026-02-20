@@ -74,9 +74,9 @@ class RULAWidget(QWidget):
         group_box = QGroupBox("그룹 점수")
         group_layout = QHBoxLayout(group_box)
 
-        # A그룹 (상지)
+        # A그룹 (상박/하박/손목)
         a_group = QVBoxLayout()
-        a_group.addWidget(QLabel("A그룹 (상지)"))
+        a_group.addWidget(QLabel("A그룹 (상박/하박/손목)"))
         self._a_score_label = QLabel("–")
         self._a_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         a_font = QFont()
@@ -86,9 +86,9 @@ class RULAWidget(QWidget):
         a_group.addWidget(self._a_score_label)
         group_layout.addLayout(a_group)
 
-        # B그룹 (목/몸통)
+        # B그룹 (목/몸통/다리)
         b_group = QVBoxLayout()
-        b_group.addWidget(QLabel("B그룹 (목/몸통)"))
+        b_group.addWidget(QLabel("B그룹 (목/몸통/다리)"))
         self._b_score_label = QLabel("–")
         self._b_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._b_score_label.setFont(a_font)
