@@ -388,7 +388,7 @@ class MainWindow(QMainWindow):
         self._sensitivity_slider.setValue(0)
         self._sensitivity_slider.setFixedWidth(100)
         self._sensitivity_slider.setFixedHeight(20)
-        self._sensitivity_slider.setToolTip("감지 민감도 보정\n0 = 기본, 100 = 최소 점수")
+        self._sensitivity_slider.setToolTip("감지 민감도\n0.0 = 정확한 값, 1.0 = 대부분의 자세가 최소 점수")
         self._sensitivity_slider.setStyleSheet("""
             QSlider::groove:horizontal {
                 height: 4px;
