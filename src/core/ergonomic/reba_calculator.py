@@ -197,25 +197,26 @@ class REBACalculator(BaseAssessment):
 
     def _calculate_neck_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
         """목 점수 계산 (세부 점수 포함)"""
-        neck_angle = angles.get('neck', 180)
-        flexion = 180 - neck_angle
+        # 목 굴곡 (좌/우 몸통 기준 평균, 0°=직립)
+        flexion = angles.get('neck_flexion', 0)
 
         # 기본 점수 (1-2)
-        if 0 <= flexion <= 20:
+        high = self._get_threshold('neck_flexion_high')
+        if 0 <= flexion <= high:
             base = 1
         else:
             base = 2
 
         # 회전/측굴 (REBA에서는 합쳐서 처리)
         twist_side = 0
-
         if landmarks:
-            nose = self._get_landmark_point(landmarks, self.NOSE)
+            left_ear = self._get_landmark_point(landmarks, 7)
+            right_ear = self._get_landmark_point(landmarks, 8)
             left_shoulder = self._get_landmark_point(landmarks, self.LEFT_SHOULDER)
             right_shoulder = self._get_landmark_point(landmarks, self.RIGHT_SHOULDER)
-
+            ear_center_x = (left_ear[0] + right_ear[0]) / 2
             shoulder_center_x = (left_shoulder[0] + right_shoulder[0]) / 2
-            if abs(nose[0] - shoulder_center_x) > 0.05:
+            if abs(ear_center_x - shoulder_center_x) > self._get_threshold('neck_twisted'):
                 twist_side = 1
 
         total = min(base + twist_side, 3)
@@ -263,7 +264,7 @@ class REBACalculator(BaseAssessment):
 
         # 회전/측굴 (REBA에서는 합쳐서 처리)
         twist_side = 0
-        if abs(left_shoulder[1] - right_shoulder[1]) > 0.03:
+        if abs(left_shoulder[1] - right_shoulder[1]) > self._get_threshold('trunk_side_bending'):
             twist_side = 1
 
         total = min(base + twist_side, 5)
@@ -276,8 +277,9 @@ class REBACalculator(BaseAssessment):
 
     def _calculate_leg_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
         """다리 점수 계산 (세부 점수 포함)"""
-        left_knee_angle = angles.get('left_knee', 180)
-        right_knee_angle = angles.get('right_knee', 180)
+        # 무릎 굴곡 (2D, 0°=펴짐)
+        left_knee_flexion = angles.get('left_knee_flexion', 0)
+        right_knee_flexion = angles.get('right_knee_flexion', 0)
 
         # 기본 점수: 양다리 지지 = 1, 한다리 지지 = 2
         base = 1
@@ -286,8 +288,7 @@ class REBACalculator(BaseAssessment):
         knee_30_60 = 0
         knee_over_60 = 0
 
-        min_knee = min(left_knee_angle, right_knee_angle)
-        knee_flexion = 180 - min_knee
+        knee_flexion = max(left_knee_flexion, right_knee_flexion)
 
         if knee_flexion > 30 and knee_flexion <= 60:
             knee_30_60 = 1
@@ -305,8 +306,10 @@ class REBACalculator(BaseAssessment):
 
     def _calculate_upper_arm_score(self, angles: Dict[str, float], landmarks: List[Dict]) -> Dict[str, int]:
         """상완 점수 계산 (세부 점수 포함)"""
+        # 어깨 각도(팔꿈치-어깨-엉덩이) 자체가 팔 거상각에 대응
+        # 팔 내림 ≈ 0-20°, 수평 ≈ 90°, 머리 위 ≈ 170°+
         shoulder_angle = angles.get('left_shoulder', 90)
-        flexion = 180 - shoulder_angle
+        flexion = shoulder_angle
 
         # 기본 점수 (1-4)
         if flexion >= -20 and flexion <= 20:
@@ -330,7 +333,7 @@ class REBACalculator(BaseAssessment):
             left_shoulder = self._get_landmark_point(landmarks, self.LEFT_SHOULDER)
             left_elbow = self._get_landmark_point(landmarks, self.LEFT_ELBOW)
 
-            if left_elbow[0] < left_shoulder[0] - 0.08:
+            if left_elbow[0] < left_shoulder[0] - self._get_threshold('upper_arm_abducted'):
                 abducted = 1
 
         total = min(base + shoulder_raised + abducted + supported, 6)
@@ -345,20 +348,24 @@ class REBACalculator(BaseAssessment):
 
     def _calculate_lower_arm_score(self, angles: Dict[str, float]) -> int:
         """전완 점수 계산 (1-2)"""
-        elbow_angle = angles.get('left_elbow', 90)
+        # 팔꿈치 굴곡 (0°=펴짐, 90°=직각)
+        flexion = angles.get('left_elbow_flexion', 90)
 
-        if 60 <= elbow_angle <= 100:
+        # REBA 기준: 60~100° 굴곡 → 1점
+        low = self._get_threshold('elbow_flexion_low')
+        high = self._get_threshold('elbow_flexion_high')
+        if low <= flexion <= high:
             return 1
         else:
             return 2
 
     def _calculate_wrist_score(self, angles: Dict[str, float]) -> Dict[str, int]:
         """손목 점수 계산 (세부 점수 포함)"""
-        wrist_angle = angles.get('left_wrist', 180)
-        deviation = abs(180 - wrist_angle)
+        # 손목 굴곡 (0°=중립, 검지/소지 중 최소값)
+        flexion = angles.get('left_wrist_flexion', 0)
 
-        # 기본 점수 (1-2)
-        if deviation <= 15:
+        # 기본 점수 (1-2) — REBA 기준: 15° 이내 → 1점
+        if flexion <= 15:
             base = 1
         else:
             base = 2
