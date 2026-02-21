@@ -41,6 +41,7 @@ FEATURES: Dict[str, bool] = {
     'project_open': False,
     'excel_export': False,
     'json_export': False,
+    'skeleton_editor': False,
 }
 
 

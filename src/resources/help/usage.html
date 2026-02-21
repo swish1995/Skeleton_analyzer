@@ -594,9 +594,10 @@
             <div class="toc-item"><span class="num">6.</span>동영상 재생</div>
             <div class="toc-item"><span class="num">7.</span>데이터 캡처</div>
             <div class="toc-item"><span class="num">8.</span>인체공학 평가</div>
-            <div class="toc-item"><span class="num">9.</span>움직임 빈도 분석</div>
-            <div class="toc-item"><span class="num">10.</span>데이터 내보내기</div>
-            <div class="toc-item"><span class="num">11.</span>단축키 모음</div>
+            <div class="toc-item"><span class="num">9.</span>스켈레톤 편집</div>
+            <div class="toc-item"><span class="num">10.</span>움직임 빈도 분석</div>
+            <div class="toc-item"><span class="num">11.</span>데이터 내보내기</div>
+            <div class="toc-item"><span class="num">12.</span>단축키 모음</div>
         </div>
     </div>
 
@@ -690,6 +691,7 @@
                         <li>Excel 내보내기</li>
                         <li>JSON 내보내기</li>
                         <li>움직임 빈도 분석</li>
+                        <li>스켈레톤 편집 (관절 드래그)</li>
                     </ul>
                 </div>
             </div>
@@ -1083,7 +1085,120 @@
         </div>
     </div>
 
-    <!-- 9. 움직임 빈도 분석 -->
+    <!-- 9. 스켈레톤 편집 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">✏️</span> 스켈레톤 편집 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
+        <p>
+            관절 좌표를 직접 드래그하여 이동하면 <strong>RULA/REBA/OWAS 점수가 실시간으로 재계산</strong>됩니다.
+            영상 없이도 특정 자세의 점수를 확인하거나, 점수 로직을 테스트할 때 유용합니다.
+        </p>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🚀</span> 편집 모드 시작하기</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">동영상을 로드하고 인체가 감지된 프레임에서 일시정지합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">스켈레톤 시각화 패널에서 관절점을 <strong>클릭</strong>하면 자동으로 편집 모드에 진입하고 영상이 일시정지됩니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">관절을 드래그하여 이동하면 우측 각도/점수가 실시간 재계산됩니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">동영상을 다시 재생하면 편집 모드가 자동으로 해제됩니다</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🖱️</span> 마우스 조작</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">동작</th>
+                        <th>방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>관절 이동 (편집 자동 시작)</td>
+                        <td>편집 가능 관절을 <strong>좌클릭 드래그</strong></td>
+                    </tr>
+                    <tr>
+                        <td>화면 이동 (팬)</td>
+                        <td>편집 모드에서 빈 영역을 <strong>좌클릭 드래그</strong></td>
+                    </tr>
+                    <tr>
+                        <td>확대/축소</td>
+                        <td>편집 모드에서 <strong>마우스 휠</strong> 또는 상단 <strong>+/-</strong> 버튼</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🔧</span> 컨트롤 바 버튼</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">버튼</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>초기화</strong></td>
+                        <td>관절 위치를 편집 전 상태로 복원하고, 확대/축소/이동도 함께 초기화합니다</td>
+                    </tr>
+                    <tr>
+                        <td><strong>+ / -</strong></td>
+                        <td>확대 / 축소</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🦴</span> 편집 가능 관절</h3>
+            <p>총 13개의 주요 관절을 편집할 수 있습니다:</p>
+            <div class="screen-layout">
+                <div class="screen-box">
+                    <h4>상체</h4>
+                    <ul>
+                        <li>코 (머리 방향)</li>
+                        <li>왼쪽/오른쪽 어깨</li>
+                        <li>왼쪽/오른쪽 팔꿈치</li>
+                        <li>왼쪽/오른쪽 손목</li>
+                    </ul>
+                </div>
+                <div class="screen-box">
+                    <h4>하체</h4>
+                    <ul>
+                        <li>왼쪽/오른쪽 고관절</li>
+                        <li>왼쪽/오른쪽 무릎</li>
+                        <li>왼쪽/오른쪽 발목</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <span class="tip-icon">💡</span>
+            <span class="tip-text"><strong>팁:</strong> 관절을 클릭하면 자동으로 편집 모드에 진입하고, 동영상을 다시 재생하면 자동으로 편집 모드가 해제됩니다. 초기화 버튼을 누르면 관절 위치와 확대/축소가 모두 원래 상태로 돌아갑니다.</span>
+        </div>
+
+        <div class="warning-box">
+            <span class="warning-icon">🔑</span>
+            <span class="warning-text"><strong>참고:</strong> 스켈레톤 편집 기능은 라이센스 등록이 필요합니다.</span>
+        </div>
+    </div>
+
+    <!-- 10. 움직임 빈도 분석 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">📊</span> 움직임 빈도 분석 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
         <p>

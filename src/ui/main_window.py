@@ -133,6 +133,10 @@ class MainWindow(QMainWindow):
         self.status_widget.movement_analysis_widget.register_requested.connect(
             self._show_license_dialog
         )
+        # 스켈레톤 편집 모드 변경 시 영상 일시정지 연동
+        self.status_widget._skeleton_widget.edit_mode_changed.connect(
+            self._on_edit_mode_changed
+        )
 
     def _init_menu(self):
         """메뉴 초기화"""
@@ -908,9 +912,18 @@ class MainWindow(QMainWindow):
                 video_path, total_frames
             )
 
+    def _on_edit_mode_changed(self, enabled: bool):
+        """스켈레톤 편집 모드 변경 시"""
+        if enabled:
+            self.player_widget.pause()
+
     def _on_frame_changed(self, frame, frame_number: int):
         """프레임 변경 시 호출"""
         if frame is not None:
+            # 동영상 재생 중이면 편집 모드 강제 해제
+            if self.status_widget._skeleton_widget.is_edit_mode:
+                self.status_widget._skeleton_widget.exit_edit_mode()
+
             # 현재 위치 정보 업데이트
             timestamp = self.player_widget.get_current_position()
             self.status_widget.set_current_position(timestamp, frame_number)

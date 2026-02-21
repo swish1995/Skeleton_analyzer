@@ -93,17 +93,18 @@ class SkeletonWidget(QWidget):
         # 관절점 그리기
         self._draw_joints(painter, w, h, margin)
 
-    def _draw_connections(self, painter: QPainter, w: int, h: int, margin: int):
+    def _draw_connections(self, painter: QPainter, w: int, h: int, margin: int, landmarks=None):
         """연결선 그리기"""
+        landmarks = landmarks or self._landmarks
         pen = QPen()
         pen.setWidth(3)
 
         for start_idx, end_idx in SKELETON_CONNECTIONS:
-            if start_idx >= len(self._landmarks) or end_idx >= len(self._landmarks):
+            if start_idx >= len(landmarks) or end_idx >= len(landmarks):
                 continue
 
-            start = self._landmarks[start_idx]
-            end = self._landmarks[end_idx]
+            start = landmarks[start_idx]
+            end = landmarks[end_idx]
 
             # visibility 체크
             if start.get('visibility', 1) < 0.5 or end.get('visibility', 1) < 0.5:
@@ -122,9 +123,10 @@ class SkeletonWidget(QWidget):
 
             painter.drawLine(x1, y1, x2, y2)
 
-    def _draw_joints(self, painter: QPainter, w: int, h: int, margin: int):
+    def _draw_joints(self, painter: QPainter, w: int, h: int, margin: int, landmarks=None):
         """관절점 그리기"""
-        for i, lm in enumerate(self._landmarks):
+        landmarks = landmarks or self._landmarks
+        for i, lm in enumerate(landmarks):
             if lm.get('visibility', 1) < 0.5:
                 continue
 

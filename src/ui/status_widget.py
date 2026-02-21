@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Optional
 
 from .skeleton_widget import SkeletonWidget
+from .interactive_skeleton_widget import InteractiveSkeletonWidget
 from .angle_widget import AngleWidget
 from .ergonomic import ErgonomicWidget
 from .movement_analysis_widget import MovementAnalysisWidget
@@ -179,9 +180,10 @@ class StatusWidget(QWidget):
         self._top_splitter.setHandleWidth(8)
         self._top_splitter.setStyleSheet(horizontal_splitter_style)
 
-        # 왼쪽: 스켈레톤 시각화
-        self._skeleton_widget = SkeletonWidget()
+        # 왼쪽: 스켈레톤 시각화 (인터랙티브)
+        self._skeleton_widget = InteractiveSkeletonWidget()
         self._skeleton_widget.setMinimumWidth(200)  # 스켈레톤 최소 너비
+        self._skeleton_widget.show_control_bar()
         self._top_splitter.addWidget(self._skeleton_widget)
 
         # 오른쪽: 각도 표시
@@ -242,8 +244,8 @@ class StatusWidget(QWidget):
 
     def _connect_signals(self):
         """시그널 연결"""
-        # 버튼이 메인 툴바로 이동하여 시그널 연결 불필요
-        pass
+        # 인터랙티브 스켈레톤 편집 시그널
+        self._skeleton_widget.landmarks_changed.connect(self._on_landmarks_edited)
 
     # === 스플리터 상태 저장/복원 ===
 
@@ -372,6 +374,10 @@ class StatusWidget(QWidget):
         # 현재 프레임 저장 (캡처용)
         self._current_frame = frame.copy()
 
+        # 편집 모드에서는 영상 감지 결과 무시 (편집 값 유지)
+        if self._skeleton_widget.is_edit_mode:
+            return
+
         # 포즈 감지
         result = self._pose_detector.detect(frame)
 
@@ -390,6 +396,16 @@ class StatusWidget(QWidget):
             self._skeleton_widget.clear()
             self._angle_widget.clear()
             self._ergonomic_widget.clear()
+
+    def _on_landmarks_edited(self, landmarks: list):
+        """인터랙티브 스켈레톤 편집 시 각도/점수 재계산"""
+        if not landmarks:
+            return
+        # 각도 재계산
+        angles = self._angle_calculator.calculate_all_angles(landmarks)
+        self._angle_widget.set_angles(angles)
+        # 인체공학적 평가 업데이트
+        self._ergonomic_widget.update_assessment(angles, landmarks)
 
     def set_current_position(self, timestamp: float, frame_number: int):
         """현재 재생 위치 설정"""
