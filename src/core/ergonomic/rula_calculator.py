@@ -321,14 +321,14 @@ class RULACalculator(BaseAssessment):
         # 기본 점수 (1-4)
         mid = self._get_threshold('neck_flexion_mid')
         high = self._get_threshold('neck_flexion_high')
-        if 0 <= flexion <= mid:
+        if flexion < 0:
+            base = 4  # 신전 (뒤로 젖힘)
+        elif flexion <= mid:
             base = 1
         elif flexion <= high:
             base = 2
-        elif flexion > high:
-            base = 3
         else:
-            base = 1
+            base = 3
 
         # 세부 가점
         twisted = 0       # 회전
