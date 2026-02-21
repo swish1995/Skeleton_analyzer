@@ -78,13 +78,21 @@ class OWASCalculator(BaseAssessment):
         4: 'AC4: 매우 유해 - 즉시 개선',
     }
 
-    def calculate(self, angles: Dict[str, float], landmarks: List[Dict]) -> OWASResult:
-        """OWAS 점수 계산"""
+    def calculate(self, angles: Dict[str, float], landmarks: List[Dict],
+                  load_code: int = 1, is_sitting: bool = False) -> OWASResult:
+        """OWAS 점수 계산
+
+        Args:
+            angles: 관절 각도 딕셔너리
+            landmarks: MediaPipe landmark 리스트
+            load_code: 하중 코드 (1: 10kg 미만, 2: 10-20kg, 3: 20kg 초과)
+            is_sitting: 앉음 상태 (수동 선택)
+        """
         # 각 부위 코드 계산
         back_code = self._calculate_back_code(angles, landmarks)
         arms_code = self._calculate_arms_code(angles, landmarks)
-        legs_code = self._calculate_legs_code(angles, landmarks)
-        load_code = 1  # 기본값 (하중 정보 없음)
+        legs_code = self._calculate_legs_code(angles, landmarks, is_sitting=is_sitting)
+        load_code = max(1, min(3, load_code))  # 1-3 범위 보장
 
         # 자세 코드 생성
         posture_code = f"{back_code}{arms_code}{legs_code}{load_code}"
@@ -192,10 +200,11 @@ class OWASCalculator(BaseAssessment):
         else:
             return 1
 
-    def _calculate_legs_code(self, angles: Dict[str, float], landmarks: List[Dict]) -> int:
+    def _calculate_legs_code(self, angles: Dict[str, float], landmarks: List[Dict],
+                             is_sitting: bool = False) -> int:
         """
         다리 코드 계산 (1-7)
-        1: 앉기
+        1: 앉기 (수동 선택 - 의자 등에 앉은 상태)
         2: 서기 (양다리 곧음)
         3: 서기 (한다리 곧음)
         4: 서기/쪼그려 앉기 (양무릎 굴곡)
@@ -203,27 +212,23 @@ class OWASCalculator(BaseAssessment):
         6: 무릎꿇기
         7: 걷기/이동
         """
+        # 앉음은 스켈레톤으로 판별 불가 → 수동 선택
+        if is_sitting:
+            return 1
+
         left_knee_angle = angles.get('left_knee', 180)
         right_knee_angle = angles.get('right_knee', 180)
-        left_hip_angle = angles.get('left_hip', 180)
-        right_hip_angle = angles.get('right_hip', 180)
 
         # 민감도 적용 (raw 각도 "미만" 비교: 민감도↑ → 임계값↓ → 트리거 어려움)
         s = self.detection_sensitivity
         knee_bent_thresh = DEFAULT_DETECTION_THRESHOLDS['owas_knee_bent'] / s if s > 0 else 150
-        sitting_thresh = DEFAULT_DETECTION_THRESHOLDS['owas_sitting'] / s if s > 0 else 120
         kneeling_thresh = DEFAULT_DETECTION_THRESHOLDS['owas_kneeling'] / s if s > 0 else 90
 
         # 무릎 굴곡 판단 (180도 = 곧음, 작을수록 굴곡)
         left_knee_bent = left_knee_angle < knee_bent_thresh
         right_knee_bent = right_knee_angle < knee_bent_thresh
 
-        # 고관절 굴곡으로 앉기 판단
-        is_sitting = left_hip_angle < sitting_thresh and right_hip_angle < sitting_thresh
-
-        if is_sitting:
-            return 1
-        elif left_knee_bent and right_knee_bent:
+        if left_knee_bent and right_knee_bent:
             # 양무릎 굴곡 정도에 따라
             if left_knee_angle < kneeling_thresh and right_knee_angle < kneeling_thresh:
                 return 6  # 무릎꿇기

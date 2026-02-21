@@ -2,9 +2,9 @@
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QGroupBox, QGridLayout, QFrame
+    QGroupBox, QGridLayout, QFrame, QComboBox, QCheckBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 
 from ...core.ergonomic.owas_calculator import OWASResult
@@ -12,6 +12,9 @@ from ...core.ergonomic.owas_calculator import OWASResult
 
 class OWASWidget(QWidget):
     """OWAS 평가 결과 표시 위젯"""
+
+    # 수동 입력 변경 시그널 (하중 또는 앉음 변경 시 재계산 요청)
+    manual_input_changed = pyqtSignal()
 
     # 색상 정의
     COLORS = {
@@ -147,6 +150,29 @@ class OWASWidget(QWidget):
 
         layout.addWidget(code_box)
 
+        # 수동 입력 영역
+        manual_box = QGroupBox("수동 입력")
+        manual_layout = QGridLayout(manual_box)
+
+        # 하중 셀렉트 박스
+        manual_layout.addWidget(QLabel("하중:"), 0, 0)
+        self._load_combo = QComboBox()
+        self._load_combo.addItem("1: 10kg 미만", 1)
+        self._load_combo.addItem("2: 10-20kg", 2)
+        self._load_combo.addItem("3: 20kg 초과", 3)
+        self._load_combo.setCurrentIndex(0)
+        self._load_combo.setToolTip("하중 코드 (1-3)")
+        self._load_combo.currentIndexChanged.connect(self._on_manual_input_changed)
+        manual_layout.addWidget(self._load_combo, 0, 1)
+
+        # 앉음 체크박스
+        self._sitting_checkbox = QCheckBox("앉음 (의자 등)")
+        self._sitting_checkbox.setToolTip("의자 등에 앉은 상태일 때 체크\n(스켈레톤으로 판별 불가)")
+        self._sitting_checkbox.stateChanged.connect(self._on_manual_input_changed)
+        manual_layout.addWidget(self._sitting_checkbox, 1, 0, 1, 2)
+
+        layout.addWidget(manual_box)
+
         layout.addStretch()
 
     def update_result(self, result: OWASResult):
@@ -182,8 +208,21 @@ class OWASWidget(QWidget):
         self._legs_code_label.setText(str(result.legs_code))
         self._legs_desc_label.setText(self.LEGS_DESCRIPTIONS.get(result.legs_code, ''))
 
+        load_descriptions = {1: '10kg 미만', 2: '10-20kg', 3: '20kg 초과'}
         self._load_code_label.setText(str(result.load_code))
-        self._load_desc_label.setText("기본값" if result.load_code == 1 else "")
+        self._load_desc_label.setText(load_descriptions.get(result.load_code, ''))
+
+    def _on_manual_input_changed(self):
+        """수동 입력 변경 시 시그널 발생"""
+        self.manual_input_changed.emit()
+
+    def get_load_code(self) -> int:
+        """현재 선택된 하중 코드 반환"""
+        return self._load_combo.currentData()
+
+    def is_sitting_checked(self) -> bool:
+        """앉음 체크박스 상태 반환"""
+        return self._sitting_checkbox.isChecked()
 
     def clear(self):
         """초기화"""

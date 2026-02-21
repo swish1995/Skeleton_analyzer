@@ -50,6 +50,7 @@ class ErgonomicWidget(QWidget):
         self._license_manager.license_changed.connect(self._update_license_state)
 
         self._init_ui()
+        self._connect_owas_signals()
 
         # 초기 라이센스 상태 적용
         self._update_license_state()
@@ -126,6 +127,20 @@ class ErgonomicWidget(QWidget):
 
         layout.addWidget(self._main_splitter)
 
+    def _connect_owas_signals(self):
+        """OWAS 수동 입력 시그널 연결"""
+        self._owas_widget.manual_input_changed.connect(self._on_owas_manual_changed)
+
+    def _on_owas_manual_changed(self):
+        """OWAS 수동 입력 변경 시 재계산"""
+        if self._last_angles and self._last_landmarks:
+            self._current_owas_result = self._owas_calculator.calculate(
+                self._last_angles, self._last_landmarks,
+                load_code=self._owas_widget.get_load_code(),
+                is_sitting=self._owas_widget.is_sitting_checked(),
+            )
+            self._owas_widget.update_result(self._current_owas_result)
+
     # === 외부에서 패널 가시성 제어 ===
 
     def set_rula_visible(self, visible: bool):
@@ -196,8 +211,12 @@ class ErgonomicWidget(QWidget):
         self._current_reba_result = self._reba_calculator.calculate(angles, landmarks)
         self._reba_widget.update_result(self._current_reba_result)
 
-        # OWAS 계산 및 업데이트
-        self._current_owas_result = self._owas_calculator.calculate(angles, landmarks)
+        # OWAS 계산 및 업데이트 (수동 입력값 반영)
+        self._current_owas_result = self._owas_calculator.calculate(
+            angles, landmarks,
+            load_code=self._owas_widget.get_load_code(),
+            is_sitting=self._owas_widget.is_sitting_checked(),
+        )
         self._owas_widget.update_result(self._current_owas_result)
 
     def recalculate(self):
