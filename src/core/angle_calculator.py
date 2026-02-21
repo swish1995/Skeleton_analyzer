@@ -182,14 +182,34 @@ class AngleCalculator:
             shoulder_center, hip_center
         )
 
-        # --- 목 굴곡 (귀 중심점 2D, 보정값 적용) ---
+        # --- 목 굴곡 (귀 중심점 2D, 부호 포함) ---
         # nose 대신 귀 중심점 사용 (두개골 중심에 가까워 편향 감소)
+        # 양수 = 굴곡 (앞으로 숙임), 음수 = 신전 (뒤로 젖힘)
         NECK_OFFSET = 5.0  # 정면 카메라 보정값 (°)
+        nose = self._get_point(landmarks, 'nose')
         ear_center_2d = ((l_ear[0] + r_ear[0]) / 2, (l_ear[1] + r_ear[1]) / 2)
         sc_2d = (shoulder_center[0], shoulder_center[1])
         hc_2d = (hip_center[0], hip_center[1])
         neck_trunk_angle = self.calculate_angle(ear_center_2d, sc_2d, hc_2d)
-        flexion_angles['neck_flexion'] = max(180 - neck_trunk_angle - NECK_OFFSET, 0)
+        neck_value = 180 - neck_trunk_angle - NECK_OFFSET
+
+        # 크로스곱으로 신전(뒤로 젖힘) 여부 판정
+        # 얼굴 전방 방향(귀 중심→코)은 머리 위치에 상관없이 일정하므로,
+        # 목의 편향 방향이 얼굴 전방과 반대이면 신전(뒤로 젖힘)
+        trunk_up = (sc_2d[0] - hc_2d[0], sc_2d[1] - hc_2d[1])
+        neck_dir = (ear_center_2d[0] - sc_2d[0], ear_center_2d[1] - sc_2d[1])
+        nose_2d = (nose[0], nose[1])
+        face_fwd = (nose_2d[0] - ear_center_2d[0], nose_2d[1] - ear_center_2d[1])
+
+        cross_neck = trunk_up[0] * neck_dir[1] - trunk_up[1] * neck_dir[0]
+        cross_face = trunk_up[0] * face_fwd[1] - trunk_up[1] * face_fwd[0]
+
+        is_extension = (abs(cross_face) > 1e-10) and (cross_neck * cross_face < 0)
+
+        if is_extension:
+            flexion_angles['neck_flexion'] = -abs(neck_value)
+        else:
+            flexion_angles['neck_flexion'] = max(neck_value, 0)
 
         # --- 2D 좌표 추출 (z축 노이즈로 인한 과대측정 방지) ---
         ls2 = (ls[0], ls[1])
