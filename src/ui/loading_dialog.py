@@ -74,8 +74,8 @@ class LoadWorker(QThread):
             self.finished_err.emit("폴더가 존재하지 않습니다.")
             return
 
-        # 전체 파일 목록 수집
-        all_files = list(folder.rglob('*'))
+        # 1뎁스 파일 목록 수집
+        all_files = list(folder.iterdir())
         total = len(all_files)
 
         images = []

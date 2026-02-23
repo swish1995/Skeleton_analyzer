@@ -5,7 +5,6 @@
 
 import re
 import shutil
-import zipfile
 from collections import OrderedDict
 from pathlib import Path
 from typing import Optional, List
@@ -90,76 +89,6 @@ class ImageSlidePlayer:
 
     # === 로드 ===
 
-    def load_folder(self, folder_path: str) -> bool:
-        """폴더에서 이미지 로드
-
-        Args:
-            folder_path: 이미지 폴더 경로
-
-        Returns:
-            성공 여부
-        """
-        self.release()
-
-        folder = Path(folder_path)
-        if not folder.exists() or not folder.is_dir():
-            return False
-
-        images = self._scan_images(folder)
-        if not images:
-            return False
-
-        self._image_paths = images
-        self._current_index = 0
-        self._source_type = 'folder'
-        self._source_path = str(folder)
-        return True
-
-    def load_archive(self, archive_path: str) -> bool:
-        """압축 파일에서 이미지 로드
-
-        ZIP 파일을 임시 디렉토리에 해제한 후 이미지를 로드합니다.
-
-        Args:
-            archive_path: 압축 파일 경로
-
-        Returns:
-            성공 여부
-        """
-        self.release()
-
-        archive = Path(archive_path)
-        if not archive.exists():
-            return False
-
-        if not zipfile.is_zipfile(archive):
-            return False
-
-        # 임시 디렉토리 생성
-        temp_dir = Path(self.TEMP_BASE_DIR) / archive.stem
-        try:
-            temp_dir.mkdir(parents=True, exist_ok=True)
-
-            with zipfile.ZipFile(archive, 'r') as zf:
-                zf.extractall(temp_dir)
-
-            # 이미지 스캔 (하위 폴더 포함)
-            images = self._scan_images(temp_dir)
-            if not images:
-                shutil.rmtree(temp_dir, ignore_errors=True)
-                return False
-
-            self._image_paths = images
-            self._current_index = 0
-            self._source_type = 'archive'
-            self._source_path = str(archive)
-            self._temp_dir = temp_dir
-            return True
-
-        except Exception:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return False
-
     def set_loaded_folder(self, folder_path: str, image_paths: List[Path]):
         """외부에서 스캔 완료된 이미지 경로 목록으로 폴더 모드 설정
 
@@ -192,16 +121,6 @@ class ImageSlidePlayer:
         self._source_type = 'archive'
         self._source_path = archive_path
         self._temp_dir = temp_dir
-
-    def _scan_images(self, folder: Path) -> List[Path]:
-        """폴더에서 이미지 파일을 스캔하여 자연순 정렬된 리스트 반환"""
-        images = []
-        for f in folder.rglob('*'):
-            if f.is_file() and f.suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS:
-                images.append(f)
-
-        images.sort(key=_natural_sort_key)
-        return images
 
     # === 네비게이션 ===
 
