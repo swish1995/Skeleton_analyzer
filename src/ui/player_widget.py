@@ -86,6 +86,10 @@ class PlayerWidget(QWidget):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #7a5a2a, stop:1 #6a4a1a);
             }
+            QPushButton:disabled {
+                background: #3a3a3a;
+                color: #666666;
+            }
         """,
         'open_archive': """
             QPushButton {
@@ -105,6 +109,10 @@ class PlayerWidget(QWidget):
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #5a4a7a, stop:1 #4a3a6a);
+            }
+            QPushButton:disabled {
+                background: #3a3a3a;
+                color: #666666;
             }
         """,
         'play': """
@@ -491,6 +499,13 @@ class PlayerWidget(QWidget):
         self._image_slider.hide()
 
         return control_container
+
+    # === 라이센스 연동 ===
+
+    def set_folder_archive_enabled(self, enabled: bool):
+        """폴더/압축파일 열기 버튼 활성화/비활성화"""
+        self._open_folder_btn.setEnabled(enabled)
+        self._open_archive_btn.setEnabled(enabled)
 
     # === 모드 전환 ===
 

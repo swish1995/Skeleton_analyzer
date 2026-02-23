@@ -1,6 +1,6 @@
 # Skeleton Analyzer 라이센스 시스템
 
-> 📅 마지막 갱신: 2026-02-01
+> 📅 마지막 갱신: 2026-02-23
 > 🔍 소스: 코드베이스 자동 분석
 
 ## 개요
@@ -27,12 +27,16 @@ Skeleton Analyzer는 하드웨어 기반 라이센스 시스템을 사용합니�
 
 ### 유료 기능 (LICENSED)
 
+- 이미지 폴더 로드 및 슬라이드쇼
+- 압축 파일(ZIP) 이미지 로드
+- 움직임 빈도 분석
 - NLE 분석 (NIOSH Lifting Equation)
 - SI 분석 (Strain Index)
 - 프로젝트 저장
 - 프로젝트 열기
 - Excel 내보내기
 - JSON 내보내기
+- 스켈레톤 편집
 
 ## 하드웨어 ID
 

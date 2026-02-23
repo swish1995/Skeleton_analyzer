@@ -177,14 +177,14 @@ class MainWindow(QMainWindow):
         file_menu.addAction(open_action)
 
         # 이미지 폴더 열기
-        open_folder_action = QAction("폴더 열기(&I)...", self)
-        open_folder_action.triggered.connect(self._open_image_folder)
-        file_menu.addAction(open_folder_action)
+        self._open_folder_action = QAction("폴더 열기(&I)...", self)
+        self._open_folder_action.triggered.connect(self._open_image_folder)
+        file_menu.addAction(self._open_folder_action)
 
         # 압축 파일 열기
-        open_archive_action = QAction("파일 열기(&Z)...", self)
-        open_archive_action.triggered.connect(self._open_archive_file)
-        file_menu.addAction(open_archive_action)
+        self._open_archive_action = QAction("파일 열기(&Z)...", self)
+        self._open_archive_action.triggered.connect(self._open_archive_file)
+        file_menu.addAction(self._open_archive_action)
 
         file_menu.addSeparator()
 
@@ -967,6 +967,10 @@ class MainWindow(QMainWindow):
 
     def _load_images(self, folder_path: str, from_project_load: bool = False):
         """이미지 폴더 로드"""
+        if not self._license_manager.check_feature('folder_load'):
+            self._show_license_dialog()
+            return
+
         self._logger.info(f"이미지 폴더 로드 요청: {folder_path}")
 
         if not from_project_load:
@@ -1023,6 +1027,10 @@ class MainWindow(QMainWindow):
 
     def _load_archive(self, archive_path: str, from_project_load: bool = False):
         """압축 파일 로드"""
+        if not self._license_manager.check_feature('archive_load'):
+            self._show_license_dialog()
+            return
+
         self._logger.info(f"압축 파일 로드 요청: {archive_path}")
 
         if not from_project_load:
@@ -1605,6 +1613,13 @@ class MainWindow(QMainWindow):
         self._open_project_action.setEnabled(is_licensed)
         self._save_project_action.setEnabled(is_licensed)
         self._save_as_action.setEnabled(is_licensed)
+
+        # 이미지 폴더/압축 파일 메뉴 - 라이센스 필요
+        self._open_folder_action.setEnabled(is_licensed)
+        self._open_archive_action.setEnabled(is_licensed)
+
+        # 플레이어 위젯 버튼도 동기화
+        self.player_widget.set_folder_archive_enabled(is_licensed)
 
         # 툴바 버튼도 동기화
         self._open_btn.setEnabled(is_licensed)

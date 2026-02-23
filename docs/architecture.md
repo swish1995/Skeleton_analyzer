@@ -1,6 +1,6 @@
 # Skeleton Analyzer 아키텍처
 
-> 📅 마지막 갱신: 2026-02-21
+> 📅 마지막 갱신: 2026-02-23
 > 🔍 소스: 코드베이스 자동 분석
 
 ## 시스템 개요
@@ -68,6 +68,8 @@
 | CaptureSpreadsheetWidget | `capture_spreadsheet_widget.py` | 캡처 데이터 스프레드시트 + Excel 내보내기 |
 | SettingsDialog | `settings_dialog.py` | 설정 다이얼로그 |
 | HelpDialog | `help_dialog.py` | 도움말 다이얼로그 (프로그램 정보, 사용 방법) |
+| LoadingDialog | `loading_dialog.py` | 파일 로딩 프로그레스 다이얼로그 + LoadWorker |
+| AnalysisProgressDialog | `analysis_progress_dialog.py` | 동영상 분석 진행 다이얼로그 |
 
 ### UI Layer - Ergonomic (`src/ui/ergonomic/`)
 
@@ -168,6 +170,8 @@ skeleton-analyzer/
 │   │   ├── capture_spreadsheet_widget.py  # 스프레드시트 + Excel
 │   │   ├── settings_dialog.py  # 설정
 │   │   ├── help_dialog.py      # 도움말
+│   │   ├── loading_dialog.py  # 파일 로딩 프로그레스 다이얼로그
+│   │   ├── analysis_progress_dialog.py  # 분석 진행 다이얼로그
 │   │   └── ergonomic/          # 인체공학적 평가 UI
 │   │       ├── __init__.py
 │   │       ├── ergonomic_widget.py  # 통합 컨테이너
@@ -250,10 +254,11 @@ skeleton-analyzer/
            └── StatusWidget.capture_current_state()
                └── CaptureSpreadsheetWidget.add_record()
 
-5. 이미지 폴더/압축 파일 열기
+5. 이미지 폴더/압축 파일 열기 (🔑 등록 기능)
    └── MainWindow._open_image_folder() / _open_archive_file()
-       └── PlayerWidget.load_images() / load_archive()
-           └── ImageSlidePlayer.load_folder() / load_archive()
+       └── LoadingDialog + LoadWorker (백그라운드 스레드)
+           └── PlayerWidget.load_images_from_worker() / load_archive_from_worker()
+               └── ImageSlidePlayer.set_loaded_folder() / set_loaded_archive()
 
 6. 이미지 네비게이션
    └── PlayerWidget._on_next_image() / _on_prev_image()

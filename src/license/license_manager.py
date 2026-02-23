@@ -35,6 +35,8 @@ FEATURES: Dict[str, bool] = {
     'capture': True,
 
     # 유료 기능
+    'folder_load': False,
+    'archive_load': False,
     'nle_analysis': False,
     'si_analysis': False,
     'project_save': False,
