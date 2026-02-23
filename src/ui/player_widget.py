@@ -2,7 +2,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QSlider, QSizePolicy, QFileDialog,
-    QGraphicsOpacityEffect, QStackedWidget
+    QGraphicsOpacityEffect, QStackedWidget, QScrollArea
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve, QSize
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QBrush, QIcon
@@ -307,6 +307,7 @@ class PlayerWidget(QWidget):
         # === 컨트롤바 (QStackedWidget으로 모드 전환) ===
         self._control_stack = QStackedWidget()
         self._control_stack.setFixedHeight(50)
+        self._image_control_height = 86
 
         # --- 동영상 컨트롤바 (index=0) ---
         video_control = self._create_video_control()
@@ -373,64 +374,121 @@ class PlayerWidget(QWidget):
         return control_container
 
     def _create_image_control(self) -> QWidget:
-        """이미지 슬라이드 컨트롤바 생성"""
+        """이미지 슬라이드 컨트롤바 생성 (썸네일 스트립)"""
         control_container = QWidget()
         control_container.setStyleSheet("background-color: #404040; border-radius: 6px;")
-        control_layout = QHBoxLayout(control_container)
-        control_layout.setContentsMargins(10, 5, 10, 5)
-        control_layout.setSpacing(8)
+        control_layout = QVBoxLayout(control_container)
+        control_layout.setContentsMargins(10, 4, 10, 4)
+        control_layout.setSpacing(4)
+
+        # === 상단: 썸네일 스트립 (좌우 버튼 포함) ===
+        thumb_row = QHBoxLayout()
+        thumb_row.setSpacing(0)
+        thumb_row.setContentsMargins(0, 0, 0, 0)
+
+        # 왼쪽 스크롤 버튼
+        self._thumb_scroll_left_btn = QPushButton("‹")
+        self._thumb_scroll_left_btn.setFixedSize(16, 52)
+        self._thumb_scroll_left_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._thumb_scroll_left_btn.setStyleSheet("""
+            QPushButton { background: #555; color: #ccc; border: none; border-radius: 2px; font-size: 16px; font-weight: bold; }
+            QPushButton:hover { background: #666; }
+            QPushButton:pressed { background: #777; }
+        """)
+        self._thumb_scroll_left_btn.clicked.connect(self._scroll_thumb_left)
+        thumb_row.addWidget(self._thumb_scroll_left_btn)
+
+        # 썸네일 스크롤 영역
+        self._thumb_scroll = QScrollArea()
+        self._thumb_scroll.setWidgetResizable(False)
+        self._thumb_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._thumb_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._thumb_scroll.setFixedHeight(52)
+        self._thumb_scroll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._thumb_scroll.setStyleSheet("""
+            QScrollArea { background: #333; border: none; border-radius: 3px; }
+        """)
+        # 마우스 휠로 좌우 스크롤
+        self._thumb_scroll.wheelEvent = self._on_thumb_wheel
+
+        self._thumb_container = QWidget()
+        self._thumb_layout = QHBoxLayout(self._thumb_container)
+        self._thumb_layout.setContentsMargins(2, 2, 2, 2)
+        self._thumb_layout.setSpacing(3)
+        self._thumb_scroll.setWidget(self._thumb_container)
+
+        self._thumb_labels: list[QLabel] = []
+        self._thumb_size = 48  # 썸네일 크기
+
+        thumb_row.addWidget(self._thumb_scroll)
+
+        # 오른쪽 스크롤 버튼
+        self._thumb_scroll_right_btn = QPushButton("›")
+        self._thumb_scroll_right_btn.setFixedSize(16, 52)
+        self._thumb_scroll_right_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._thumb_scroll_right_btn.setStyleSheet("""
+            QPushButton { background: #555; color: #ccc; border: none; border-radius: 2px; font-size: 16px; font-weight: bold; }
+            QPushButton:hover { background: #666; }
+            QPushButton:pressed { background: #777; }
+        """)
+        self._thumb_scroll_right_btn.clicked.connect(self._scroll_thumb_right)
+        thumb_row.addWidget(self._thumb_scroll_right_btn)
+
+        control_layout.addLayout(thumb_row)
+
+        # === 하단: 버튼 + 인덱스 + 파일명 ===
+        bottom_bar = QHBoxLayout()
+        bottom_bar.setSpacing(8)
 
         # 이전 버튼
         self._prev_btn = QPushButton("◀")
-        self._prev_btn.setFixedSize(40, 32)
+        self._prev_btn.setFixedSize(40, 24)
         self._prev_btn.setStyleSheet(self.BUTTON_STYLES['nav'])
         self._prev_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._prev_btn.clicked.connect(self._on_prev_image)
         self._prev_btn.setEnabled(False)
-        control_layout.addWidget(self._prev_btn)
+        bottom_bar.addWidget(self._prev_btn)
 
         # 다음 버튼
         self._next_btn = QPushButton("▶")
-        self._next_btn.setFixedSize(40, 32)
+        self._next_btn.setFixedSize(40, 24)
         self._next_btn.setStyleSheet(self.BUTTON_STYLES['nav'])
         self._next_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._next_btn.clicked.connect(self._on_next_image)
         self._next_btn.setEnabled(False)
-        control_layout.addWidget(self._next_btn)
+        bottom_bar.addWidget(self._next_btn)
 
         # 이미지 캡처 버튼
         self._image_capture_btn = QPushButton()
-        self._image_capture_btn.setFixedSize(40, 32)
+        self._image_capture_btn.setFixedSize(40, 24)
         self._image_capture_btn.setIcon(self._create_capture_icon())
-        self._image_capture_btn.setIconSize(self._image_capture_btn.size() * 0.6)
+        self._image_capture_btn.setIconSize(QSize(14, 14))
         self._image_capture_btn.setStyleSheet(self.BUTTON_STYLES['capture'])
         self._image_capture_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._image_capture_btn.clicked.connect(self._on_capture_clicked)
         self._image_capture_btn.setEnabled(False)
-        control_layout.addWidget(self._image_capture_btn)
+        bottom_bar.addWidget(self._image_capture_btn)
 
         # 현재/전체 인덱스 표시
         self._image_index_label = QLabel("0 / 0")
-        self._image_index_label.setFixedWidth(70)
-        self._image_index_label.setStyleSheet("color: #ccc; font-size: 12px; font-weight: bold; background: transparent;")
+        self._image_index_label.setFixedWidth(60)
+        self._image_index_label.setStyleSheet("color: #ccc; font-size: 11px; font-weight: bold; background: transparent;")
         self._image_index_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        control_layout.addWidget(self._image_index_label)
-
-        # 이미지 슬라이더
-        self._image_slider = QSlider(Qt.Orientation.Horizontal)
-        self._image_slider.setRange(0, 0)
-        self._image_slider.setStyleSheet(self.SLIDER_STYLE)
-        self._image_slider.sliderPressed.connect(self._on_image_slider_pressed)
-        self._image_slider.sliderReleased.connect(self._on_image_slider_released)
-        self._image_slider.sliderMoved.connect(self._on_image_slider_moved)
-        control_layout.addWidget(self._image_slider)
+        bottom_bar.addWidget(self._image_index_label)
 
         # 파일명 표시
         self._image_filename_label = QLabel("")
-        self._image_filename_label.setFixedWidth(120)
         self._image_filename_label.setStyleSheet("color: #999; font-size: 10px; background: transparent;")
-        self._image_filename_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        control_layout.addWidget(self._image_filename_label)
+        self._image_filename_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        bottom_bar.addWidget(self._image_filename_label)
+
+        bottom_bar.addStretch()
+        control_layout.addLayout(bottom_bar)
+
+        # 기존 슬라이더 (숨김 - 호환용)
+        self._image_slider = QSlider(Qt.Orientation.Horizontal)
+        self._image_slider.setRange(0, 0)
+        self._image_slider.hide()
 
         return control_container
 
@@ -445,10 +503,33 @@ class PlayerWidget(QWidget):
         self._mode = mode
         if mode == self.MODE_VIDEO:
             self._control_stack.setCurrentIndex(0)
+            self._control_stack.setFixedHeight(50)
             self._help_label.setText("Space: 재생/정지  |  Enter: 캡처  |  ←/→: 5초 이동")
         elif mode == self.MODE_IMAGE:
             self._control_stack.setCurrentIndex(1)
-            self._help_label.setText("Enter: 캡처  |  ←/→: 이전/다음 이미지")
+            self._control_stack.setFixedHeight(self._image_control_height)
+            self._help_label.setText("Enter: 캡처  |  ←/→: 이전/다음")
+
+    # === 키 이벤트 ===
+
+    def keyPressEvent(self, event):
+        """키 입력 이벤트 - 화살표 키 처리
+
+        QSplitter가 화살표 키를 가로채기 때문에 PlayerWidget에서 직접 처리합니다.
+        """
+        if event.key() == Qt.Key.Key_Left:
+            if self._mode == self.MODE_IMAGE:
+                self._on_prev_image()
+            elif self._mode == self.MODE_VIDEO:
+                self.seek_relative(-5)
+            return
+        elif event.key() == Qt.Key.Key_Right:
+            if self._mode == self.MODE_IMAGE:
+                self._on_next_image()
+            elif self._mode == self.MODE_VIDEO:
+                self.seek_relative(5)
+            return
+        super().keyPressEvent(event)
 
     # === 드래그 앤 드롭 ===
 
@@ -568,6 +649,10 @@ class PlayerWidget(QWidget):
         count = self._image_player.image_count
         self._image_slider.setRange(0, count - 1)
         self._image_slider.setValue(0)
+
+        # 썸네일 스트립 생성
+        self._build_thumbnail_strip()
+
         self._update_image_index_display()
 
         # 첫 이미지 표시
@@ -579,12 +664,102 @@ class PlayerWidget(QWidget):
         # 버튼 활성화
         self._image_capture_btn.setEnabled(True)
         self._update_image_nav_buttons()
+        self._update_thumbnail_selection(0)
 
         # 소스 이름 저장 및 시그널
         self._current_source_name = source_name
         self._current_video_name = None
         self._current_video_path = None
         self.source_loaded.emit(source_name)
+
+    def _build_thumbnail_strip(self):
+        """썸네일 스트립 생성"""
+        import cv2
+
+        # 기존 썸네일 제거
+        for lbl in self._thumb_labels:
+            lbl.deleteLater()
+        self._thumb_labels.clear()
+
+        count = self._image_player.image_count
+        size = self._thumb_size
+
+        for i in range(count):
+            img = self._image_player.get_frame(i)
+            if img is None:
+                continue
+
+            # 썸네일 생성 (정사각형 크롭 후 리사이즈)
+            h, w = img.shape[:2]
+            side = min(h, w)
+            y0 = (h - side) // 2
+            x0 = (w - side) // 2
+            cropped = img[y0:y0+side, x0:x0+side]
+            thumb = cv2.resize(cropped, (size, size), interpolation=cv2.INTER_AREA)
+
+            # BGR → RGB → QPixmap
+            rgb = cv2.cvtColor(thumb, cv2.COLOR_BGR2RGB)
+            qimg = QImage(rgb.data, size, size, size * 3, QImage.Format.Format_RGB888)
+            pixmap = QPixmap.fromImage(qimg)
+
+            lbl = QLabel()
+            lbl.setFixedSize(size, size)
+            lbl.setPixmap(pixmap)
+            lbl.setStyleSheet("border: 2px solid transparent; border-radius: 3px;")
+            lbl.setCursor(Qt.CursorShape.PointingHandCursor)
+            lbl.mousePressEvent = lambda event, idx=i: self._on_thumbnail_clicked(idx)
+            self._thumb_labels.append(lbl)
+            self._thumb_layout.addWidget(lbl)
+
+        # 컨테이너 크기 조정
+        total_width = count * (size + 3) + 4
+        self._thumb_container.setFixedSize(total_width, size + 4)
+
+    def _scroll_thumb_left(self):
+        """썸네일 스트립 왼쪽으로 한 프레임 스크롤"""
+        step = self._thumb_size + 3
+        bar = self._thumb_scroll.horizontalScrollBar()
+        bar.setValue(bar.value() - step)
+
+    def _scroll_thumb_right(self):
+        """썸네일 스트립 오른쪽으로 한 프레임 스크롤"""
+        step = self._thumb_size + 3
+        bar = self._thumb_scroll.horizontalScrollBar()
+        bar.setValue(bar.value() + step)
+
+    def _on_thumb_wheel(self, event):
+        """마우스 휠로 썸네일 좌우 스크롤"""
+        delta = event.angleDelta().y() or event.angleDelta().x()
+        step = self._thumb_size + 3
+        bar = self._thumb_scroll.horizontalScrollBar()
+        if delta > 0:
+            bar.setValue(bar.value() - step)
+        elif delta < 0:
+            bar.setValue(bar.value() + step)
+
+    def _on_thumbnail_clicked(self, index: int):
+        """썸네일 클릭 시 해당 이미지로 이동"""
+        frame = self._image_player.seek(index)
+        if frame is not None:
+            self._display_frame(frame)
+            self._image_slider.setValue(index)
+            self._update_image_index_display()
+            self._update_image_nav_buttons()
+            self._update_thumbnail_selection(index)
+            self.frame_changed.emit(frame, index)
+
+    def _update_thumbnail_selection(self, current_index: int):
+        """현재 선택된 썸네일 하이라이트"""
+        for i, lbl in enumerate(self._thumb_labels):
+            if i == current_index:
+                lbl.setStyleSheet("border: 2px solid #4CAF50; border-radius: 3px;")
+            else:
+                lbl.setStyleSheet("border: 2px solid transparent; border-radius: 3px;")
+
+        # 현재 썸네일이 보이도록 스크롤
+        if current_index < len(self._thumb_labels):
+            target = self._thumb_labels[current_index]
+            self._thumb_scroll.ensureWidgetVisible(target, 50, 0)
 
     def _on_prev_image(self):
         """이전 이미지"""
@@ -596,6 +771,7 @@ class PlayerWidget(QWidget):
                 self._image_slider.setValue(idx)
                 self._update_image_index_display()
                 self._update_image_nav_buttons()
+                self._update_thumbnail_selection(idx)
                 self.frame_changed.emit(frame, idx)
 
     def _on_next_image(self):
@@ -608,6 +784,7 @@ class PlayerWidget(QWidget):
                 self._image_slider.setValue(idx)
                 self._update_image_index_display()
                 self._update_image_nav_buttons()
+                self._update_thumbnail_selection(idx)
                 self.frame_changed.emit(frame, idx)
 
     def navigate_prev(self):
@@ -659,6 +836,7 @@ class PlayerWidget(QWidget):
             self._display_frame(frame)
             self._update_image_index_display()
             self._update_image_nav_buttons()
+            self._update_thumbnail_selection(idx)
             self.frame_changed.emit(frame, idx)
 
     def _on_image_slider_moved(self, value: int):
