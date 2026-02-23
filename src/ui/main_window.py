@@ -16,6 +16,7 @@ from .status_widget import StatusWidget
 from .settings_dialog import SettingsDialog
 from .help_dialog import HelpDialog
 from .analysis_progress_dialog import AnalysisProgressDialog
+from .loading_dialog import LoadingDialog
 from ..utils.config import Config
 from ..core.project_manager import ProjectManager, ProjectLoadError, LoadResult
 from ..core.image_slide_player import ImageSlidePlayer
@@ -812,20 +813,27 @@ class MainWindow(QMainWindow):
             self.status_widget.movement_analysis_widget.reset_to_ready()
             self.player_widget.stop()
 
-        if self.player_widget.load_video(file_path):
-            self._add_recent_file(file_path)
-            self._status_bar.showMessage(f"로드됨: {file_path}")
+        # 로딩 다이얼로그 표시
+        dlg = LoadingDialog('video', file_path, parent=self)
+        dlg.start()
+        result = dlg.exec()
 
-            # 새 동영상이므로 프로젝트 상태 초기화
-            if not from_project_load:
-                self._project_manager.new_project()
-                self._update_window_title()
+        if result == LoadingDialog.DialogCode.Accepted and dlg.success:
+            if self.player_widget.load_video(file_path):
+                self._add_recent_file(file_path)
+                self._status_bar.showMessage(f"로드됨: {file_path}")
 
-            # 포커스를 플레이어로 설정 (엔터키 캡처가 동작하도록)
-            self.player_widget.setFocus()
-        else:
-            self._logger.error(f"비디오 로드 실패: {file_path}")
-            QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
+                if not from_project_load:
+                    self._project_manager.new_project()
+                    self._update_window_title()
+
+                self.player_widget.setFocus()
+            else:
+                self._logger.error(f"비디오 로드 실패: {file_path}")
+                QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
+        elif dlg.error_msg:
+            self._logger.error(f"비디오 로드 실패: {dlg.error_msg}")
+            QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{dlg.error_msg}")
 
     def _cleanup_capture_images(self, silent: bool = False):
         """
@@ -991,17 +999,27 @@ class MainWindow(QMainWindow):
             self.status_widget.movement_analysis_widget.reset_to_ready()
             self.player_widget.stop()
 
-        if self.player_widget.load_images(folder_path):
-            self._status_bar.showMessage(f"이미지 폴더 로드됨: {folder_path}")
+        # 로딩 다이얼로그 표시
+        dlg = LoadingDialog('folder', folder_path, parent=self)
+        dlg.start()
+        result = dlg.exec()
 
-            if not from_project_load:
-                self._project_manager.new_project()
-                self._update_window_title()
+        if result == LoadingDialog.DialogCode.Accepted and dlg.success:
+            worker = dlg.worker
+            if self.player_widget.load_images_from_worker(folder_path, worker.image_paths):
+                self._status_bar.showMessage(f"이미지 폴더 로드됨: {folder_path}")
 
-            self.player_widget.setFocus()
-        else:
-            self._logger.error(f"이미지 폴더 로드 실패: {folder_path}")
-            QMessageBox.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{folder_path}")
+                if not from_project_load:
+                    self._project_manager.new_project()
+                    self._update_window_title()
+
+                self.player_widget.setFocus()
+            else:
+                self._logger.error(f"이미지 폴더 로드 실패: {folder_path}")
+                QMessageBox.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{folder_path}")
+        elif dlg.error_msg:
+            self._logger.error(f"이미지 폴더 로드 실패: {dlg.error_msg}")
+            QMessageBox.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{dlg.error_msg}")
 
     def _load_archive(self, archive_path: str, from_project_load: bool = False):
         """압축 파일 로드"""
@@ -1037,17 +1055,29 @@ class MainWindow(QMainWindow):
             self.status_widget.movement_analysis_widget.reset_to_ready()
             self.player_widget.stop()
 
-        if self.player_widget.load_archive(archive_path):
-            self._status_bar.showMessage(f"압축 파일 로드됨: {archive_path}")
+        # 로딩 다이얼로그 표시
+        dlg = LoadingDialog('archive', archive_path, parent=self)
+        dlg.start()
+        result = dlg.exec()
 
-            if not from_project_load:
-                self._project_manager.new_project()
-                self._update_window_title()
+        if result == LoadingDialog.DialogCode.Accepted and dlg.success:
+            worker = dlg.worker
+            if self.player_widget.load_archive_from_worker(
+                archive_path, worker.image_paths, worker.temp_dir
+            ):
+                self._status_bar.showMessage(f"압축 파일 로드됨: {archive_path}")
 
-            self.player_widget.setFocus()
-        else:
-            self._logger.error(f"압축 파일 로드 실패: {archive_path}")
-            QMessageBox.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{archive_path}")
+                if not from_project_load:
+                    self._project_manager.new_project()
+                    self._update_window_title()
+
+                self.player_widget.setFocus()
+            else:
+                self._logger.error(f"압축 파일 로드 실패: {archive_path}")
+                QMessageBox.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{archive_path}")
+        elif dlg.error_msg:
+            self._logger.error(f"압축 파일 로드 실패: {dlg.error_msg}")
+            QMessageBox.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{dlg.error_msg}")
 
     def _on_edit_mode_changed(self, enabled: bool):
         """스켈레톤 편집 모드 변경 시"""

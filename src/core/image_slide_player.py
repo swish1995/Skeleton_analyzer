@@ -160,6 +160,39 @@ class ImageSlidePlayer:
             shutil.rmtree(temp_dir, ignore_errors=True)
             return False
 
+    def set_loaded_folder(self, folder_path: str, image_paths: List[Path]):
+        """외부에서 스캔 완료된 이미지 경로 목록으로 폴더 모드 설정
+
+        LoadWorker에서 미리 스캔한 결과를 받아 세팅합니다.
+
+        Args:
+            folder_path: 원본 폴더 경로
+            image_paths: 스캔된 이미지 경로 목록 (정렬 완료)
+        """
+        self.release()
+        self._image_paths = list(image_paths)
+        self._current_index = 0
+        self._source_type = 'folder'
+        self._source_path = folder_path
+
+    def set_loaded_archive(self, archive_path: str, image_paths: List[Path],
+                           temp_dir: Path):
+        """외부에서 압축 해제 완료된 결과로 아카이브 모드 설정
+
+        LoadWorker에서 미리 압축 해제 + 스캔한 결과를 받아 세팅합니다.
+
+        Args:
+            archive_path: 원본 압축 파일 경로
+            image_paths: 스캔된 이미지 경로 목록 (정렬 완료)
+            temp_dir: 압축 해제 임시 디렉토리
+        """
+        self.release()
+        self._image_paths = list(image_paths)
+        self._current_index = 0
+        self._source_type = 'archive'
+        self._source_path = archive_path
+        self._temp_dir = temp_dir
+
     def _scan_images(self, folder: Path) -> List[Path]:
         """폴더에서 이미지 파일을 스캔하여 자연순 정렬된 리스트 반환"""
         images = []

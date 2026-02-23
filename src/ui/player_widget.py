@@ -632,12 +632,34 @@ class PlayerWidget(QWidget):
             return True
         return False
 
+    def load_images_from_worker(self, folder_path: str, image_paths) -> bool:
+        """워커에서 스캔 완료된 결과로 이미지 폴더 로드"""
+        self.stop()
+        self._video_player.release()
+
+        self._image_player.set_loaded_folder(folder_path, image_paths)
+        if self._image_player.is_loaded:
+            self._setup_image_mode(Path(folder_path).name)
+            return True
+        return False
+
     def load_archive(self, archive_path: str) -> bool:
         """압축 파일 로드"""
         self.stop()
         self._video_player.release()
 
         if self._image_player.load_archive(archive_path):
+            self._setup_image_mode(Path(archive_path).stem)
+            return True
+        return False
+
+    def load_archive_from_worker(self, archive_path: str, image_paths, temp_dir) -> bool:
+        """워커에서 압축 해제 완료된 결과로 아카이브 로드"""
+        self.stop()
+        self._video_player.release()
+
+        self._image_player.set_loaded_archive(archive_path, image_paths, temp_dir)
+        if self._image_player.is_loaded:
             self._setup_image_mode(Path(archive_path).stem)
             return True
         return False
