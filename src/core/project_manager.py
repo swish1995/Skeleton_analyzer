@@ -42,6 +42,8 @@ class LoadInfo:
     video_missing: bool = False
     capture_count: int = 0
     image_count: int = 0
+    source_type: str = 'video'
+    source_path: Optional[str] = None
 
 
 class ProjectLoadError(Exception):
@@ -68,6 +70,8 @@ class ProjectManager:
         self._ui_state: Dict[str, Any] = {}
         self._capture_dir: Optional[Path] = None
         self._movement_analysis_result: Optional[MovementAnalysisResult] = None
+        self._source_type: str = 'video'  # 'video' | 'folder' | 'archive'
+        self._source_path: Optional[str] = None
 
     # === 속성 ===
 
@@ -109,6 +113,8 @@ class ProjectManager:
         ui_state: Dict[str, Any],
         capture_dir: Optional[Path] = None,
         movement_analysis_result: Optional[MovementAnalysisResult] = None,
+        source_type: str = 'video',
+        source_path: Optional[str] = None,
     ) -> None:
         """저장할 상태 설정"""
         self._video_path = video_path
@@ -118,6 +124,8 @@ class ProjectManager:
         self._ui_state = ui_state
         self._capture_dir = capture_dir
         self._movement_analysis_result = movement_analysis_result
+        self._source_type = source_type
+        self._source_path = source_path
 
     def get_state(self) -> Dict[str, Any]:
         """현재 상태 반환"""
@@ -128,6 +136,8 @@ class ProjectManager:
             'capture_model': self._capture_model,
             'ui_state': self._ui_state,
             'movement_analysis_result': self._movement_analysis_result,
+            'source_type': self._source_type,
+            'source_path': self._source_path,
         }
 
     # === 저장 ===
@@ -189,10 +199,13 @@ class ProjectManager:
 
             # video.json
             video_data = {
+                'type': self._source_type,
                 'path': self._video_path,
                 'frame_position': self._frame_position,
                 'fps': self._fps,
             }
+            if self._source_path:
+                video_data['source_path'] = self._source_path
             zf.writestr('video.json', json.dumps(video_data, indent=2))
 
             # captures.json
@@ -291,11 +304,20 @@ class ProjectManager:
                     if movement_data and 'body_parts' in movement_data:
                         movement_analysis_result = MovementAnalysisResult.from_dict(movement_data)
 
-                # 동영상 존재 확인
+                # 소스 타입 확인 (하위 호환: type 없으면 video)
+                source_type = video_data.get('type', 'video')
+                source_path = video_data.get('source_path')
+
+                # 동영상/소스 존재 확인
                 video_path = video_data.get('path')
                 video_missing = False
-                if check_video and video_path:
-                    video_missing = not Path(video_path).exists()
+                if source_type == 'video':
+                    if check_video and video_path:
+                        video_missing = not Path(video_path).exists()
+                elif source_type in ('folder', 'archive'):
+                    check_path = source_path or video_path
+                    if check_video and check_path:
+                        video_missing = not Path(check_path).exists()
 
                 # 캡처 디렉토리 설정
                 if capture_dir is None:
@@ -319,6 +341,8 @@ class ProjectManager:
                 self._capture_model = capture_model
                 self._ui_state = ui_state
                 self._movement_analysis_result = movement_analysis_result
+                self._source_type = source_type
+                self._source_path = source_path
                 self._current_path = path
                 self.mark_clean()
 
@@ -338,6 +362,8 @@ class ProjectManager:
                     video_missing=video_missing,
                     capture_count=len(capture_model),
                     image_count=image_count,
+                    source_type=source_type,
+                    source_path=source_path,
                 )
 
         except zipfile.BadZipFile:
@@ -382,3 +408,5 @@ class ProjectManager:
         self._ui_state = {}
         self._capture_dir = None
         self._movement_analysis_result = None
+        self._source_type = 'video'
+        self._source_path = None

@@ -2,6 +2,7 @@
 
 from .logger import setup_logging, get_logger
 from .capture_model import CaptureRecord, CaptureDataModel
+from .image_slide_player import ImageSlidePlayer
 from .score_calculator import (
     get_rula_table_a_score,
     get_rula_table_b_score,
@@ -20,6 +21,7 @@ __all__ = [
     'get_logger',
     'CaptureRecord',
     'CaptureDataModel',
+    'ImageSlidePlayer',
     'get_rula_table_a_score',
     'get_rula_table_b_score',
     'get_rula_table_c_score',
