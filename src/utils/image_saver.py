@@ -8,9 +8,10 @@ import os
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
-import cv2
 import numpy as np
 from PyQt6.QtGui import QPixmap
+
+from src.utils.cv_unicode import imwrite as cv_imwrite
 
 if TYPE_CHECKING:
     from utils.config import Config
@@ -99,7 +100,7 @@ class ImageSaver:
             성공 여부
         """
         try:
-            return cv2.imwrite(path, frame)
+            return cv_imwrite(path, frame)
         except Exception:
             return False
 

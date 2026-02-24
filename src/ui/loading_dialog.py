@@ -6,8 +6,9 @@ import zipfile
 from pathlib import Path
 from typing import Optional, List
 
-import cv2
 import numpy as np
+
+from src.utils.cv_unicode import VideoCapture as CvVideoCapture
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton,
@@ -55,7 +56,7 @@ class LoadWorker(QThread):
         self.status_changed.emit("동영상 파일 로드 중...")
         self.progress.emit(0, 0)  # indeterminate
 
-        cap = cv2.VideoCapture(self._path)
+        cap = CvVideoCapture(self._path)
         if not cap.isOpened():
             cap.release()
             self.finished_err.emit("동영상 파일을 열 수 없습니다.")

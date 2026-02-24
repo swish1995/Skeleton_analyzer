@@ -4,6 +4,8 @@ import time
 import cv2
 from PyQt6.QtCore import QThread, pyqtSignal
 
+from src.utils.cv_unicode import VideoCapture as CvVideoCapture
+
 from src.core.pose_detector import PoseDetector
 from src.core.angle_calculator import AngleCalculator
 from src.core.ergonomic.rula_calculator import RULACalculator
@@ -41,7 +43,7 @@ class AnalysisWorker(QThread):
     def run(self):
         start_time = time.time()
 
-        cap = cv2.VideoCapture(self._video_path)
+        cap = CvVideoCapture(self._video_path)
         detector = PoseDetector()
         angle_calc = AngleCalculator()
         rula_calc = RULACalculator()

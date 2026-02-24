@@ -9,8 +9,9 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Optional, List
 
-import cv2
 import numpy as np
+
+from src.utils.cv_unicode import imread as cv_imread
 
 
 # 지원하는 이미지 확장자
@@ -142,7 +143,7 @@ class ImageSlidePlayer:
             return self._cache[index]
 
         # 이미지 로드
-        img = cv2.imread(str(self._image_paths[index]))
+        img = cv_imread(str(self._image_paths[index]))
         if img is None:
             return None
 

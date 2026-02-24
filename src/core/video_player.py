@@ -3,13 +3,15 @@ import cv2
 import numpy as np
 from typing import Optional, Tuple
 
+from src.utils.cv_unicode import VideoCapture as CvVideoCapture
+
 
 class VideoPlayer:
     """OpenCV 기반 비디오 플레이어 클래스"""
 
     def __init__(self):
         """VideoPlayer 초기화"""
-        self._cap: Optional[cv2.VideoCapture] = None
+        self._cap: Optional[CvVideoCapture] = None
         self._is_playing: bool = False
         self._current_frame: int = 0
         self._file_path: Optional[str] = None
@@ -84,7 +86,7 @@ class VideoPlayer:
         self.release()
 
         try:
-            self._cap = cv2.VideoCapture(file_path)
+            self._cap = CvVideoCapture(file_path)
             if not self._cap.isOpened():
                 self._cap = None
                 return False
