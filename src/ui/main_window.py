@@ -109,8 +109,8 @@ class MainWindow(QMainWindow):
         self._splitter.setCollapsible(0, False)  # 플레이어
         self._splitter.setCollapsible(1, False)  # 스테이터스
 
-        # 50:50 비율 설정
-        self._splitter.setSizes([800, 800])
+        # 30:70 비율 설정
+        self._splitter.setSizes([480, 1120])
 
         layout.addWidget(self._splitter)
 
@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
         # 데이터 패널
         self._spreadsheet_action = QAction("데이터(&D)", self)
         self._spreadsheet_action.setCheckable(True)
-        self._spreadsheet_action.setChecked(True)
+        self._spreadsheet_action.setChecked(False)
         self._spreadsheet_action.setShortcut("Ctrl+2")
         self._spreadsheet_action.triggered.connect(
             lambda checked: self.status_widget.set_spreadsheet_visible(checked)
@@ -241,7 +241,7 @@ class MainWindow(QMainWindow):
         # 분석 결과 패널
         self._analysis_result_action = QAction("분석 결과(&R)", self)
         self._analysis_result_action.setCheckable(True)
-        self._analysis_result_action.setChecked(True)
+        self._analysis_result_action.setChecked(False)
         self._analysis_result_action.setShortcut("Ctrl+3")
         self._analysis_result_action.triggered.connect(
             lambda checked: self.status_widget.set_analysis_visible(checked)
@@ -458,8 +458,8 @@ class MainWindow(QMainWindow):
         self._data_btn.setIconSize(QSize(14, 14))
         self._data_btn.setFixedHeight(28)
         self._data_btn.setCheckable(True)
-        self._data_btn.setChecked(True)
-        self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', True))
+        self._data_btn.setChecked(False)
+        self._data_btn.setStyleSheet(self._get_toolbar_button_style('데이터', False))
         self._data_btn.toggled.connect(self._on_data_toggled)
         self._toolbar.addWidget(self._data_btn)
 
@@ -472,8 +472,8 @@ class MainWindow(QMainWindow):
         self._analysis_result_btn.setIconSize(QSize(14, 14))
         self._analysis_result_btn.setFixedHeight(28)
         self._analysis_result_btn.setCheckable(True)
-        self._analysis_result_btn.setChecked(True)
-        self._analysis_result_btn.setStyleSheet(self._get_toolbar_button_style('분석 결과', True))
+        self._analysis_result_btn.setChecked(False)
+        self._analysis_result_btn.setStyleSheet(self._get_toolbar_button_style('분석 결과', False))
         self._analysis_result_btn.toggled.connect(self._on_analysis_result_toggled)
         self._toolbar.addWidget(self._analysis_result_btn)
 
@@ -501,8 +501,8 @@ class MainWindow(QMainWindow):
         self._reba_btn = QPushButton("REBA")
         self._reba_btn.setFixedHeight(28)
         self._reba_btn.setCheckable(True)
-        self._reba_btn.setChecked(True)
-        self._reba_btn.setStyleSheet(self._get_toolbar_button_style('REBA', True, True))
+        self._reba_btn.setChecked(False)
+        self._reba_btn.setStyleSheet(self._get_toolbar_button_style('REBA', False, True))
         self._reba_btn.toggled.connect(self._on_reba_toggled)
         self._toolbar.addWidget(self._reba_btn)
 
@@ -510,8 +510,8 @@ class MainWindow(QMainWindow):
         self._owas_btn = QPushButton("OWAS")
         self._owas_btn.setFixedHeight(28)
         self._owas_btn.setCheckable(True)
-        self._owas_btn.setChecked(True)
-        self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', True, True))
+        self._owas_btn.setChecked(False)
+        self._owas_btn.setStyleSheet(self._get_toolbar_button_style('OWAS', False, True))
         self._owas_btn.toggled.connect(self._on_owas_toggled)
         self._toolbar.addWidget(self._owas_btn)
 
@@ -657,12 +657,12 @@ class MainWindow(QMainWindow):
 
         # 패널 가시성 로드
         angle_visible = self._settings.value("panel_angle", True, type=bool)
-        analysis_visible = self._settings.value("panel_analysis", True, type=bool)
+        analysis_visible = self._settings.value("panel_analysis", False, type=bool)
         ergonomic_visible = self._settings.value("panel_ergonomic", True, type=bool)
-        spreadsheet_visible = self._settings.value("panel_spreadsheet", True, type=bool)
+        spreadsheet_visible = self._settings.value("panel_spreadsheet", False, type=bool)
         rula_visible = self._settings.value("panel_rula", True, type=bool)
-        reba_visible = self._settings.value("panel_reba", True, type=bool)
-        owas_visible = self._settings.value("panel_owas", True, type=bool)
+        reba_visible = self._settings.value("panel_reba", False, type=bool)
+        owas_visible = self._settings.value("panel_owas", False, type=bool)
         nle_visible = self._settings.value("panel_nle", False, type=bool)
         si_visible = self._settings.value("panel_si", False, type=bool)
 

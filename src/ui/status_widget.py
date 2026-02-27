@@ -130,12 +130,12 @@ class StatusWidget(QWidget):
 
         # 패널 가시성 상태 (버튼 없이 직접 관리)
         self._angle_visible = True
-        self._spreadsheet_visible = True
+        self._spreadsheet_visible = False
         self._ergonomic_visible = True
-        self._analysis_visible = True
+        self._analysis_visible = False
         self._rula_visible = True
-        self._reba_visible = True
-        self._owas_visible = True
+        self._reba_visible = False
+        self._owas_visible = False
         self._nle_visible = False  # 기본 숨김
         self._si_visible = False   # 기본 숨김
 
@@ -238,7 +238,7 @@ class StatusWidget(QWidget):
         self._main_splitter.setCollapsible(2, False)  # 하단 (스프레드시트)
 
         # 상단:중단:하단 = 35:35:30 비율
-        self._main_splitter.setSizes([350, 350, 300])
+        self._main_splitter.setSizes([500, 500, 300])
 
         layout.addWidget(self._main_splitter)
 
