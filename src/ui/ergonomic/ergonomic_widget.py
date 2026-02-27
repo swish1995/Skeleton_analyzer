@@ -88,15 +88,23 @@ class ErgonomicWidget(QWidget):
         self._rula_widget.setMinimumWidth(120)
         self._main_splitter.addWidget(self._rula_widget)
 
-        # REBA
+        # REBA (QStackedWidget으로 위젯/잠금화면 전환)
+        self._reba_stack = QStackedWidget()
         self._reba_widget = REBAWidget()
-        self._reba_widget.setMinimumWidth(120)
-        self._main_splitter.addWidget(self._reba_widget)
+        self._reba_lock = self._create_lock_widget("REBA 분석")
+        self._reba_stack.addWidget(self._reba_widget)  # index 0: 실제 위젯
+        self._reba_stack.addWidget(self._reba_lock)    # index 1: 잠금 화면
+        self._reba_stack.setMinimumWidth(120)
+        self._main_splitter.addWidget(self._reba_stack)
 
-        # OWAS
+        # OWAS (QStackedWidget으로 위젯/잠금화면 전환)
+        self._owas_stack = QStackedWidget()
         self._owas_widget = OWASWidget()
-        self._owas_widget.setMinimumWidth(120)
-        self._main_splitter.addWidget(self._owas_widget)
+        self._owas_lock = self._create_lock_widget("OWAS 분석")
+        self._owas_stack.addWidget(self._owas_widget)  # index 0: 실제 위젯
+        self._owas_stack.addWidget(self._owas_lock)    # index 1: 잠금 화면
+        self._owas_stack.setMinimumWidth(120)
+        self._main_splitter.addWidget(self._owas_stack)
 
         # NLE (QStackedWidget으로 위젯/잠금화면 전환)
         self._nle_stack = QStackedWidget()
@@ -149,11 +157,15 @@ class ErgonomicWidget(QWidget):
 
     def set_reba_visible(self, visible: bool):
         """REBA 위젯 가시성 설정"""
-        self._reba_widget.setVisible(visible)
+        self._reba_stack.setVisible(visible)
+        if visible:
+            self._update_license_state()
 
     def set_owas_visible(self, visible: bool):
         """OWAS 위젯 가시성 설정"""
-        self._owas_widget.setVisible(visible)
+        self._owas_stack.setVisible(visible)
+        if visible:
+            self._update_license_state()
 
     def set_nle_visible(self, visible: bool):
         """NLE 위젯 가시성 설정"""
@@ -173,11 +185,11 @@ class ErgonomicWidget(QWidget):
 
     def is_reba_visible(self) -> bool:
         """REBA 위젯 가시성 반환"""
-        return self._reba_widget.isVisible()
+        return self._reba_stack.isVisible()
 
     def is_owas_visible(self) -> bool:
         """OWAS 위젯 가시성 반환"""
-        return self._owas_widget.isVisible()
+        return self._owas_stack.isVisible()
 
     def is_nle_visible(self) -> bool:
         """NLE 위젯 가시성 반환"""
@@ -307,8 +319,16 @@ class ErgonomicWidget(QWidget):
 
     def _update_license_state(self):
         """라이센스 상태에 따른 위젯/잠금화면 전환"""
+        can_use_reba = self._license_manager.check_feature('reba_analysis')
+        can_use_owas = self._license_manager.check_feature('owas_analysis')
         can_use_nle = self._license_manager.check_feature('nle_analysis')
         can_use_si = self._license_manager.check_feature('si_analysis')
+
+        # REBA: 0=위젯, 1=잠금화면
+        self._reba_stack.setCurrentIndex(0 if can_use_reba else 1)
+
+        # OWAS: 0=위젯, 1=잠금화면
+        self._owas_stack.setCurrentIndex(0 if can_use_owas else 1)
 
         # NLE: 0=위젯, 1=잠금화면
         self._nle_stack.setCurrentIndex(0 if can_use_nle else 1)
