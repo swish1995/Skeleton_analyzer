@@ -136,6 +136,8 @@ class TestFeatureCheck:
 
         manager = LicenseManager.instance()
 
+        assert manager.check_feature('reba_analysis') is False
+        assert manager.check_feature('owas_analysis') is False
         assert manager.check_feature('excel_export') is False
         assert manager.check_feature('project_save') is False
         assert manager.check_feature('nle_analysis') is False
@@ -151,6 +153,8 @@ class TestFeatureCheck:
         valid_key = validator.generate_test_key("TESTHARDWARE01")
         manager.register(valid_key)
 
+        assert manager.check_feature('reba_analysis') is True
+        assert manager.check_feature('owas_analysis') is True
         assert manager.check_feature('excel_export') is True
         assert manager.check_feature('project_save') is True
         assert manager.check_feature('nle_analysis') is True
@@ -164,8 +168,7 @@ class TestFeatureCheck:
 
         assert manager.check_feature('video_load') is True
         assert manager.check_feature('rula_analysis') is True
-        assert manager.check_feature('reba_analysis') is True
-        assert manager.check_feature('owas_analysis') is True
+        assert manager.check_feature('capture') is True
 
     def test_check_unknown_feature(self, reset_license_manager, mock_hardware_id, temp_config_dir):
         """알 수 없는 기능 → False"""

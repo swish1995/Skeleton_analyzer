@@ -30,11 +30,11 @@ FEATURES: Dict[str, bool] = {
     # 무료 기능
     'video_load': True,
     'rula_analysis': True,
-    'reba_analysis': True,
-    'owas_analysis': True,
     'capture': True,
 
     # 유료 기능
+    'reba_analysis': False,
+    'owas_analysis': False,
     'folder_load': False,
     'archive_load': False,
     'nle_analysis': False,
