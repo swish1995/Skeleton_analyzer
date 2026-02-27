@@ -9,7 +9,7 @@ from datetime import datetime
 class FileHistory:
     """최근 파일 이력 관리 클래스"""
 
-    def __init__(self, app_name: str = "SkeletonAnalyzer", max_items: int = 10):
+    def __init__(self, app_name: str = "IMAS", max_items: int = 10):
         self._app_name = app_name
         self._max_items = max_items
         self._history_dir = self._get_history_dir()

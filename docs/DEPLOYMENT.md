@@ -1,8 +1,8 @@
-# Skeleton Analyzer 배포 가이드
+# IMAS 배포 가이드
 
 ## 개요
 
-이 문서는 Skeleton Analyzer를 윈도우 사용자에게 배포하는 방법을 설명합니다.
+이 문서는 IMAS를 윈도우 사용자에게 배포하는 방법을 설명합니다.
 
 GitHub Actions를 통해 윈도우용 실행 파일(.exe)을 자동으로 빌드하고 배포할 수 있습니다.
 
@@ -79,7 +79,7 @@ GitHub Actions가 자동으로 수행하는 작업:
 
 | 파일명 | 설명 |
 |--------|------|
-| `SkeletonAnalyzer.exe` | 윈도우용 실행 파일 (단일 파일) |
+| `IMAS.exe` | 윈도우용 실행 파일 (단일 파일) |
 
 ---
 
@@ -92,7 +92,7 @@ https://github.com/{username}/{repo}/releases/latest
 
 ### 직접 다운로드 링크
 ```
-https://github.com/{username}/{repo}/releases/download/v1.0.0/SkeletonAnalyzer.exe
+https://github.com/{username}/{repo}/releases/download/v1.0.0/IMAS.exe
 ```
 
 ---
@@ -133,7 +133,7 @@ pip install -r requirements.txt
 pyinstaller skeleton_analyzer.spec
 
 # 5. 실행 파일 확인
-dir dist\SkeletonAnalyzer.exe
+dir dist\IMAS.exe
 ```
 
-빌드된 파일은 `dist/SkeletonAnalyzer.exe`에 생성됩니다.
+빌드된 파일은 `dist/IMAS.exe`에 생성됩니다.

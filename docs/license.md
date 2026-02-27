@@ -1,11 +1,11 @@
-# Skeleton Analyzer 라이센스 시스템
+# IMAS 라이센스 시스템
 
 > 📅 마지막 갱신: 2026-02-23
 > 🔍 소스: 코드베이스 자동 분석
 
 ## 개요
 
-Skeleton Analyzer는 하드웨어 기반 라이센스 시스템을 사용합니다. 각 컴퓨터의 고유 하드웨어 ID를 기반으로 라이센스 키가 발급되며, 해당 컴퓨터에서만 라이센스가 유효합니다.
+IMAS는 하드웨어 기반 라이센스 시스템을 사용합니다. 각 컴퓨터의 고유 하드웨어 ID를 기반으로 라이센스 키가 발급되며, 해당 컴퓨터에서만 라이센스가 유효합니다.
 
 ## 라이센스 모드
 
@@ -74,8 +74,8 @@ XXXX-XXXX-XXXX-XXXX
 
 | 플랫폼 | 경로 |
 |--------|------|
-| Windows | `%APPDATA%\SkeletonAnalyzer\license.json` |
-| macOS/Linux | `~/.config/SkeletonAnalyzer/license.json` |
+| Windows | `%APPDATA%\IMAS\license.json` |
+| macOS/Linux | `~/.config/IMAS/license.json` |
 
 ### license.json 구조
 
@@ -93,7 +93,7 @@ XXXX-XXXX-XXXX-XXXX
 
 | 환경변수 | 값 | 설명 |
 |----------|-----|------|
-| `SKELETON_ANALYZER_LICENSE_MODE` | `dev` | 개발 모드 활성화 |
+| `IMAS_LICENSE_MODE` | `dev` | 개발 모드 활성화 |
 | | `licensed` | 강제 등록 모드 |
 | | `free` 또는 없음 | 기본 무료 모드 |
 
@@ -101,11 +101,11 @@ XXXX-XXXX-XXXX-XXXX
 
 ```bash
 # macOS/Linux
-export SKELETON_ANALYZER_LICENSE_MODE=dev
+export IMAS_LICENSE_MODE=dev
 python main.py
 
 # Windows
-set SKELETON_ANALYZER_LICENSE_MODE=dev
+set IMAS_LICENSE_MODE=dev
 python main.py
 ```
 

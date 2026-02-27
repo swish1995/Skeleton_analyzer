@@ -35,7 +35,7 @@ class HelpDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._settings = QSettings("SkeletonAnalyzer", "SkeletonAnalyzer")
+        self._settings = QSettings("IMAS", "IMAS")
         self._init_ui()
         self._load_settings()
 

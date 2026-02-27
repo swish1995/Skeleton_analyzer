@@ -1,1 +1,1 @@
-# Skeleton Analyzer - Source Package
+# IMAS - Source Package

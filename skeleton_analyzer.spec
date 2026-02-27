@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec file for Skeleton Analyzer"""
+"""PyInstaller spec file for IMAS"""
 
 import os
 import sys
@@ -65,7 +65,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='SkeletonAnalyzer',
+    name='IMAS',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -90,19 +90,19 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='SkeletonAnalyzer',
+    name='IMAS',
 )
 
 # macOS 앱 번들
 app = BUNDLE(
     coll,
-    name='SkeletonAnalyzer.app',
+    name='IMAS.app',
     icon='resources/icon.icns',  # macOS 아이콘
-    bundle_identifier='com.skeletonanalyzer.app',
+    bundle_identifier='com.imas.app',
     info_plist={
         'NSHighResolutionCapable': 'True',
         'CFBundleShortVersionString': '1.0.0',
-        'CFBundleName': 'Skeleton Analyzer',
-        'CFBundleDisplayName': 'Skeleton Analyzer',
+        'CFBundleName': 'IMAS',
+        'CFBundleDisplayName': 'IMAS',
     },
 )

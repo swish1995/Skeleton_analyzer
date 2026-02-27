@@ -10,8 +10,8 @@
     - 상용 환경: INFO 레벨
 
 환경 변수:
-    - SKELETON_ANALYZER_LOG_LEVEL: 로그 레벨 (DEBUG, INFO, WARNING, ERROR)
-    - SKELETON_ANALYZER_ENV: 환경 (development, production)
+    - IMAS_LOG_LEVEL: 로그 레벨 (DEBUG, INFO, WARNING, ERROR)
+    - IMAS_ENV: 환경 (development, production)
 """
 
 import logging
@@ -35,7 +35,7 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 def _get_log_level() -> int:
     """환경에 따른 로그 레벨 결정"""
     # 명시적 레벨 설정 확인
-    level_str = os.environ.get('SKELETON_ANALYZER_LOG_LEVEL', '').upper()
+    level_str = os.environ.get('IMAS_LOG_LEVEL', '').upper()
     if level_str:
         level_map = {
             'DEBUG': logging.DEBUG,
@@ -47,7 +47,7 @@ def _get_log_level() -> int:
             return level_map[level_str]
 
     # 환경에 따른 기본 레벨
-    env = os.environ.get('SKELETON_ANALYZER_ENV', 'development').lower()
+    env = os.environ.get('IMAS_ENV', 'development').lower()
     if env == 'production':
         return logging.INFO
     return logging.DEBUG
@@ -92,7 +92,7 @@ def setup_logging() -> logging.Logger:
     root_logger.addHandler(file_handler)
 
     # 콘솔 핸들러 (개발 환경에서만)
-    env = os.environ.get('SKELETON_ANALYZER_ENV', 'development').lower()
+    env = os.environ.get('IMAS_ENV', 'development').lower()
     if env != 'production':
         console_handler = logging.StreamHandler()
         console_handler.setLevel(log_level)

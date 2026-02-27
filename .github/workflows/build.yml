@@ -13,9 +13,9 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact_name: SkeletonAnalyzer-Windows
+            artifact_name: IMAS-Windows
           - os: macos-latest
-            artifact_name: SkeletonAnalyzer-macOS
+            artifact_name: IMAS-macOS
 
     runs-on: ${{ matrix.os }}
 
@@ -43,14 +43,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/SkeletonAnalyzer/
+          path: dist/IMAS/
 
       - name: Upload Artifact (macOS)
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/SkeletonAnalyzer.app
+          path: dist/IMAS.app
 
   release:
     needs: build

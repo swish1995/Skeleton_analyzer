@@ -25,7 +25,7 @@ from ..license import LicenseManager, LicenseMode
 from ..license.license_dialog import LicenseDialog
 
 # 앱 이름 (환경변수로 변경 가능)
-APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
+APP_NAME = os.environ.get('IMAS_APP_NAME', 'IMAS')
 
 
 class MainWindow(QMainWindow):
@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
 
         self._recent_files: List[str] = []
         self._recent_projects: List[str] = []
-        self._settings = QSettings("SkeletonAnalyzer", "SkeletonAnalyzer")
+        self._settings = QSettings("IMAS", "IMAS")
         self._config = Config()
         self._project_manager = ProjectManager()
 
@@ -1265,7 +1265,7 @@ class MainWindow(QMainWindow):
             self,
             "작업 불러오기",
             default_dir,
-            "Skeleton Analyzer 프로젝트 (*.skpx);;모든 파일 (*.*)"
+            "IMAS 프로젝트 (*.skpx);;모든 파일 (*.*)"
         )
 
         if file_path:
@@ -1415,7 +1415,7 @@ class MainWindow(QMainWindow):
             self,
             "작업 저장",
             os.path.join(default_dir, default_name),
-            "Skeleton Analyzer 프로젝트 (*.skpx)"
+            "IMAS 프로젝트 (*.skpx)"
         )
 
         if file_path:

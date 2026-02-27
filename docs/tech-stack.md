@@ -1,4 +1,4 @@
-# Skeleton Analyzer 기술 스택
+# IMAS 기술 스택
 
 > 📅 마지막 갱신: 2026-02-01
 > 🔍 소스: requirements.txt

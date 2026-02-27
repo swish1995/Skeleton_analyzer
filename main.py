@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Skeleton Analyzer - Human Pose Analysis Application
+IMAS - Intelligent Musculoskeletal Analysis System
 Main entry point
 """
 import sys
@@ -13,7 +13,7 @@ from src.core.logger import setup_logging, get_logger
 from src.ui.main_window import MainWindow
 
 # 앱 이름 (환경변수로 변경 가능)
-APP_NAME = os.environ.get('SKELETON_ANALYZER_APP_NAME', 'Skeleton Analyzer')
+APP_NAME = os.environ.get('IMAS_APP_NAME', 'IMAS')
 
 
 def set_process_name(name: str):
@@ -96,7 +96,7 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)  # 디스플레이 이름 설정
-    app.setOrganizationName("SkeletonAnalyzer")
+    app.setOrganizationName("IMAS")
 
     # 다크 테마 강제 적용 (시스템 테마 무시)
     app.setStyle("Fusion")

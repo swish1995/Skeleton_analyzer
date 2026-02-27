@@ -1,4 +1,4 @@
-# Skeleton Analyzer 사용법
+# IMAS 사용법
 
 > 📅 마지막 갱신: 2026-02-23
 
@@ -40,7 +40,7 @@ python main.py
 
 ## 라이센스
 
-Skeleton Analyzer는 **무료 버전**과 **등록 버전**으로 제공됩니다.
+IMAS는 **무료 버전**과 **등록 버전**으로 제공됩니다.
 
 ### 무료 기능
 
@@ -314,5 +314,5 @@ pytest tests/ --cov=src --cov-report=html
 
 ```bash
 pyinstaller skeleton_analyzer.spec
-# 결과: dist/skeleton_analyzer.app (macOS) 또는 dist/skeleton_analyzer.exe (Windows)
+# 결과: dist/IMAS.app (macOS) 또는 dist/IMAS.exe (Windows)
 ```

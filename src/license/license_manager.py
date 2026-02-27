@@ -171,7 +171,7 @@ class LicenseManager(QObject):
 
     def _check_environment_mode(self) -> None:
         """환경변수에서 모드를 확인합니다."""
-        env_mode = os.environ.get('SKELETON_ANALYZER_LICENSE_MODE', '').lower()
+        env_mode = os.environ.get('IMAS_LICENSE_MODE', '').lower()
 
         if env_mode == 'dev':
             self._mode = LicenseMode.DEV
@@ -187,7 +187,7 @@ class LicenseManager(QObject):
         else:  # macOS, Linux
             base = Path.home() / '.config'
 
-        config_dir = base / 'SkeletonAnalyzer'
+        config_dir = base / 'IMAS'
         config_dir.mkdir(parents=True, exist_ok=True)
 
         return config_dir / 'license.json'
@@ -251,6 +251,6 @@ class LicenseManager(QObject):
 
     def _calculate_config_checksum(self, data: Dict[str, Any]) -> str:
         """설정 데이터의 체크섬을 계산합니다."""
-        secret = "SKELETON_ANALYZER_CONFIG_SECRET"
+        secret = "IMAS_CONFIG_SECRET"
         content = json.dumps(data, sort_keys=True) + secret
         return hashlib.sha256(content.encode()).hexdigest()[:16]

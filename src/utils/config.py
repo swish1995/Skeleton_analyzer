@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 class Config:
     """애플리케이션 설정 관리 클래스"""
 
-    def __init__(self, app_name: str = "SkeletonAnalyzer"):
+    def __init__(self, app_name: str = "IMAS"):
         self._app_name = app_name
         self._config_dir = self._get_config_dir()
         self._config_file = self._config_dir / "config.json"

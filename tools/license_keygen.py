@@ -71,7 +71,7 @@ def process_batch(file_path: str) -> list:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Skeleton Analyzer 라이센스 키 생성 도구',
+        description='IMAS 라이센스 키 생성 도구',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 예시:

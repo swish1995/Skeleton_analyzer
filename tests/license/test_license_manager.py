@@ -30,7 +30,7 @@ def mock_hardware_id():
 @pytest.fixture
 def temp_config_dir(tmp_path):
     """임시 설정 디렉토리"""
-    config_dir = tmp_path / "SkeletonAnalyzer"
+    config_dir = tmp_path / "IMAS"
     config_dir.mkdir()
     with patch('src.license.license_manager.LicenseManager._get_config_path') as mock:
         mock.return_value = config_dir / "license.json"
@@ -204,7 +204,7 @@ class TestDevMode:
         """환경변수에서 모드 읽기"""
         from src.license.license_manager import LicenseManager, LicenseMode
 
-        with patch.dict(os.environ, {'SKELETON_ANALYZER_LICENSE_MODE': 'dev'}):
+        with patch.dict(os.environ, {'IMAS_LICENSE_MODE': 'dev'}):
             LicenseManager._reset_for_testing()
             manager = LicenseManager.instance()
 

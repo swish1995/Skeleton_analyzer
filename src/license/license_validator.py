@@ -173,7 +173,7 @@ class LicenseValidator:
             4자리 체크섬
         """
         # 키와 시크릿을 결합하여 해시
-        secret = "SKELETON_ANALYZER_LICENSE"
+        secret = "IMAS_LICENSE"
         data = f"{key_without_checksum}:{secret}"
         hash_obj = hashlib.sha256(data.encode())
         return hash_obj.hexdigest()[:4].upper()
