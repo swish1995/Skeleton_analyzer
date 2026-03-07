@@ -97,79 +97,30 @@ class InteractiveSkeletonWidget(QWidget):
     def _init_ui(self):
         """UI 초기화"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 5, 0, 0)
         layout.setSpacing(0)
 
         # 컨트롤 바
         self._control_bar = QWidget()
         self._control_bar.setVisible(False)
-        self._control_bar.setFixedHeight(34)
+        self._control_bar.setFixedHeight(32)
         self._control_bar.setStyleSheet("""
             QWidget {
-                background-color: rgba(30, 30, 30, 220);
-                border-bottom: 1px solid #444;
+                background-color: #333333;
+                border-radius: 4px;
             }
         """)
         ctrl_layout = QHBoxLayout(self._control_bar)
-        ctrl_layout.setContentsMargins(6, 2, 6, 2)
+        ctrl_layout.setContentsMargins(8, 2, 8, 0)
         ctrl_layout.setSpacing(4)
-
-        btn_style = """
-            QPushButton {
-                background: #444; color: #ddd; border: none;
-                padding: 3px 8px; border-radius: 3px; font-size: 11px;
-            }
-            QPushButton:hover { background: #555; }
-            QPushButton:pressed { background: #333; }
-            QPushButton:disabled { color: #666; background: #3a3a3a; }
-        """
-
-        # 초기화 (관절 위치 + 뷰 트랜스폼 모두 리셋)
-        self._reset_btn = QPushButton("초기화")
-        self._reset_btn.setStyleSheet(btn_style)
-        self._reset_btn.setEnabled(False)
-        self._reset_btn.clicked.connect(self._reset_all)
-        ctrl_layout.addWidget(self._reset_btn)
-
-        ctrl_layout.addStretch()
-
-        # 확대
-        zoom_in_btn = QPushButton("+")
-        zoom_in_btn.setStyleSheet(btn_style)
-        zoom_in_btn.setFixedWidth(28)
-        zoom_in_btn.clicked.connect(lambda: self._zoom(1.2))
-        ctrl_layout.addWidget(zoom_in_btn)
-
-        # 축소
-        zoom_out_btn = QPushButton("-")
-        zoom_out_btn.setStyleSheet(btn_style)
-        zoom_out_btn.setFixedWidth(28)
-        zoom_out_btn.clicked.connect(lambda: self._zoom(1 / 1.2))
-        ctrl_layout.addWidget(zoom_out_btn)
-
-        layout.addWidget(self._control_bar)
-
-        # ── 시뮬레이션 전용 컨트롤 바 (기본 숨김) ──
-        self._sim_bar = QWidget()
-        self._sim_bar.setVisible(False)
-        self._sim_bar.setFixedHeight(34)
-        self._sim_bar.setStyleSheet("""
-            QWidget {
-                background-color: rgba(30, 30, 40, 220);
-                border-bottom: 1px solid #555;
-            }
-        """)
-        sim_layout = QHBoxLayout(self._sim_bar)
-        sim_layout.setContentsMargins(6, 2, 6, 2)
-        sim_layout.setSpacing(4)
 
         icon_dir = Path(__file__).parent.parent / "resources" / "icons"
 
-        def _sim_btn(text, icon_name, base, dark, light):
+        def _ctrl_btn(text, icon_name, base, dark, light):
             btn = QPushButton(f" {text}")
             btn.setIcon(QIcon(str(icon_dir / f"{icon_name}.svg")))
             btn.setIconSize(QSize(14, 14))
-            btn.setFixedHeight(28)
+            btn.setFixedHeight(26)
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
@@ -189,29 +140,31 @@ class InteractiveSkeletonWidget(QWidget):
             """)
             return btn
 
-        # 캡처 (파란색 - 플레이어 캡처 버튼과 동일)
-        self._sim_capture_btn = _sim_btn("캡처", "capture", '#5a7ab8', '#4a6aa8', '#6a8ac8')
-        self._sim_capture_btn.clicked.connect(self.capture_clicked.emit)
-        sim_layout.addWidget(self._sim_capture_btn)
+        # 캡처 (시뮬레이션 모드에서만 표시)
+        self._capture_btn = _ctrl_btn("캡처", "capture", '#5a7ab8', '#4a6aa8', '#6a8ac8')
+        self._capture_btn.setVisible(False)
+        self._capture_btn.clicked.connect(self.capture_clicked.emit)
+        ctrl_layout.addWidget(self._capture_btn)
 
-        # 초기화 (초록색)
-        self._sim_reset_btn = _sim_btn("초기화", "reset", '#5ab87a', '#4aa86a', '#6ac88a')
-        self._sim_reset_btn.clicked.connect(self._reset_all)
-        sim_layout.addWidget(self._sim_reset_btn)
+        # 초기화
+        self._reset_btn = _ctrl_btn("초기화", "reset", '#5ab87a', '#4aa86a', '#6ac88a')
+        self._reset_btn.setEnabled(False)
+        self._reset_btn.clicked.connect(self._reset_all)
+        ctrl_layout.addWidget(self._reset_btn)
 
-        sim_layout.addStretch()
+        ctrl_layout.addStretch()
 
         # 확대
-        self._sim_zoom_in_btn = _sim_btn("확대", "zoom_in", '#3a9a8a', '#2a8a7a', '#4aaa9a')
-        self._sim_zoom_in_btn.clicked.connect(lambda: self._zoom(1.2))
-        sim_layout.addWidget(self._sim_zoom_in_btn)
+        self._zoom_in_btn = _ctrl_btn("확대", "zoom_in", '#3a9a8a', '#2a8a7a', '#4aaa9a')
+        self._zoom_in_btn.clicked.connect(lambda: self._zoom(1.2))
+        ctrl_layout.addWidget(self._zoom_in_btn)
 
         # 축소
-        self._sim_zoom_out_btn = _sim_btn("축소", "zoom_out", '#3a9a8a', '#2a8a7a', '#4aaa9a')
-        self._sim_zoom_out_btn.clicked.connect(lambda: self._zoom(1 / 1.2))
-        sim_layout.addWidget(self._sim_zoom_out_btn)
+        self._zoom_out_btn = _ctrl_btn("축소", "zoom_out", '#3a9a8a', '#2a8a7a', '#4aaa9a')
+        self._zoom_out_btn.clicked.connect(lambda: self._zoom(1 / 1.2))
+        ctrl_layout.addWidget(self._zoom_out_btn)
 
-        layout.addWidget(self._sim_bar)
+        layout.addWidget(self._control_bar)
         layout.addWidget(self._skeleton, 1)
 
     # === 공개 API ===
@@ -262,12 +215,8 @@ class InteractiveSkeletonWidget(QWidget):
             self.set_edit_mode(False)
 
     def set_simulation_mode(self, enabled: bool):
-        """시뮬레이션 모드 설정: 전용 컨트롤 바 표시/숨기기"""
-        if enabled:
-            self._control_bar.setVisible(False)
-            self._sim_bar.setVisible(True)
-        else:
-            self._sim_bar.setVisible(False)
+        """시뮬레이션 모드 설정: 캡처 버튼 토글"""
+        self._capture_btn.setVisible(enabled)
 
     def show_control_bar(self):
         """컨트롤 바 표시"""
