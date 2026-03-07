@@ -54,6 +54,7 @@ class PoseDetector:
         options = vision.PoseLandmarkerOptions(
             base_options=base_options,
             running_mode=vision.RunningMode.IMAGE,
+            num_poses=5,
             min_pose_detection_confidence=self._min_detection_confidence,
             min_tracking_confidence=self._min_tracking_confidence
         )
@@ -82,8 +83,9 @@ class PoseDetector:
         results = self._landmarker.detect(mp_image)
 
         if results.pose_landmarks and len(results.pose_landmarks) > 0:
-            # 첫 번째 감지된 포즈의 랜드마크
-            pose_landmarks = results.pose_landmarks[0]
+            # 다중 인원 감지 시 가장 큰(가까운) 사람 선택
+            best_idx = self._select_closest_pose(results.pose_landmarks)
+            pose_landmarks = results.pose_landmarks[best_idx]
 
             # 랜드마크를 리스트로 변환
             landmarks = []
@@ -96,9 +98,9 @@ class PoseDetector:
                 })
 
             world_landmarks = None
-            if results.pose_world_landmarks and len(results.pose_world_landmarks) > 0:
+            if results.pose_world_landmarks and len(results.pose_world_landmarks) > best_idx:
                 world_landmarks = []
-                for lm in results.pose_world_landmarks[0]:
+                for lm in results.pose_world_landmarks[best_idx]:
                     world_landmarks.append({
                         'x': lm.x,
                         'y': lm.y,
@@ -113,6 +115,26 @@ class PoseDetector:
             )
 
         return PoseResult(pose_detected=False, landmarks=None)
+
+    @staticmethod
+    def _select_closest_pose(pose_landmarks_list) -> int:
+        """여러 감지된 포즈 중 가장 큰(카메라에 가까운) 사람의 인덱스 반환"""
+        if len(pose_landmarks_list) == 1:
+            return 0
+
+        best_idx = 0
+        best_area = 0.0
+
+        for i, pose_lms in enumerate(pose_landmarks_list):
+            # 바운딩 박스 면적으로 크기 판단 (가장 큰 사람 = 가장 가까운 사람)
+            xs = [lm.x for lm in pose_lms]
+            ys = [lm.y for lm in pose_lms]
+            area = (max(xs) - min(xs)) * (max(ys) - min(ys))
+            if area > best_area:
+                best_area = area
+                best_idx = i
+
+        return best_idx
 
     def release(self):
         """리소스 해제"""
