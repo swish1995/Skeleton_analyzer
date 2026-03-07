@@ -126,7 +126,7 @@ class SettingsDialog(QDialog):
         """설정 저장 후 다이얼로그 닫기"""
         # 디렉토리 설정
         self._config.set("directories.video_open", self._video_open_edit.text())
-        self._config.set("directories.capture_save", self._capture_save_edit.text())
+        self._config.set("directories.capture_save", self._capture_save_edit.text() or "captures")
         self._config.set("directories.export", self._export_edit.text())
 
         # 이미지 관리 설정

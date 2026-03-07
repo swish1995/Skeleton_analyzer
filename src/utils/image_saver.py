@@ -27,7 +27,7 @@ class ImageSaver:
             config: 설정 객체 (directories.capture_save 키 사용)
         """
         if config is not None:
-            self._base_dir = config.get("directories.capture_save", base_dir)
+            self._base_dir = config.get("directories.capture_save", base_dir) or base_dir
         else:
             self._base_dir = base_dir
 

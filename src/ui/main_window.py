@@ -901,10 +901,10 @@ class MainWindow(QMainWindow):
         """
         import shutil
 
-        capture_base = Path(self._config.get(
-            "directories.capture_save",
-            "captures"
-        ))
+        capture_save = self._config.get("directories.capture_save", "captures")
+        if not capture_save:
+            capture_save = "captures"
+        capture_base = Path(capture_save)
 
         # 정리할 디렉토리 목록
         dirs_to_clean = []
@@ -942,12 +942,15 @@ class MainWindow(QMainWindow):
         """
         import shutil
 
-        capture_base = Path(self._config.get(
-            "directories.capture_save",
-            "captures"
-        ))
+        capture_save = self._config.get("directories.capture_save", "captures")
+        if not capture_save:
+            capture_save = "captures"
+        capture_base = Path(capture_save)
 
-        if capture_base.exists():
+        # 안전 검증: 현재 디렉토리(.) 또는 프로젝트 루트 삭제 방지
+        if capture_base.resolve() == Path.cwd().resolve() or str(capture_base) in (".", "", "/"):
+            self._logger.warning(f"captures 삭제 스킵 (안전 검증 실패): {capture_base}")
+        elif capture_base.exists():
             try:
                 shutil.rmtree(capture_base)
                 self._logger.info(f"captures 전체 삭제 완료: {capture_base}")
@@ -1411,10 +1414,10 @@ class MainWindow(QMainWindow):
         """프로젝트 로드"""
         self._logger.info(f"작업 로드 시작: {file_path}")
         try:
-            capture_dir = Path(self._config.get(
-                "directories.capture_save",
-                "captures"
-            ))
+            capture_save = self._config.get("directories.capture_save", "captures")
+            if not capture_save:
+                capture_save = "captures"
+            capture_dir = Path(capture_save)
             info = self._project_manager.load(
                 Path(file_path),
                 check_video=True,
@@ -1577,10 +1580,10 @@ class MainWindow(QMainWindow):
         """실제 프로젝트 저장 수행"""
         self._logger.info(f"작업 저장 시작: {path}")
         try:
-            capture_dir = Path(self._config.get(
-                "directories.capture_save",
-                "captures"
-            ))
+            capture_save = self._config.get("directories.capture_save", "captures")
+            if not capture_save:
+                capture_save = "captures"
+            capture_dir = Path(capture_save)
 
             # 소스 타입 결정
             if self.player_widget.mode == 'image' and self.player_widget.image_player.is_loaded:
