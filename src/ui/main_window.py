@@ -1125,8 +1125,9 @@ class MainWindow(QMainWindow):
     def _on_frame_changed(self, frame, frame_number: int):
         """프레임 변경 시 호출"""
         if frame is not None:
-            # 동영상 재생 중이면 편집 모드 강제 해제
-            if self.status_widget._skeleton_widget.is_edit_mode:
+            # 동영상 재생 중이면 편집 모드 강제 해제 (일시정지 상태에서는 유지)
+            if (self.status_widget._skeleton_widget.is_edit_mode
+                    and self.player_widget._video_player.is_playing):
                 self.status_widget._skeleton_widget.exit_edit_mode()
 
             # 현재 위치 정보 업데이트
