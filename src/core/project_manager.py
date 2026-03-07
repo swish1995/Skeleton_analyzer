@@ -72,6 +72,7 @@ class ProjectManager:
         self._movement_analysis_result: Optional[MovementAnalysisResult] = None
         self._source_type: str = 'video'  # 'video' | 'folder' | 'archive'
         self._source_path: Optional[str] = None
+        self._transforms: Dict[str, Any] = {}
 
     # === 속성 ===
 
@@ -115,6 +116,7 @@ class ProjectManager:
         movement_analysis_result: Optional[MovementAnalysisResult] = None,
         source_type: str = 'video',
         source_path: Optional[str] = None,
+        transforms: Optional[Dict[str, Any]] = None,
     ) -> None:
         """저장할 상태 설정"""
         self._video_path = video_path
@@ -126,6 +128,7 @@ class ProjectManager:
         self._movement_analysis_result = movement_analysis_result
         self._source_type = source_type
         self._source_path = source_path
+        self._transforms = transforms or {}
 
     def get_state(self) -> Dict[str, Any]:
         """현재 상태 반환"""
@@ -138,6 +141,7 @@ class ProjectManager:
             'movement_analysis_result': self._movement_analysis_result,
             'source_type': self._source_type,
             'source_path': self._source_path,
+            'transforms': self._transforms,
         }
 
     # === 저장 ===
@@ -206,6 +210,8 @@ class ProjectManager:
             }
             if self._source_path:
                 video_data['source_path'] = self._source_path
+            if self._transforms:
+                video_data['transforms'] = self._transforms
             zf.writestr('video.json', json.dumps(video_data, indent=2))
 
             # captures.json
@@ -343,6 +349,7 @@ class ProjectManager:
                 self._movement_analysis_result = movement_analysis_result
                 self._source_type = source_type
                 self._source_path = source_path
+                self._transforms = video_data.get('transforms', {})
                 self._current_path = path
                 self.mark_clean()
 
@@ -410,3 +417,4 @@ class ProjectManager:
         self._movement_analysis_result = None
         self._source_type = 'video'
         self._source_path = None
+        self._transforms = {}

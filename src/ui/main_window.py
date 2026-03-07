@@ -1342,6 +1342,12 @@ class MainWindow(QMainWindow):
                     state['capture_model']
                 )
 
+            # 변환 상태 복원
+            transforms = state.get('transforms', {})
+            if transforms:
+                self.player_widget.set_transforms(transforms)
+                self.player_widget._refresh_current_frame()
+
             # UI 상태 복원
             self._restore_ui_state(state['ui_state'])
 
@@ -1451,6 +1457,7 @@ class MainWindow(QMainWindow):
                 movement_analysis_result=self.status_widget.movement_analysis_widget.get_result(),
                 source_type=source_type,
                 source_path=source_path,
+                transforms=self.player_widget.get_transforms(),
             )
 
             if self._project_manager.save(path):
