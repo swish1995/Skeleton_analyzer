@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
         self._settings = QSettings("IMAS", "IMAS")
         self._config = Config()
         self._project_manager = ProjectManager()
+        self._backup_landmarks = None
 
         # 라이센스 매니저
         self._license_manager = LicenseManager.instance()
@@ -1159,7 +1160,17 @@ class MainWindow(QMainWindow):
 
     def _enter_simulation(self):
         """시뮬레이션 모드 진입"""
+        import copy
         from ..core.pose_detector import PoseDetector
+
+        skeleton = self.status_widget._skeleton_widget
+
+        # 기존 편집 모드 해제 (set_landmarks가 동작하도록)
+        if skeleton.is_edit_mode:
+            skeleton.exit_edit_mode()
+
+        # 기존 랜드마크 백업
+        self._backup_landmarks = copy.deepcopy(skeleton._edit_landmarks)
 
         # 불러오기/저장 비활성화
         self._open_btn.setEnabled(False)
@@ -1168,13 +1179,13 @@ class MainWindow(QMainWindow):
         # 플레이어 위젯 숨기기
         self.player_widget.hide()
 
-        # 기본 랜드마크 로드
+        # 기본 포즈로 교체
         landmarks = PoseDetector.create_default_landmarks()
-        self.status_widget._skeleton_widget.set_landmarks(landmarks)
+        skeleton.set_landmarks(landmarks)
 
-        # 편집 모드 진입 + 시뮬레이션 컨트롤 바 표시
-        self.status_widget._skeleton_widget.set_edit_mode(True)
-        self.status_widget._skeleton_widget.set_simulation_mode(True)
+        # 편집 모드 진입 + 캡처 버튼 표시
+        skeleton.set_edit_mode(True)
+        skeleton.set_simulation_mode(True)
 
         # 초기 각도/점수 계산
         self.status_widget._on_landmarks_edited(landmarks)
@@ -1184,14 +1195,21 @@ class MainWindow(QMainWindow):
 
     def _exit_simulation(self):
         """시뮬레이션 모드 해제"""
-        # 편집 모드 해제 + 시뮬레이션 컨트롤 바 숨기기
-        self.status_widget._skeleton_widget.set_simulation_mode(False)
-        self.status_widget._skeleton_widget.exit_edit_mode()
+        skeleton = self.status_widget._skeleton_widget
 
-        # 포즈/각도/평가 클리어
-        self.status_widget._skeleton_widget.clear()
-        self.status_widget._angle_widget.clear()
-        self.status_widget._ergonomic_widget.clear()
+        # 편집 모드 해제 + 캡처 버튼 숨기기
+        skeleton.set_simulation_mode(False)
+        skeleton.exit_edit_mode()
+
+        # 백업된 랜드마크 복원
+        if hasattr(self, '_backup_landmarks') and self._backup_landmarks:
+            skeleton.set_landmarks(self._backup_landmarks)
+            self.status_widget._on_landmarks_edited(self._backup_landmarks)
+        else:
+            skeleton.clear()
+            self.status_widget._angle_widget.clear()
+            self.status_widget._ergonomic_widget.clear()
+        self._backup_landmarks = None
 
         # 플레이어 위젯 복원 + 현재 프레임 다시 표시
         self.player_widget.show()
