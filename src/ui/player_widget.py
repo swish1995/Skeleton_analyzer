@@ -4,8 +4,9 @@ from PyQt6.QtWidgets import (
     QPushButton, QSlider, QSizePolicy, QFileDialog,
     QGraphicsOpacityEffect, QStackedWidget, QScrollArea
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve, QSize
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve, QSize, QEvent
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QBrush, QIcon
+import cv2
 import numpy as np
 from pathlib import Path
 from typing import Optional
@@ -219,6 +220,11 @@ class PlayerWidget(QWidget):
         self._current_source_name = None
         self._mode = self.MODE_VIDEO
 
+        # 변환 상태
+        self._rotation_angle = 0       # 0, 90, 180, 270
+        self._flip_horizontal = False
+        self._flip_vertical = False
+
         self._init_ui()
         self._setup_drag_drop()
 
@@ -295,6 +301,81 @@ class PlayerWidget(QWidget):
         self._video_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._video_label.setStyleSheet("background-color: black;")
 
+        # 변환 툴바 (hover 시 표시)
+        self._transform_bar = QWidget(video_container)
+        self._transform_bar_height = 34
+        self._transform_bar.setFixedHeight(self._transform_bar_height)
+        self._transform_bar.setStyleSheet(
+            "QWidget { background: transparent; }"
+        )
+        self._transform_bar.hide()
+
+        TRANSFORM_BTN_STYLE = """
+            QPushButton {
+                background: rgba(60, 60, 60, 140);
+                color: white;
+                border: none;
+                padding: 5px 12px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: rgba(80, 80, 80, 180);
+            }
+            QPushButton:pressed {
+                background: rgba(40, 40, 40, 160);
+            }
+            QPushButton:checked {
+                background: rgba(100, 180, 255, 120);
+            }
+        """
+
+        tbar_layout = QHBoxLayout(self._transform_bar)
+        tbar_layout.setContentsMargins(16, 2, 8, 2)
+        tbar_layout.setSpacing(6)
+
+        icon_size = QSize(14, 14)
+
+        self._rotate_btn = QPushButton(" 회전")
+        self._rotate_btn.setIcon(QIcon(_get_icon_path("rotate_right")))
+        self._rotate_btn.setIconSize(icon_size)
+        self._rotate_btn.setFixedHeight(26)
+        self._rotate_btn.setStyleSheet(TRANSFORM_BTN_STYLE)
+        self._rotate_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._rotate_btn.clicked.connect(self.rotate_90)
+        tbar_layout.addWidget(self._rotate_btn)
+
+        self._flip_h_btn = QPushButton(" 좌우반전")
+        self._flip_h_btn.setIcon(QIcon(_get_icon_path("flip_horizontal")))
+        self._flip_h_btn.setIconSize(icon_size)
+        self._flip_h_btn.setFixedHeight(26)
+        self._flip_h_btn.setCheckable(True)
+        self._flip_h_btn.setStyleSheet(TRANSFORM_BTN_STYLE)
+        self._flip_h_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._flip_h_btn.clicked.connect(self.flip_horizontal)
+        tbar_layout.addWidget(self._flip_h_btn)
+
+        self._flip_v_btn = QPushButton(" 상하반전")
+        self._flip_v_btn.setIcon(QIcon(_get_icon_path("flip_vertical")))
+        self._flip_v_btn.setIconSize(icon_size)
+        self._flip_v_btn.setFixedHeight(26)
+        self._flip_v_btn.setCheckable(True)
+        self._flip_v_btn.setStyleSheet(TRANSFORM_BTN_STYLE)
+        self._flip_v_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._flip_v_btn.clicked.connect(self.flip_vertical)
+        tbar_layout.addWidget(self._flip_v_btn)
+
+        self._reset_transform_btn = QPushButton(" 초기화")
+        self._reset_transform_btn.setIcon(QIcon(_get_icon_path("reset")))
+        self._reset_transform_btn.setIconSize(icon_size)
+        self._reset_transform_btn.setFixedHeight(26)
+        self._reset_transform_btn.setStyleSheet(TRANSFORM_BTN_STYLE)
+        self._reset_transform_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._reset_transform_btn.clicked.connect(self.reset_transforms)
+        tbar_layout.addWidget(self._reset_transform_btn)
+        tbar_layout.addStretch()
+
         # 플래시 오버레이
         self._flash_overlay = QLabel(video_container)
         self._flash_overlay.setStyleSheet("background-color: white;")
@@ -311,6 +392,7 @@ class PlayerWidget(QWidget):
 
         layout.addWidget(video_container)
         self._video_container = video_container
+        self._video_container.installEventFilter(self)
 
         # === 컨트롤바 (QStackedWidget으로 모드 전환) ===
         self._control_stack = QStackedWidget()
@@ -585,7 +667,7 @@ class PlayerWidget(QWidget):
 
             frame = self._video_player.read_frame()
             if frame is not None:
-                self._display_frame(frame)
+                self._display_frame(self._apply_transforms(frame))
                 self._video_player.seek(0)
 
             self._capture_btn.setEnabled(True)
@@ -675,6 +757,7 @@ class PlayerWidget(QWidget):
         # 첫 이미지 표시
         frame = self._image_player.read_frame()
         if frame is not None:
+            frame = self._apply_transforms(frame)
             self._display_frame(frame)
             self.frame_changed.emit(frame, 0)
 
@@ -758,6 +841,7 @@ class PlayerWidget(QWidget):
         """썸네일 클릭 시 해당 이미지로 이동"""
         frame = self._image_player.seek(index)
         if frame is not None:
+            frame = self._apply_transforms(frame)
             self._display_frame(frame)
             self._image_slider.setValue(index)
             self._update_image_index_display()
@@ -783,6 +867,7 @@ class PlayerWidget(QWidget):
         if self._image_player.is_loaded:
             frame = self._image_player.prev()
             if frame is not None:
+                frame = self._apply_transforms(frame)
                 self._display_frame(frame)
                 idx = self._image_player.current_index
                 self._image_slider.setValue(idx)
@@ -796,6 +881,7 @@ class PlayerWidget(QWidget):
         if self._image_player.is_loaded:
             frame = self._image_player.next()
             if frame is not None:
+                frame = self._apply_transforms(frame)
                 self._display_frame(frame)
                 idx = self._image_player.current_index
                 self._image_slider.setValue(idx)
@@ -850,6 +936,7 @@ class PlayerWidget(QWidget):
         idx = self._image_slider.value()
         frame = self._image_player.seek(idx)
         if frame is not None:
+            frame = self._apply_transforms(frame)
             self._display_frame(frame)
             self._update_image_index_display()
             self._update_image_nav_buttons()
@@ -860,6 +947,7 @@ class PlayerWidget(QWidget):
         """이미지 슬라이더 이동 (미리보기)"""
         frame = self._image_player.get_frame(value)
         if frame is not None:
+            frame = self._apply_transforms(frame)
             self._display_frame(frame)
 
     # === 캡처 (공통) ===
@@ -904,9 +992,35 @@ class PlayerWidget(QWidget):
         """크기 변경 시 오버레이 크기 조정"""
         super().resizeEvent(event)
         if hasattr(self, '_video_container'):
-            size = self._video_container.size()
-            self._video_label.setGeometry(0, 0, size.width(), size.height())
-            self._flash_overlay.setGeometry(0, 0, size.width(), size.height())
+            self._update_video_geometry()
+
+    def _update_video_geometry(self):
+        """비디오 표시 영역과 변환 툴바 위치 갱신"""
+        size = self._video_container.size()
+        self._video_label.setGeometry(0, 0, size.width(), size.height())
+        self._flash_overlay.setGeometry(0, 0, size.width(), size.height())
+        self._transform_bar.setGeometry(0, 0, size.width(), self._transform_bar_height)
+        self._transform_bar.raise_()
+
+    def eventFilter(self, obj, event):
+        """비디오 컨테이너 hover 시 변환 툴바 표시"""
+        if obj == self._video_container:
+            if event.type() == QEvent.Type.Enter:
+                if self._is_source_loaded():
+                    self._transform_bar.show()
+                    self._update_video_geometry()
+            elif event.type() == QEvent.Type.Leave:
+                self._transform_bar.hide()
+                self._update_video_geometry()
+        return super().eventFilter(obj, event)
+
+    def _is_source_loaded(self) -> bool:
+        """소스(동영상/이미지)가 로드되었는지 확인"""
+        if self._mode == self.MODE_VIDEO:
+            return self._video_player.is_loaded
+        elif self._mode == self.MODE_IMAGE:
+            return self._image_player.is_loaded
+        return False
 
     def seek_relative(self, seconds: float):
         """상대적 시크 (초 단위) - 동영상 모드 전용"""
@@ -959,6 +1073,7 @@ class PlayerWidget(QWidget):
         elif self._mode == self.MODE_IMAGE and self._image_player.is_loaded:
             frame = self._image_player.seek(frame_number)
             if frame is not None:
+                frame = self._apply_transforms(frame)
                 self._display_frame(frame)
                 self._image_slider.setValue(frame_number)
                 self._update_image_index_display()
@@ -980,12 +1095,96 @@ class PlayerWidget(QWidget):
         self._video_player.release()
         self._image_player.release()
 
+    # === 변환 (회전/반전) ===
+
+    def _apply_transforms(self, frame: np.ndarray) -> np.ndarray:
+        """프레임에 회전/반전 변환 적용"""
+        if self._rotation_angle == 90:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+        elif self._rotation_angle == 180:
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+        elif self._rotation_angle == 270:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        if self._flip_horizontal:
+            frame = cv2.flip(frame, 1)
+        if self._flip_vertical:
+            frame = cv2.flip(frame, 0)
+
+        return frame
+
+    def rotate_90(self):
+        """시계방향 90도 회전"""
+        self._rotation_angle = (self._rotation_angle + 90) % 360
+        self._sync_transform_buttons()
+        self._refresh_current_frame()
+
+    def flip_horizontal(self):
+        """좌우 반전 토글"""
+        self._flip_horizontal = not self._flip_horizontal
+        self._sync_transform_buttons()
+        self._refresh_current_frame()
+
+    def flip_vertical(self):
+        """상하 반전 토글"""
+        self._flip_vertical = not self._flip_vertical
+        self._sync_transform_buttons()
+        self._refresh_current_frame()
+
+    def reset_transforms(self):
+        """모든 변환 초기화"""
+        self._rotation_angle = 0
+        self._flip_horizontal = False
+        self._flip_vertical = False
+        self._sync_transform_buttons()
+        self._refresh_current_frame()
+
+    def get_transforms(self) -> dict:
+        """현재 변환 상태 반환"""
+        return {
+            'rotation_angle': self._rotation_angle,
+            'flip_horizontal': self._flip_horizontal,
+            'flip_vertical': self._flip_vertical,
+        }
+
+    def set_transforms(self, transforms: dict):
+        """변환 상태 설정"""
+        self._rotation_angle = transforms.get('rotation_angle', 0)
+        self._flip_horizontal = transforms.get('flip_horizontal', False)
+        self._flip_vertical = transforms.get('flip_vertical', False)
+        self._sync_transform_buttons()
+
+    def _sync_transform_buttons(self):
+        """변환 버튼 상태를 내부 상태와 동기화"""
+        self._flip_h_btn.setChecked(self._flip_horizontal)
+        self._flip_v_btn.setChecked(self._flip_vertical)
+        if self._rotation_angle == 0:
+            self._rotate_btn.setText(" 회전")
+        else:
+            self._rotate_btn.setText(f" {self._rotation_angle}°")
+
+    def _refresh_current_frame(self):
+        """현재 프레임을 변환 적용하여 다시 표시"""
+        if self._mode == self.MODE_VIDEO and self._video_player.is_loaded:
+            frame = self._video_player.read_frame()
+            if frame is not None:
+                frame = self._apply_transforms(frame)
+                self._display_frame(frame)
+                self.frame_changed.emit(frame, self._video_player.current_frame)
+        elif self._mode == self.MODE_IMAGE and self._image_player.is_loaded:
+            frame = self._image_player.get_frame(self._image_player.current_index)
+            if frame is not None:
+                frame = self._apply_transforms(frame)
+                self._display_frame(frame)
+                self.frame_changed.emit(frame, self._image_player.current_index)
+
     # === 내부 메서드 ===
 
     def _on_timer(self):
         """타이머 콜백 (동영상 모드)"""
         frame = self._video_player.read_frame()
         if frame is not None:
+            frame = self._apply_transforms(frame)
             self._display_frame(frame)
             self._update_time_display()
 
@@ -1024,6 +1223,7 @@ class PlayerWidget(QWidget):
         if self._mode == self.MODE_VIDEO and self._video_player.is_loaded:
             frame = self._video_player.read_frame()
             if frame is not None:
+                frame = self._apply_transforms(frame)
                 self._display_frame(frame)
                 self.frame_changed.emit(frame, self._video_player.current_frame)
             self._update_time_display()
