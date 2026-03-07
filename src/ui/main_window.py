@@ -258,6 +258,36 @@ class MainWindow(QMainWindow):
         )
         view_menu.addAction(self._ergonomic_action)
 
+        view_menu.addSeparator()
+
+        # 변환 서브메뉴
+        transform_menu = view_menu.addMenu("변환(&T)")
+
+        self._rotate_action = QAction("시계방향 90° 회전(&R)", self)
+        self._rotate_action.setShortcut("Ctrl+R")
+        self._rotate_action.triggered.connect(lambda: self.player_widget.rotate_90())
+        transform_menu.addAction(self._rotate_action)
+
+        self._flip_h_action = QAction("좌우 반전(&H)", self)
+        self._flip_h_action.setShortcut("Ctrl+H")
+        self._flip_h_action.setCheckable(True)
+        self._flip_h_action.triggered.connect(lambda: self.player_widget.flip_horizontal())
+        transform_menu.addAction(self._flip_h_action)
+
+        self._flip_v_action = QAction("상하 반전(&V)", self)
+        self._flip_v_action.setShortcut("Ctrl+Shift+H")
+        self._flip_v_action.setCheckable(True)
+        self._flip_v_action.triggered.connect(lambda: self.player_widget.flip_vertical())
+        transform_menu.addAction(self._flip_v_action)
+
+        transform_menu.aboutToShow.connect(self._sync_transform_menu)
+
+        transform_menu.addSeparator()
+
+        self._reset_transform_action = QAction("변환 초기화(&X)", self)
+        self._reset_transform_action.triggered.connect(lambda: self.player_widget.reset_transforms())
+        transform_menu.addAction(self._reset_transform_action)
+
         # StatusWidget 가시성 변경 시 메뉴 동기화
         self.status_widget.visibility_changed.connect(self._on_visibility_changed)
 
@@ -1386,6 +1416,12 @@ class MainWindow(QMainWindow):
         msg_box.setIconPixmap(icon.pixmap(64, 64))
         msg_box.addButton("확인", QMessageBox.ButtonRole.AcceptRole)
         msg_box.exec()
+
+    def _sync_transform_menu(self):
+        """변환 메뉴 열릴 때 체크 상태 동기화"""
+        transforms = self.player_widget.get_transforms()
+        self._flip_h_action.setChecked(transforms.get('flip_horizontal', False))
+        self._flip_v_action.setChecked(transforms.get('flip_vertical', False))
 
     def _on_sensitivity_changed(self, value: int):
         """민감도 슬라이더 변경"""
