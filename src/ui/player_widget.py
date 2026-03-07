@@ -30,6 +30,7 @@ class PlayerWidget(QWidget):
 
     MODE_VIDEO = 'video'
     MODE_IMAGE = 'image'
+    MODE_SIMULATION = 'simulation'
 
     # 시그널: (frame, frame_number)
     frame_changed = pyqtSignal(object, int)
@@ -606,6 +607,9 @@ class PlayerWidget(QWidget):
             self._control_stack.setCurrentIndex(1)
             self._control_stack.setFixedHeight(self._image_control_height)
             self._help_label.setText("Enter: 캡처  |  ←/→: 이전/다음")
+        elif mode == self.MODE_SIMULATION:
+            self._control_stack.hide()
+            self._help_label.setText("시뮬레이션 모드  |  관절을 드래그하여 자세 조정  |  Enter: 캡처")
 
     # === 키 이벤트 ===
 
@@ -771,6 +775,21 @@ class PlayerWidget(QWidget):
         self._current_video_name = None
         self._current_video_path = None
         self.source_loaded.emit(source_name)
+
+    def load_simulation(self):
+        """시뮬레이션 모드 시작 (빈 배경 프레임 표시)"""
+        self.set_mode(self.MODE_SIMULATION)
+
+        # 빈 프레임 생성 (회색 배경)
+        frame = np.full((480, 640, 3), 50, dtype=np.uint8)
+        self._display_frame(frame)
+        self._simulation_frame = frame
+
+        # 소스 정보 초기화
+        self._current_source_name = "시뮬레이션"
+        self._current_video_name = None
+        self._current_video_path = None
+        self.source_loaded.emit("시뮬레이션")
 
     def _build_thumbnail_strip(self):
         """썸네일 스트립 생성"""
@@ -963,6 +982,9 @@ class PlayerWidget(QWidget):
             idx = self._image_player.current_index
             self.flash_effect()
             self.capture_requested.emit(0.0, idx)
+        elif self._mode == self.MODE_SIMULATION:
+            self.flash_effect()
+            self.capture_requested.emit(0.0, 0)
 
     def flash_effect(self):
         """플래시 효과 실행"""

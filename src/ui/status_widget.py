@@ -437,13 +437,13 @@ class StatusWidget(QWidget):
         video_frame_path = None
         skeleton_image_path = None
 
-        if self._video_name:
-            video_frame_path, skeleton_image_path = self._image_saver.save_capture(
-                video_name=self._video_name,
-                timestamp=self._current_timestamp,
-                frame=self._current_frame,
-                skeleton_pixmap=self._skeleton_widget.grab_as_pixmap(),
-            )
+        source_name = self._video_name or "simulation"
+        video_frame_path, skeleton_image_path = self._image_saver.save_capture(
+            video_name=source_name,
+            timestamp=self._current_timestamp,
+            frame=self._current_frame,
+            skeleton_pixmap=self._skeleton_widget.grab_as_pixmap(),
+        )
 
         # CaptureRecord 생성
         record = CaptureRecord(

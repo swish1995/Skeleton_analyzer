@@ -136,6 +136,64 @@ class PoseDetector:
 
         return best_idx
 
+    @staticmethod
+    def create_default_landmarks() -> List:
+        """기본 T-포즈 랜드마크 생성 (33개, 정규화 좌표 0~1)"""
+        # MediaPipe Pose 33개 랜드마크 기본 위치 (팔 내린 자세)
+        positions = {
+            # 얼굴
+            0: (0.500, 0.140),  # nose
+            1: (0.490, 0.120),  # left_eye_inner
+            2: (0.480, 0.118),  # left_eye
+            3: (0.470, 0.120),  # left_eye_outer
+            4: (0.510, 0.120),  # right_eye_inner
+            5: (0.520, 0.118),  # right_eye
+            6: (0.530, 0.120),  # right_eye_outer
+            7: (0.460, 0.130),  # left_ear
+            8: (0.540, 0.130),  # right_ear
+            9: (0.495, 0.155),  # mouth_left
+            10: (0.505, 0.155), # mouth_right
+            # 어깨
+            11: (0.380, 0.220), # left_shoulder
+            12: (0.620, 0.220), # right_shoulder
+            # 팔 (내린 자세)
+            13: (0.360, 0.370), # left_elbow
+            14: (0.640, 0.370), # right_elbow
+            15: (0.350, 0.500), # left_wrist
+            16: (0.650, 0.500), # right_wrist
+            # 손
+            17: (0.340, 0.520), # left_pinky
+            18: (0.660, 0.520), # right_pinky
+            19: (0.345, 0.520), # left_index
+            20: (0.655, 0.520), # right_index
+            21: (0.355, 0.510), # left_thumb
+            22: (0.645, 0.510), # right_thumb
+            # 골반
+            23: (0.420, 0.520), # left_hip
+            24: (0.580, 0.520), # right_hip
+            # 다리
+            25: (0.410, 0.700), # left_knee
+            26: (0.590, 0.700), # right_knee
+            27: (0.400, 0.880), # left_ankle
+            28: (0.600, 0.880), # right_ankle
+            # 발
+            29: (0.390, 0.920), # left_heel
+            30: (0.610, 0.920), # right_heel
+            31: (0.385, 0.900), # left_foot_index
+            32: (0.615, 0.900), # right_foot_index
+        }
+
+        landmarks = []
+        for i in range(33):
+            x, y = positions.get(i, (0.5, 0.5))
+            landmarks.append({
+                'x': x,
+                'y': y,
+                'z': 0.0,
+                'visibility': 1.0
+            })
+        return landmarks
+
     def release(self):
         """리소스 해제"""
         if self._landmarker:

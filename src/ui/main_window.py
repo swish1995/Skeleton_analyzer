@@ -142,6 +142,10 @@ class MainWindow(QMainWindow):
         self.status_widget._skeleton_widget.edit_mode_changed.connect(
             self._on_edit_mode_changed
         )
+        # 시뮬레이션 캡처 버튼
+        self.status_widget._skeleton_widget.capture_clicked.connect(
+            lambda: self._on_capture_requested(0.0, 0)
+        )
 
     def _init_menu(self):
         """메뉴 초기화"""
@@ -185,6 +189,15 @@ class MainWindow(QMainWindow):
         self._open_archive_action = QAction("파일 열기(&Z)...", self)
         self._open_archive_action.triggered.connect(self._open_archive_file)
         file_menu.addAction(self._open_archive_action)
+
+        file_menu.addSeparator()
+
+        # 시뮬레이션
+        self._sim_action = QAction("시뮬레이션(&M)", self)
+        self._sim_action.setShortcut("Ctrl+M")
+        self._sim_action.setCheckable(True)
+        self._sim_action.triggered.connect(self._on_sim_menu_triggered)
+        file_menu.addAction(self._sim_action)
 
         file_menu.addSeparator()
 
@@ -402,8 +415,8 @@ class MainWindow(QMainWindow):
         """)
         self.addToolBar(self._toolbar)
 
-        # 작업 불러오기 버튼
-        self._open_btn = QPushButton(" 작업 불러오기")
+        # 불러오기 버튼
+        self._open_btn = QPushButton(" 불러오기")
         self._open_btn.setIcon(QIcon(self._get_icon_path("folder_open")))
         self._open_btn.setIconSize(QSize(14, 14))
         self._open_btn.setFixedHeight(28)
@@ -412,8 +425,8 @@ class MainWindow(QMainWindow):
         self._open_btn.clicked.connect(self._open_project)
         self._toolbar.addWidget(self._open_btn)
 
-        # 작업 저장 버튼
-        self._save_btn = QPushButton(" 작업 저장")
+        # 저장 버튼
+        self._save_btn = QPushButton(" 저장")
         self._save_btn.setIcon(QIcon(self._get_icon_path("save")))
         self._save_btn.setIconSize(QSize(14, 14))
         self._save_btn.setFixedHeight(28)
@@ -421,6 +434,15 @@ class MainWindow(QMainWindow):
         self._save_btn.setStyleSheet(self._get_toolbar_button_style('save'))
         self._save_btn.clicked.connect(self._save_project)
         self._toolbar.addWidget(self._save_btn)
+
+        # 시뮬레이션 토글 버튼
+        self._sim_btn = QPushButton(" 시뮬레이션")
+        self._sim_btn.setFixedHeight(28)
+        self._sim_btn.setCheckable(True)
+        self._sim_btn.setToolTip("시뮬레이션 모드 (Ctrl+M)")
+        self._sim_btn.setStyleSheet(self._get_toolbar_button_style('시뮬레이션', False))
+        self._sim_btn.clicked.connect(self._toggle_simulation)
+        self._toolbar.addWidget(self._sim_btn)
 
         # ── 민감도 슬라이더 ──
         sensitivity_container = QWidget()
@@ -435,7 +457,7 @@ class MainWindow(QMainWindow):
         self._sensitivity_slider = QSlider(Qt.Orientation.Horizontal)
         self._sensitivity_slider.setRange(0, 100)
         self._sensitivity_slider.setValue(0)
-        self._sensitivity_slider.setFixedWidth(100)
+        self._sensitivity_slider.setFixedWidth(50)
         self._sensitivity_slider.setFixedHeight(20)
         self._sensitivity_slider.setToolTip("감지 민감도\n0.0 = 정확한 값, 1.0 = 대부분의 자세가 최소 점수")
         self._sensitivity_slider.setStyleSheet("""
@@ -1117,6 +1139,61 @@ class MainWindow(QMainWindow):
             self._logger.error(f"압축 파일 로드 실패: {dlg.error_msg}")
             QMessageBox.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{dlg.error_msg}")
 
+    def _on_sim_menu_triggered(self, checked: bool):
+        """파일 메뉴 시뮬레이션 액션 핸들러"""
+        self._sim_btn.setChecked(checked)
+        self._toggle_simulation()
+
+    def _toggle_simulation(self):
+        """시뮬레이션 모드 토글"""
+        checked = self._sim_btn.isChecked()
+        self._sim_btn.setStyleSheet(self._get_toolbar_button_style('시뮬레이션', checked))
+        self._sim_action.setChecked(checked)
+
+        if checked:
+            self._enter_simulation()
+        else:
+            self._exit_simulation()
+
+    def _enter_simulation(self):
+        """시뮬레이션 모드 진입"""
+        from ..core.pose_detector import PoseDetector
+
+        # 불러오기/저장 비활성화
+        self._open_btn.setEnabled(False)
+        self._save_btn.setEnabled(False)
+
+        # 플레이어 위젯 숨기기
+        self.player_widget.hide()
+
+        # 기본 랜드마크 로드
+        landmarks = PoseDetector.create_default_landmarks()
+        self.status_widget._skeleton_widget.set_landmarks(landmarks)
+
+        # 편집 모드 자동 진입 + 캡처 버튼 표시
+        self.status_widget._skeleton_widget.set_edit_mode(True)
+        self.status_widget._skeleton_widget.show_control_bar()
+        self.status_widget._skeleton_widget.show_capture_btn(True)
+
+        # 초기 각도/점수 계산
+        self.status_widget._on_landmarks_edited(landmarks)
+
+        # 소스 이름 설정 (캡처용)
+        self.status_widget.set_video_name("simulation")
+
+    def _exit_simulation(self):
+        """시뮬레이션 모드 해제"""
+        # 편집 모드 해제
+        self.status_widget._skeleton_widget.exit_edit_mode()
+        self.status_widget._skeleton_widget.show_capture_btn(False)
+
+        # 플레이어 위젯 복원
+        self.player_widget.show()
+
+        # 불러오기/저장 활성화
+        self._open_btn.setEnabled(True)
+        self._save_btn.setEnabled(True)
+
     def _on_edit_mode_changed(self, enabled: bool):
         """스켈레톤 편집 모드 변경 시"""
         if enabled:
@@ -1150,7 +1227,10 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, event):
         """키 입력 이벤트"""
         if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
-            self.player_widget._on_capture_clicked()
+            if self._sim_btn.isChecked():
+                self._on_capture_requested(0.0, 0)
+            else:
+                self.player_widget._on_capture_clicked()
         elif self.player_widget.mode == PlayerWidget.MODE_VIDEO:
             # 동영상 모드 전용 단축키
             if event.key() == Qt.Key.Key_Space:

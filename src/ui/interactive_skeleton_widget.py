@@ -68,6 +68,7 @@ class InteractiveSkeletonWidget(QWidget):
 
     landmarks_changed = pyqtSignal(list)
     edit_mode_changed = pyqtSignal(bool)
+    capture_clicked = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -121,6 +122,20 @@ class InteractiveSkeletonWidget(QWidget):
             QPushButton:pressed { background: #333; }
             QPushButton:disabled { color: #666; background: #3a3a3a; }
         """
+
+        # 캡처 버튼 (시뮬레이션 모드에서만 표시)
+        self._capture_btn = QPushButton("캡처")
+        self._capture_btn.setStyleSheet("""
+            QPushButton {
+                background: #c0392b; color: white; border: none;
+                padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: bold;
+            }
+            QPushButton:hover { background: #e74c3c; }
+            QPushButton:pressed { background: #a93226; }
+        """)
+        self._capture_btn.setVisible(False)
+        self._capture_btn.clicked.connect(self.capture_clicked.emit)
+        ctrl_layout.addWidget(self._capture_btn)
 
         # 초기화 (관절 위치 + 뷰 트랜스폼 모두 리셋)
         self._reset_btn = QPushButton("초기화")
@@ -202,6 +217,10 @@ class InteractiveSkeletonWidget(QWidget):
     def hide_control_bar(self):
         """컨트롤 바 숨기기"""
         self._control_bar.setVisible(False)
+
+    def show_capture_btn(self, visible: bool):
+        """캡처 버튼 표시/숨기기"""
+        self._capture_btn.setVisible(visible)
 
     def grab_as_pixmap(self):
         """위젯을 QPixmap으로 캡처"""
