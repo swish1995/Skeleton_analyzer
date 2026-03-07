@@ -2,6 +2,7 @@
 
 import os
 import urllib.request
+from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QLineEdit, QPushButton, QCheckBox,
@@ -275,13 +276,18 @@ class SettingsDialog(QDialog):
 
         # 캡처 저장 디렉토리
         self._capture_save_edit = QLineEdit()
-        self._capture_save_edit.setPlaceholderText("기본값: captures")
+        self._capture_save_edit.setPlaceholderText("비워두면 현재 디렉토리")
         capture_save_btn = QPushButton("찾아보기...")
         capture_save_btn.clicked.connect(lambda: self._browse_directory(self._capture_save_edit))
         capture_save_row = QHBoxLayout()
         capture_save_row.addWidget(self._capture_save_edit)
         capture_save_row.addWidget(capture_save_btn)
-        dir_layout.addRow("캡처 저장:", capture_save_row)
+        capture_note = QLabel("※ 지정 경로 하위에 captures/ 폴더가 자동 생성됩니다")
+        capture_note.setStyleSheet("color: #888; font-size: 11px;")
+        capture_save_col = QVBoxLayout()
+        capture_save_col.addLayout(capture_save_row)
+        capture_save_col.addWidget(capture_note)
+        dir_layout.addRow("캡처 저장:", capture_save_col)
 
         # 내보내기 디렉토리
         self._export_edit = QLineEdit()
@@ -361,9 +367,16 @@ class SettingsDialog(QDialog):
         self._video_open_edit.setText(
             self._config.get("directories.video_open", "")
         )
-        self._capture_save_edit.setText(
-            self._config.get("directories.capture_save", "")
-        )
+        # capture_save에서 끝의 /captures 를 제거하여 기본 경로만 표시
+        raw_capture_save = self._config.get("directories.capture_save", "")
+        if raw_capture_save:
+            p = Path(raw_capture_save)
+            if p.name == "captures":
+                self._capture_save_edit.setText(str(p.parent) if str(p.parent) != "." else "")
+            else:
+                self._capture_save_edit.setText(raw_capture_save)
+        else:
+            self._capture_save_edit.setText("")
         self._export_edit.setText(
             self._config.get("directories.export", "")
         )
@@ -385,7 +398,13 @@ class SettingsDialog(QDialog):
         """설정 저장 후 다이얼로그 닫기"""
         # 디렉토리 설정
         self._config.set("directories.video_open", self._video_open_edit.text())
-        self._config.set("directories.capture_save", self._capture_save_edit.text() or "captures")
+        # 사용자 입력 경로 하위에 captures/ 를 붙여서 저장
+        user_path = self._capture_save_edit.text().strip()
+        if user_path:
+            capture_save = str(Path(user_path) / "captures")
+        else:
+            capture_save = "captures"
+        self._config.set("directories.capture_save", capture_save)
         self._config.set("directories.export", self._export_edit.text())
 
         # 이미지 관리 설정
