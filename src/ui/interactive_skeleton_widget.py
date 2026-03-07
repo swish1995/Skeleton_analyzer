@@ -105,7 +105,7 @@ class InteractiveSkeletonWidget(QWidget):
     def _init_ui(self):
         """UI 초기화"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 5, 0, 0)
+        layout.setContentsMargins(0, 5, 0, 5)
         layout.setSpacing(0)
 
         # 컨트롤 바
@@ -159,15 +159,6 @@ class InteractiveSkeletonWidget(QWidget):
         self._reset_btn.setEnabled(False)
         self._reset_btn.clicked.connect(self._reset_all)
         ctrl_layout.addWidget(self._reset_btn)
-
-        # z축 이동 (선택 관절)
-        self._depth_fwd_btn = _ctrl_btn("앞으로", "depth_forward", '#8a5ab8', '#7a4aa8', '#9a6ac8')
-        self._depth_fwd_btn.clicked.connect(lambda: self._move_z(-0.05))
-        ctrl_layout.addWidget(self._depth_fwd_btn)
-
-        self._depth_bwd_btn = _ctrl_btn("뒤로", "depth_backward", '#8a5ab8', '#7a4aa8', '#9a6ac8')
-        self._depth_bwd_btn.clicked.connect(lambda: self._move_z(0.05))
-        ctrl_layout.addWidget(self._depth_bwd_btn)
 
         ctrl_layout.addStretch()
 
@@ -512,6 +503,9 @@ class InteractiveSkeletonWidget(QWidget):
             return None
         # 렌더링 위치와 일치하도록 조정된 좌표 사용
         landmarks = self._skeleton._adjust_landmarks_for_render(landmarks)
+        # 뷰 회전 투영 적용
+        if abs(self._view_yaw) > 0.1 or abs(self._view_pitch) > 0.1:
+            landmarks = self._apply_3d_projection(landmarks)
 
         logical = self._screen_to_logical(screen_pos)
         w = self._skeleton.width()
@@ -614,12 +608,19 @@ class InteractiveSkeletonWidget(QWidget):
 
             # 렌더링 조정된 좌표 기준으로 delta 계산 (어깨 위치 보정 반영)
             render_lms = self._skeleton._adjust_landmarks_for_render(self._edit_landmarks)
+            # 뷰 회전 투영 적용
+            if abs(self._view_yaw) > 0.1 or abs(self._view_pitch) > 0.1:
+                render_lms = self._apply_3d_projection(render_lms)
             adj_x, adj_y = render_lms[idx]['x'], render_lms[idx]['y']
-            dx, dy = nx - adj_x, ny - adj_y
+            dsx, dsy = nx - adj_x, ny - adj_y
 
-            # 1) 드래그 대상 관절 이동 (원본에 delta 적용)
+            # 뷰 회전 역변환: 화면 delta → 월드 delta (x, y, z)
+            dx, dy, dz = self._screen_delta_to_world(dsx, dsy)
+
+            # 1) 드래그 대상 관절 이동
             lm['x'] = max(0.0, min(1.0, lm['x'] + dx))
             lm['y'] = max(0.0, min(1.0, lm['y'] + dy))
+            lm['z'] = lm.get('z', 0.0) + dz
 
             # 2) 자식 관절 연동 이동
             children = self._get_all_descendants(idx)
@@ -628,6 +629,7 @@ class InteractiveSkeletonWidget(QWidget):
                     clm = self._edit_landmarks[child_idx]
                     clm['x'] = max(0.0, min(1.0, clm['x'] + dx))
                     clm['y'] = max(0.0, min(1.0, clm['y'] + dy))
+                    clm['z'] = clm.get('z', 0.0) + dz
 
             # 3) 가동 범위 제한
             self._apply_rom_constraints(idx)
@@ -772,28 +774,24 @@ class InteractiveSkeletonWidget(QWidget):
                 radius = 4
                 painter.drawEllipse(x - radius, y - radius, radius * 2, radius * 2)
 
-    # === z축 이동 ===
-
-    def _move_z(self, delta: float):
-        """선택된 관절의 z값 변경"""
-        if self._selected_joint is None or not self._edit_landmarks:
-            return
-        idx = self._selected_joint
-        if idx >= len(self._edit_landmarks):
-            return
-        lm = self._edit_landmarks[idx]
-        lm['z'] = lm.get('z', 0.0) + delta
-
-        # 자식 관절도 함께 이동
-        for child_idx in self._get_all_descendants(idx):
-            if child_idx < len(self._edit_landmarks):
-                clm = self._edit_landmarks[child_idx]
-                clm['z'] = clm.get('z', 0.0) + delta
-
-        self._skeleton.set_landmarks(self._edit_landmarks)
-        self.landmarks_changed.emit(self._edit_landmarks)
-
     # === 뷰 회전 ===
+
+    def _screen_delta_to_world(self, dsx: float, dsy: float) -> tuple:
+        """화면 delta를 뷰 회전 역변환하여 월드 delta (dx, dy, dz)로 변환"""
+        yaw_rad = math.radians(self._view_yaw)
+        pitch_rad = math.radians(self._view_pitch)
+        cos_y, sin_y = math.cos(yaw_rad), math.sin(yaw_rad)
+        cos_p, sin_p = math.cos(pitch_rad), math.sin(pitch_rad)
+
+        # 역변환: view space → world space
+        # 1) Inverse X rotation (pitch)
+        dz_after_pitch = -dsy * sin_p
+        dy = dsy * cos_p
+        # 2) Inverse Y rotation (yaw)
+        dx = dsx * cos_y + dz_after_pitch * sin_y
+        dz = -dsx * sin_y + dz_after_pitch * cos_y
+
+        return dx, dy, dz
 
     def _rotate_view(self, d_pitch: float, d_yaw: float):
         """뷰 회전 각도 변경"""
