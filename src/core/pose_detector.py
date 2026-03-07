@@ -92,7 +92,7 @@ class PoseDetector:
                     'x': lm.x,
                     'y': lm.y,
                     'z': lm.z,
-                    'visibility': lm.visibility if hasattr(lm, 'visibility') else 1.0
+                    'visibility': max(lm.visibility if hasattr(lm, 'visibility') else 1.0, 0.5)
                 })
 
             world_landmarks = None
@@ -103,7 +103,7 @@ class PoseDetector:
                         'x': lm.x,
                         'y': lm.y,
                         'z': lm.z,
-                        'visibility': lm.visibility if hasattr(lm, 'visibility') else 1.0
+                        'visibility': max(lm.visibility if hasattr(lm, 'visibility') else 1.0, 0.5)
                     })
 
             return PoseResult(
