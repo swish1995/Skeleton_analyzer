@@ -138,58 +138,58 @@ class PoseDetector:
 
     @staticmethod
     def create_default_landmarks() -> List:
-        """기본 T-포즈 랜드마크 생성 (33개, 정규화 좌표 0~1)"""
-        # MediaPipe Pose 33개 랜드마크 기본 위치 (팔 내린 자세)
+        """기본 포즈 랜드마크 생성 (33개, 정규화 좌표)"""
+        # (x, y, z) - z: 음수=카메라쪽(앞), 양수=뒤쪽
         positions = {
-            # 얼굴 (코 중심으로 밀집)
-            0: (0.500, 0.140),  # nose
-            1: (0.496, 0.128),  # left_eye_inner
-            2: (0.492, 0.126),  # left_eye
-            3: (0.488, 0.128),  # left_eye_outer
-            4: (0.504, 0.128),  # right_eye_inner
-            5: (0.508, 0.126),  # right_eye
-            6: (0.512, 0.128),  # right_eye_outer
-            7: (0.484, 0.134),  # left_ear
-            8: (0.516, 0.134),  # right_ear
-            9: (0.497, 0.148),  # mouth_left
-            10: (0.503, 0.148), # mouth_right
-            # 어깨
-            11: (0.380, 0.220), # left_shoulder
-            12: (0.620, 0.220), # right_shoulder
-            # 팔 (내린 자세)
-            13: (0.360, 0.370), # left_elbow
-            14: (0.640, 0.370), # right_elbow
-            15: (0.350, 0.500), # left_wrist
-            16: (0.650, 0.500), # right_wrist
-            # 손
-            17: (0.340, 0.520), # left_pinky
-            18: (0.660, 0.520), # right_pinky
-            19: (0.345, 0.520), # left_index
-            20: (0.655, 0.520), # right_index
-            21: (0.355, 0.510), # left_thumb
-            22: (0.645, 0.510), # right_thumb
-            # 골반
-            23: (0.420, 0.520), # left_hip
-            24: (0.580, 0.520), # right_hip
-            # 다리
-            25: (0.410, 0.700), # left_knee
-            26: (0.590, 0.700), # right_knee
-            27: (0.400, 0.880), # left_ankle
-            28: (0.600, 0.880), # right_ankle
-            # 발
-            29: (0.390, 0.920), # left_heel
-            30: (0.610, 0.920), # right_heel
-            31: (0.385, 0.900), # left_foot_index
-            32: (0.615, 0.900), # right_foot_index
+            # 얼굴 (코 중심으로 밀집, 얼굴은 몸보다 약간 앞)
+            0: (0.500, 0.140, -0.06),   # nose
+            1: (0.496, 0.128, -0.04),   # left_eye_inner
+            2: (0.492, 0.126, -0.05),   # left_eye
+            3: (0.488, 0.128, -0.04),   # left_eye_outer
+            4: (0.504, 0.128, -0.04),   # right_eye_inner
+            5: (0.508, 0.126, -0.05),   # right_eye
+            6: (0.512, 0.128, -0.04),   # right_eye_outer
+            7: (0.484, 0.134, -0.01),   # left_ear
+            8: (0.516, 0.134, -0.01),   # right_ear
+            9: (0.497, 0.148, -0.05),   # mouth_left
+            10: (0.503, 0.148, -0.05),  # mouth_right
+            # 어깨 (몸통 기준면)
+            11: (0.380, 0.220, 0.0),    # left_shoulder
+            12: (0.620, 0.220, 0.0),    # right_shoulder
+            # 팔 (내린 자세, 약간 앞쪽)
+            13: (0.360, 0.370, -0.03),  # left_elbow
+            14: (0.640, 0.370, -0.03),  # right_elbow
+            15: (0.350, 0.500, -0.05),  # left_wrist
+            16: (0.650, 0.500, -0.05),  # right_wrist
+            # 손 (손목보다 약간 앞)
+            17: (0.340, 0.520, -0.06),  # left_pinky
+            18: (0.660, 0.520, -0.06),  # right_pinky
+            19: (0.345, 0.520, -0.07),  # left_index
+            20: (0.655, 0.520, -0.07),  # right_index
+            21: (0.355, 0.510, -0.06),  # left_thumb
+            22: (0.645, 0.510, -0.06),  # right_thumb
+            # 골반 (어깨와 같은 면)
+            23: (0.420, 0.520, 0.0),    # left_hip
+            24: (0.580, 0.520, 0.0),    # right_hip
+            # 다리 (무릎은 약간 앞)
+            25: (0.410, 0.700, -0.03),  # left_knee
+            26: (0.590, 0.700, -0.03),  # right_knee
+            27: (0.400, 0.880, -0.02),  # left_ankle
+            28: (0.600, 0.880, -0.02),  # right_ankle
+            # 발 (발끝은 앞, 발꿈치는 뒤)
+            29: (0.390, 0.920, 0.02),   # left_heel
+            30: (0.610, 0.920, 0.02),   # right_heel
+            31: (0.385, 0.900, -0.08),  # left_foot_index
+            32: (0.615, 0.900, -0.08),  # right_foot_index
         }
 
         landmarks = []
         for i in range(33):
-            x, y = positions.get(i, (0.5, 0.5))
+            x, y, z = positions.get(i, (0.5, 0.5, 0.0))
             landmarks.append({
                 'x': x,
                 'y': y,
-                'z': 0.0,
+                'z': z,
                 'visibility': 1.0
             })
         return landmarks
