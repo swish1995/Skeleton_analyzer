@@ -671,7 +671,9 @@ class PlayerWidget(QWidget):
 
             frame = self._video_player.read_frame()
             if frame is not None:
-                self._display_frame(self._apply_transforms(frame))
+                frame = self._apply_transforms(frame)
+                self._display_frame(frame)
+                self.frame_changed.emit(frame, 0)
                 self._video_player.seek(0)
 
             self._capture_btn.setEnabled(True)
