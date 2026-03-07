@@ -141,18 +141,18 @@ class PoseDetector:
         """기본 T-포즈 랜드마크 생성 (33개, 정규화 좌표 0~1)"""
         # MediaPipe Pose 33개 랜드마크 기본 위치 (팔 내린 자세)
         positions = {
-            # 얼굴
+            # 얼굴 (코 중심으로 밀집)
             0: (0.500, 0.140),  # nose
-            1: (0.490, 0.120),  # left_eye_inner
-            2: (0.480, 0.118),  # left_eye
-            3: (0.470, 0.120),  # left_eye_outer
-            4: (0.510, 0.120),  # right_eye_inner
-            5: (0.520, 0.118),  # right_eye
-            6: (0.530, 0.120),  # right_eye_outer
-            7: (0.460, 0.130),  # left_ear
-            8: (0.540, 0.130),  # right_ear
-            9: (0.495, 0.155),  # mouth_left
-            10: (0.505, 0.155), # mouth_right
+            1: (0.496, 0.128),  # left_eye_inner
+            2: (0.492, 0.126),  # left_eye
+            3: (0.488, 0.128),  # left_eye_outer
+            4: (0.504, 0.128),  # right_eye_inner
+            5: (0.508, 0.126),  # right_eye
+            6: (0.512, 0.128),  # right_eye_outer
+            7: (0.484, 0.134),  # left_ear
+            8: (0.516, 0.134),  # right_ear
+            9: (0.497, 0.148),  # mouth_left
+            10: (0.503, 0.148), # mouth_right
             # 어깨
             11: (0.380, 0.220), # left_shoulder
             12: (0.620, 0.220), # right_shoulder

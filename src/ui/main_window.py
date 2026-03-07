@@ -1172,10 +1172,9 @@ class MainWindow(QMainWindow):
         landmarks = PoseDetector.create_default_landmarks()
         self.status_widget._skeleton_widget.set_landmarks(landmarks)
 
-        # 편집 모드 자동 진입 + 캡처 버튼 표시
+        # 편집 모드 진입 + 시뮬레이션 컨트롤 바 표시
         self.status_widget._skeleton_widget.set_edit_mode(True)
-        self.status_widget._skeleton_widget.show_control_bar()
-        self.status_widget._skeleton_widget.show_capture_btn(True)
+        self.status_widget._skeleton_widget.set_simulation_mode(True)
 
         # 초기 각도/점수 계산
         self.status_widget._on_landmarks_edited(landmarks)
@@ -1185,12 +1184,18 @@ class MainWindow(QMainWindow):
 
     def _exit_simulation(self):
         """시뮬레이션 모드 해제"""
-        # 편집 모드 해제
+        # 편집 모드 해제 + 시뮬레이션 컨트롤 바 숨기기
+        self.status_widget._skeleton_widget.set_simulation_mode(False)
         self.status_widget._skeleton_widget.exit_edit_mode()
-        self.status_widget._skeleton_widget.show_capture_btn(False)
 
-        # 플레이어 위젯 복원
+        # 포즈/각도/평가 클리어
+        self.status_widget._skeleton_widget.clear()
+        self.status_widget._angle_widget.clear()
+        self.status_widget._ergonomic_widget.clear()
+
+        # 플레이어 위젯 복원 + 현재 프레임 다시 표시
         self.player_widget.show()
+        self.player_widget._refresh_current_frame()
 
         # 불러오기/저장 활성화
         self._open_btn.setEnabled(True)

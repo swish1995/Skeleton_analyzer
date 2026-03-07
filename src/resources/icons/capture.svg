@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 뷰파인더 코너 -->
+  <path d="M2 2 L8 2"/>
+  <path d="M2 2 L2 8"/>
+  <path d="M16 2 L22 2"/>
+  <path d="M22 2 L22 8"/>
+  <path d="M2 16 L2 22"/>
+  <path d="M2 22 L8 22"/>
+  <path d="M22 16 L22 22"/>
+  <path d="M16 22 L22 22"/>
+  <!-- 중앙 원 -->
+  <circle cx="12" cy="12" r="4"/>
+</svg>
