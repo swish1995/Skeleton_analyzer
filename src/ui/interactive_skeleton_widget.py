@@ -574,7 +574,11 @@ class InteractiveSkeletonWidget(QWidget):
                 self._skeleton.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
                 self._skeleton.update()
                 return True
-            elif self._edit_mode:
+            else:
+                # 빈 영역 클릭 → 편집 모드 자동 진입
+                if not self._edit_mode:
+                    if not self._enter_edit_mode_if_needed():
+                        return False
                 # 편집 모드에서 빈 영역 좌클릭 → 뷰 회전 드래그
                 self._rotating_view = True
                 self._last_mouse_pos = pos
