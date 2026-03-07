@@ -21,11 +21,24 @@ class PoseResult:
 class PoseDetector:
     """MediaPipe 기반 인체 포즈 감지 클래스"""
 
-    MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
-    MODEL_PATH = os.path.join(os.path.dirname(__file__), "pose_landmarker.task")
+    MODELS = {
+        'lite': {
+            'url': "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+            'filename': "pose_landmarker_lite.task",
+        },
+        'full': {
+            'url': "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+            'filename': "pose_landmarker_full.task",
+        },
+        'heavy': {
+            'url': "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
+            'filename': "pose_landmarker_heavy.task",
+        },
+    }
 
     def __init__(
         self,
+        model_type: str = 'lite',
         min_detection_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5
     ):
@@ -33,24 +46,36 @@ class PoseDetector:
         PoseDetector 초기화
 
         Args:
+            model_type: 모델 타입 ('lite', 'full', 'heavy')
             min_detection_confidence: 최소 감지 신뢰도
             min_tracking_confidence: 최소 추적 신뢰도
         """
+        self._model_type = model_type if model_type in self.MODELS else 'lite'
         self._min_detection_confidence = min_detection_confidence
         self._min_tracking_confidence = min_tracking_confidence
         self._landmarker = None
         self._initialize()
 
+    @property
+    def model_type(self) -> str:
+        return self._model_type
+
+    def _get_model_path(self) -> str:
+        info = self.MODELS[self._model_type]
+        return os.path.join(os.path.dirname(__file__), info['filename'])
+
     def _download_model(self):
         """모델 파일 다운로드"""
-        if not os.path.exists(self.MODEL_PATH):
-            urllib.request.urlretrieve(self.MODEL_URL, self.MODEL_PATH)
+        model_path = self._get_model_path()
+        if not os.path.exists(model_path):
+            url = self.MODELS[self._model_type]['url']
+            urllib.request.urlretrieve(url, model_path)
 
     def _initialize(self):
         """MediaPipe PoseLandmarker 초기화"""
         self._download_model()
 
-        base_options = python.BaseOptions(model_asset_path=self.MODEL_PATH)
+        base_options = python.BaseOptions(model_asset_path=self._get_model_path())
         options = vision.PoseLandmarkerOptions(
             base_options=base_options,
             running_mode=vision.RunningMode.IMAGE,
@@ -59,6 +84,16 @@ class PoseDetector:
             min_tracking_confidence=self._min_tracking_confidence
         )
         self._landmarker = vision.PoseLandmarker.create_from_options(options)
+
+    def change_model(self, model_type: str):
+        """모델 변경"""
+        if model_type == self._model_type:
+            return
+        if model_type not in self.MODELS:
+            return
+        self.release()
+        self._model_type = model_type
+        self._initialize()
 
     def detect(self, image: np.ndarray) -> PoseResult:
         """

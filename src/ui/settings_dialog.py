@@ -1,15 +1,57 @@
 """설정 다이얼로그 모듈"""
 
+import os
+import urllib.request
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QLineEdit, QPushButton, QCheckBox,
-    QFileDialog, QDialogButtonBox, QFormLayout
+    QFileDialog, QDialogButtonBox, QFormLayout, QComboBox,
+    QProgressDialog, QMessageBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from typing import TYPE_CHECKING
+
+from ..license import LicenseManager
 
 if TYPE_CHECKING:
     from ..utils.config import Config
+
+
+class ModelDownloadThread(QThread):
+    """모델 다운로드 스레드"""
+    progress = pyqtSignal(int)  # 퍼센트 (0~100)
+    finished = pyqtSignal(bool, str)  # 성공여부, 메시지
+
+    def __init__(self, url: str, save_path: str):
+        super().__init__()
+        self._url = url
+        self._save_path = save_path
+        self._cancelled = False
+
+    def cancel(self):
+        self._cancelled = True
+
+    def run(self):
+        try:
+            def reporthook(block_num, block_size, total_size):
+                if self._cancelled:
+                    raise InterruptedError("다운로드 취소됨")
+                if total_size > 0:
+                    percent = int(block_num * block_size * 100 / total_size)
+                    self.progress.emit(min(percent, 100))
+
+            urllib.request.urlretrieve(self._url, self._save_path, reporthook)
+            if not self._cancelled:
+                self.finished.emit(True, "다운로드 완료")
+        except InterruptedError:
+            # 취소 시 불완전 파일 삭제
+            if os.path.exists(self._save_path):
+                os.remove(self._save_path)
+            self.finished.emit(False, "다운로드가 취소되었습니다.")
+        except Exception as e:
+            if os.path.exists(self._save_path):
+                os.remove(self._save_path)
+            self.finished.emit(False, f"다운로드 실패: {e}")
 
 
 class SettingsDialog(QDialog):
@@ -83,6 +125,29 @@ class SettingsDialog(QDialog):
 
         layout.addWidget(image_group)
 
+        # 감지 모델 설정 그룹
+        model_group = QGroupBox("포즈 감지")
+        model_layout = QFormLayout(model_group)
+
+        self._model_combo = QComboBox()
+        self._model_combo.addItem("Lite (빠름, 보통 정확도)", "lite")
+        self._model_combo.addItem("Full (보통, 좋은 정확도)", "full")
+        self._model_combo.addItem("Heavy (느림, 최고 정확도)", "heavy")
+
+        is_licensed = LicenseManager.instance().check_feature('model_change')
+        self._model_combo.setEnabled(is_licensed)
+
+        self._model_note = QLabel(
+            "※ 모델 변경은 등록 버전에서 사용할 수 있습니다." if not is_licensed
+            else "※ 모델 변경 시 자동 다운로드됩니다. 적용은 재시작 후."
+        )
+        self._model_note.setStyleSheet("color: #888; font-size: 11px;")
+
+        model_layout.addRow("감지 모델:", self._model_combo)
+        model_layout.addRow("", self._model_note)
+
+        layout.addWidget(model_group)
+
         # 버튼
         button_box = QDialogButtonBox()
         ok_btn = button_box.addButton("확인", QDialogButtonBox.ButtonRole.AcceptRole)
@@ -122,6 +187,12 @@ class SettingsDialog(QDialog):
             self._config.get("images.confirm_before_delete", True)
         )
 
+        model_type = self._config.get("detection.model_type", "lite")
+        idx = self._model_combo.findData(model_type)
+        if idx >= 0:
+            self._model_combo.setCurrentIndex(idx)
+        self._original_model_type = model_type
+
     def _save_and_accept(self):
         """설정 저장 후 다이얼로그 닫기"""
         # 디렉토리 설정
@@ -133,5 +204,76 @@ class SettingsDialog(QDialog):
         self._config.set("images.auto_delete_on_row_delete", self._auto_delete_checkbox.isChecked())
         self._config.set("images.confirm_before_delete", self._confirm_delete_checkbox.isChecked())
 
+        # 감지 모델 설정 (등록 시에만)
+        if self._model_combo.isEnabled():
+            new_model = self._model_combo.currentData()
+            if new_model != self._original_model_type:
+                self._download_model_if_needed(new_model)
+                return  # 다운로드 완료 콜백에서 저장/닫기 처리
+
         self._config.save()
         self.accept()
+
+    def _download_model_if_needed(self, model_type: str):
+        """모델 파일이 없으면 다운로드"""
+        from ..core.pose_detector import PoseDetector
+
+        info = PoseDetector.MODELS[model_type]
+        model_path = os.path.join(
+            os.path.dirname(os.path.abspath(PoseDetector.__module__.replace('.', '/') + '.py')),
+            info['filename']
+        )
+        # 실제 경로 계산
+        import inspect
+        model_dir = os.path.dirname(inspect.getfile(PoseDetector))
+        model_path = os.path.join(model_dir, info['filename'])
+
+        if os.path.exists(model_path):
+            # 이미 다운로드됨
+            self._config.set("detection.model_type", model_type)
+            self._config.save()
+            QMessageBox.information(
+                self, "모델 변경",
+                f"감지 모델이 '{model_type.upper()}'로 변경되었습니다.\n재시작 후 적용됩니다."
+            )
+            self.accept()
+            return
+
+        # 다운로드 필요
+        self._download_thread = ModelDownloadThread(info['url'], model_path)
+
+        progress = QProgressDialog(
+            f"'{model_type.upper()}' 모델 다운로드 중...",
+            "취소", 0, 100, self
+        )
+        progress.setWindowTitle("모델 다운로드")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
+        self._progress_dialog = progress
+
+        def on_progress(percent):
+            progress.setValue(percent)
+
+        def on_finished(success, message):
+            progress.close()
+            self._download_thread.deleteLater()
+            if success:
+                self._config.set("detection.model_type", model_type)
+                self._config.save()
+                QMessageBox.information(
+                    self, "모델 다운로드 완료",
+                    f"'{model_type.upper()}' 모델 다운로드가 완료되었습니다.\n재시작 후 적용됩니다."
+                )
+                self.accept()
+            else:
+                # 콤보박스를 원래 값으로 복원
+                idx = self._model_combo.findData(self._original_model_type)
+                if idx >= 0:
+                    self._model_combo.setCurrentIndex(idx)
+                QMessageBox.warning(self, "모델 다운로드 실패", message)
+
+        progress.canceled.connect(self._download_thread.cancel)
+        self._download_thread.progress.connect(on_progress)
+        self._download_thread.finished.connect(on_finished)
+        self._download_thread.start()

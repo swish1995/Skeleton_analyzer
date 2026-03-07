@@ -35,7 +35,8 @@ class StatusWidget(QWidget):
     def __init__(self, config: Optional[Config] = None):
         super().__init__()
         self._config = config
-        self._pose_detector = PoseDetector()
+        model_type = config.get("detection.model_type", "lite") if config else "lite"
+        self._pose_detector = PoseDetector(model_type=model_type)
         self._angle_calculator = AngleCalculator()
         self._image_saver = ImageSaver(config=config)
         self._current_timestamp = 0.0
