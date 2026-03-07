@@ -90,7 +90,15 @@ class InteractiveSkeletonWidget(QWidget):
         # 드래그 상태
         self._dragging_joint: Optional[int] = None
         self._panning = False
+        self._rotating_view = False
         self._last_mouse_pos = QPointF()
+
+        # 선택된 관절 (z축 이동용)
+        self._selected_joint: Optional[int] = None
+
+        # 뷰 회전 (degree)
+        self._view_yaw = 0.0    # Y축 회전 (좌우)
+        self._view_pitch = 0.0  # X축 회전 (상하)
 
         self._init_ui()
 
@@ -152,6 +160,15 @@ class InteractiveSkeletonWidget(QWidget):
         self._reset_btn.clicked.connect(self._reset_all)
         ctrl_layout.addWidget(self._reset_btn)
 
+        # z축 이동 (선택 관절)
+        self._depth_fwd_btn = _ctrl_btn("앞으로", "depth_forward", '#8a5ab8', '#7a4aa8', '#9a6ac8')
+        self._depth_fwd_btn.clicked.connect(lambda: self._move_z(-0.05))
+        ctrl_layout.addWidget(self._depth_fwd_btn)
+
+        self._depth_bwd_btn = _ctrl_btn("뒤로", "depth_backward", '#8a5ab8', '#7a4aa8', '#9a6ac8')
+        self._depth_bwd_btn.clicked.connect(lambda: self._move_z(0.05))
+        ctrl_layout.addWidget(self._depth_bwd_btn)
+
         ctrl_layout.addStretch()
 
         # 확대
@@ -166,6 +183,71 @@ class InteractiveSkeletonWidget(QWidget):
 
         layout.addWidget(self._control_bar)
         layout.addWidget(self._skeleton, 1)
+
+        # ── 뷰 회전 오버레이 방향패드 (편집 모드에서만 표시) ──
+        self._dpad = QWidget(self._skeleton)
+        self._dpad.setVisible(False)
+        self._dpad.setFixedSize(90, 90)
+        self._dpad.setStyleSheet("background: transparent;")
+
+        dpad_style = """
+            QPushButton {
+                background: rgba(60, 60, 70, 180);
+                color: white; border: 1px solid rgba(100, 100, 120, 150);
+                font-size: 14px; font-weight: bold;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background: rgba(80, 80, 100, 200); }
+            QPushButton:pressed { background: rgba(40, 40, 50, 220); }
+        """
+        center_style = """
+            QPushButton {
+                background: rgba(80, 80, 100, 180);
+                color: white; border: 1px solid rgba(120, 120, 140, 150);
+                font-size: 10px; font-weight: bold;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background: rgba(100, 100, 130, 200); }
+            QPushButton:pressed { background: rgba(50, 50, 70, 220); }
+        """
+
+        btn_size = 26
+
+        # 상 (X축 회전 - 위에서 보기)
+        self._dpad_up = QPushButton("▲", self._dpad)
+        self._dpad_up.setFixedSize(btn_size, btn_size)
+        self._dpad_up.move(32, 0)
+        self._dpad_up.setStyleSheet(dpad_style)
+        self._dpad_up.clicked.connect(lambda: self._rotate_view(-10, 0))
+
+        # 하 (X축 회전 - 아래에서 보기)
+        self._dpad_down = QPushButton("▼", self._dpad)
+        self._dpad_down.setFixedSize(btn_size, btn_size)
+        self._dpad_down.move(32, 64)
+        self._dpad_down.setStyleSheet(dpad_style)
+        self._dpad_down.clicked.connect(lambda: self._rotate_view(10, 0))
+
+        # 좌 (Y축 회전 - 왼쪽에서 보기)
+        self._dpad_left = QPushButton("◀", self._dpad)
+        self._dpad_left.setFixedSize(btn_size, btn_size)
+        self._dpad_left.move(0, 32)
+        self._dpad_left.setStyleSheet(dpad_style)
+        self._dpad_left.clicked.connect(lambda: self._rotate_view(0, -10))
+
+        # 우 (Y축 회전 - 오른쪽에서 보기)
+        self._dpad_right = QPushButton("▶", self._dpad)
+        self._dpad_right.setFixedSize(btn_size, btn_size)
+        self._dpad_right.move(64, 32)
+        self._dpad_right.setStyleSheet(dpad_style)
+        self._dpad_right.clicked.connect(lambda: self._rotate_view(0, 10))
+
+        # 중앙 (리셋)
+        self._dpad_center = QPushButton("●", self._dpad)
+        self._dpad_center.setFixedSize(btn_size, btn_size)
+        self._dpad_center.move(32, 32)
+        self._dpad_center.setStyleSheet(center_style)
+        self._dpad_center.setToolTip("정면 뷰로 리셋")
+        self._dpad_center.clicked.connect(self._reset_view_rotation)
 
     # === 공개 API ===
 
@@ -198,11 +280,18 @@ class InteractiveSkeletonWidget(QWidget):
             if self._edit_landmarks:
                 self._original_landmarks = copy.deepcopy(self._edit_landmarks)
             self._reset_btn.setEnabled(True)
+            self._dpad.setVisible(True)
+            self._update_dpad_position()
         else:
             # 편집 모드 해제
             self._dragging_joint = None
+            self._selected_joint = None
             self._original_landmarks = None
             self._reset_btn.setEnabled(False)
+            self._dpad.setVisible(False)
+            # 뷰 회전 초기화
+            self._view_yaw = 0.0
+            self._view_pitch = 0.0
             # 트랜스폼 초기화
             self._reset_transform()
 
@@ -240,8 +329,11 @@ class InteractiveSkeletonWidget(QWidget):
     # === 내부 메서드 ===
 
     def _reset_all(self):
-        """초기화: 관절 위치를 원본으로 복원 + 뷰 트랜스폼 초기화"""
+        """초기화: 관절 위치를 원본으로 복원 + 뷰 트랜스폼 + 뷰 회전 초기화"""
         self._reset_transform()
+        self._view_yaw = 0.0
+        self._view_pitch = 0.0
+        self._selected_joint = None
         if self._original_landmarks:
             self._edit_landmarks = copy.deepcopy(self._original_landmarks)
             self._skeleton.set_landmarks(self._edit_landmarks)
@@ -484,14 +576,22 @@ class InteractiveSkeletonWidget(QWidget):
                 if not self._enter_edit_mode_if_needed():
                     return False
                 self._dragging_joint = joint_idx
+                self._selected_joint = joint_idx
                 self._skeleton.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+                self._skeleton.update()
                 return True
             elif self._edit_mode:
-                # 편집 모드에서 빈 영역 → 팬 시작
-                self._panning = True
+                # 편집 모드에서 빈 영역 좌클릭 → 뷰 회전 드래그
+                self._rotating_view = True
                 self._last_mouse_pos = pos
-                self._skeleton.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+                self._skeleton.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
                 return True
+        elif event.button() == Qt.MouseButton.RightButton and self._edit_mode:
+            # 우클릭 → 팬
+            self._panning = True
+            self._last_mouse_pos = pos
+            self._skeleton.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+            return True
         elif event.button() == Qt.MouseButton.MiddleButton and self._edit_mode:
             self._panning = True
             self._last_mouse_pos = pos
@@ -536,6 +636,15 @@ class InteractiveSkeletonWidget(QWidget):
             self.landmarks_changed.emit(self._edit_landmarks)
             return True
 
+        elif getattr(self, '_rotating_view', False):
+            # 뷰 회전 드래그
+            delta = pos - self._last_mouse_pos
+            self._view_yaw += delta.x() * 0.5
+            self._view_pitch += delta.y() * 0.5
+            self._last_mouse_pos = pos
+            self._skeleton.update()
+            return True
+
         elif self._panning:
             # 팬
             delta = pos - self._last_mouse_pos
@@ -557,6 +666,10 @@ class InteractiveSkeletonWidget(QWidget):
         """마우스 놓음"""
         if self._dragging_joint is not None:
             self._dragging_joint = None
+            self._skeleton.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+            return True
+        elif getattr(self, '_rotating_view', False):
+            self._rotating_view = False
             self._skeleton.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
             return True
         elif self._panning:
@@ -598,6 +711,10 @@ class InteractiveSkeletonWidget(QWidget):
 
         # 렌더링용 랜드마크 (어깨 좌표 조정)
         render_lms = self._skeleton._adjust_landmarks_for_render(landmarks)
+
+        # 뷰 회전이 있으면 3D 투영 적용
+        if self._edit_mode and (abs(self._view_yaw) > 0.1 or abs(self._view_pitch) > 0.1):
+            render_lms = self._apply_3d_projection(render_lms)
 
         # 편집 모드에서 트랜스폼 적용
         if self._edit_mode:
@@ -642,6 +759,11 @@ class InteractiveSkeletonWidget(QWidget):
                     painter.setBrush(Qt.BrushStyle.NoBrush)
                     painter.setPen(QPen(QColor(0, 255, 128, 180), 3))
                     painter.drawEllipse(x - 12, y - 12, 24, 24)
+                # 선택된 관절 표시 (z축 이동 대상)
+                elif self._selected_joint == i:
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
+                    painter.setPen(QPen(QColor(255, 200, 0, 180), 2))
+                    painter.drawEllipse(x - 12, y - 12, 24, 24)
             else:
                 # 편집 불가 관절: 기존 스타일 (작게)
                 color = self._skeleton._get_joint_color(i)
@@ -649,3 +771,90 @@ class InteractiveSkeletonWidget(QWidget):
                 painter.setPen(QPen(Qt.GlobalColor.white, 1))
                 radius = 4
                 painter.drawEllipse(x - radius, y - radius, radius * 2, radius * 2)
+
+    # === z축 이동 ===
+
+    def _move_z(self, delta: float):
+        """선택된 관절의 z값 변경"""
+        if self._selected_joint is None or not self._edit_landmarks:
+            return
+        idx = self._selected_joint
+        if idx >= len(self._edit_landmarks):
+            return
+        lm = self._edit_landmarks[idx]
+        lm['z'] = lm.get('z', 0.0) + delta
+
+        # 자식 관절도 함께 이동
+        for child_idx in self._get_all_descendants(idx):
+            if child_idx < len(self._edit_landmarks):
+                clm = self._edit_landmarks[child_idx]
+                clm['z'] = clm.get('z', 0.0) + delta
+
+        self._skeleton.set_landmarks(self._edit_landmarks)
+        self.landmarks_changed.emit(self._edit_landmarks)
+
+    # === 뷰 회전 ===
+
+    def _rotate_view(self, d_pitch: float, d_yaw: float):
+        """뷰 회전 각도 변경"""
+        self._view_pitch += d_pitch
+        self._view_yaw += d_yaw
+        self._skeleton.update()
+
+    def _reset_view_rotation(self):
+        """뷰 회전 초기화 (정면)"""
+        self._view_yaw = 0.0
+        self._view_pitch = 0.0
+        self._skeleton.update()
+
+    def _apply_3d_projection(self, landmarks: List[Dict]) -> List[Dict]:
+        """뷰 회전을 적용한 3D→2D 투영"""
+        projected = copy.deepcopy(landmarks)
+
+        yaw_rad = math.radians(self._view_yaw)
+        pitch_rad = math.radians(self._view_pitch)
+        cos_y, sin_y = math.cos(yaw_rad), math.sin(yaw_rad)
+        cos_p, sin_p = math.cos(pitch_rad), math.sin(pitch_rad)
+
+        # 중심점 (0.5, 0.5)을 기준으로 회전
+        cx, cy = 0.5, 0.5
+
+        for lm in projected:
+            # 중심 기준 상대 좌표
+            x = lm['x'] - cx
+            y = lm['y'] - cy
+            z = lm.get('z', 0.0)
+
+            # Y축 회전 (좌우)
+            x2 = x * cos_y - z * sin_y
+            z2 = x * sin_y + z * cos_y
+
+            # X축 회전 (상하)
+            y2 = y * cos_p - z2 * sin_p
+            z3 = y * sin_p + z2 * cos_p
+
+            # 간단한 투영 (원근감)
+            perspective = 1.0 + z3 * 0.3
+            if perspective < 0.1:
+                perspective = 0.1
+
+            lm['x'] = x2 / perspective + cx
+            lm['y'] = y2 / perspective + cy
+
+        return projected
+
+    # === 방향패드 위치 ===
+
+    def _update_dpad_position(self):
+        """방향패드를 스켈레톤 위젯 우하단에 배치"""
+        sw = self._skeleton.width()
+        sh = self._skeleton.height()
+        dw = self._dpad.width()
+        dh = self._dpad.height()
+        self._dpad.move(sw - dw - 10, sh - dh - 10)
+
+    def resizeEvent(self, event):
+        """리사이즈 시 방향패드 위치 갱신"""
+        super().resizeEvent(event)
+        if self._dpad.isVisible():
+            self._update_dpad_position()
