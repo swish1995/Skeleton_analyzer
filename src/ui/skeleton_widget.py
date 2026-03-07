@@ -1,4 +1,5 @@
 """스켈레톤 시각화 위젯 모듈"""
+import copy
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QPalette, QPixmap
@@ -87,11 +88,14 @@ class SkeletonWidget(QWidget):
         h = self.height()
         margin = 20
 
+        # 렌더링용 랜드마크 (어깨 좌표를 골반 너비에 맞춰 조정)
+        render_lms = self._adjust_landmarks_for_render(self._landmarks)
+
         # 연결선 그리기
-        self._draw_connections(painter, w, h, margin)
+        self._draw_connections(painter, w, h, margin, render_lms)
 
         # 관절점 그리기
-        self._draw_joints(painter, w, h, margin)
+        self._draw_joints(painter, w, h, margin, render_lms)
 
     def _draw_connections(self, painter: QPainter, w: int, h: int, margin: int, landmarks=None):
         """연결선 그리기"""
@@ -141,6 +145,46 @@ class SkeletonWidget(QWidget):
             # 원 그리기
             radius = 5
             painter.drawEllipse(x - radius, y - radius, radius * 2, radius * 2)
+
+    @staticmethod
+    def _adjust_landmarks_for_render(landmarks: List[Dict]) -> List[Dict]:
+        """렌더링용 랜드마크 생성: 어깨(11,12) x좌표를 골반(23,24) 너비에 맞춰 조정"""
+        if not landmarks or len(landmarks) < 25:
+            return landmarks
+
+        # visibility 체크 - 몸통 랜드마크가 보이지 않으면 조정 불가
+        torso_indices = [11, 12, 23, 24]
+        if any(landmarks[i].get('visibility', 1) < 0.5 for i in torso_indices):
+            return landmarks
+
+        adjusted = copy.deepcopy(landmarks)
+
+        lsh_x = landmarks[11]['x']
+        rsh_x = landmarks[12]['x']
+        lhip_x = landmarks[23]['x']
+        rhip_x = landmarks[24]['x']
+
+        # 어깨/골반 중심과 반폭
+        sh_cx = (lsh_x + rsh_x) / 2
+        sh_hw = abs(rsh_x - lsh_x) / 2
+        hip_hw = abs(rhip_x - lhip_x) / 2
+
+        # 어깨가 골반보다 좁으면 조정 불필요
+        if sh_hw <= hip_hw:
+            return landmarks
+
+        # 어깨 x좌표를 골반 너비로 좁힘
+        offset = sh_hw - hip_hw  # 한쪽당 안쪽으로 이동할 양
+
+        # 왼어깨(11): 어깨 중심 기준 왼쪽이면 오른쪽으로, 오른쪽이면 왼쪽으로
+        if lsh_x < rsh_x:
+            adjusted[11]['x'] = lsh_x + offset
+            adjusted[12]['x'] = rsh_x - offset
+        else:
+            adjusted[11]['x'] = lsh_x - offset
+            adjusted[12]['x'] = rsh_x + offset
+
+        return adjusted
 
     def _get_connection_color(self, start_idx: int, end_idx: int) -> QColor:
         """연결선 색상 결정"""

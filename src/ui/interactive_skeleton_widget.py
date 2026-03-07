@@ -395,6 +395,8 @@ class InteractiveSkeletonWidget(QWidget):
             landmarks = self._skeleton._landmarks
         if not landmarks:
             return None
+        # 렌더링 위치와 일치하도록 조정된 좌표 사용
+        landmarks = self._skeleton._adjust_landmarks_for_render(landmarks)
 
         logical = self._screen_to_logical(screen_pos)
         w = self._skeleton.width()
@@ -486,12 +488,15 @@ class InteractiveSkeletonWidget(QWidget):
 
             idx = self._dragging_joint
             lm = self._edit_landmarks[idx]
-            old_x, old_y = lm['x'], lm['y']
-            dx, dy = nx - old_x, ny - old_y
 
-            # 1) 드래그 대상 관절 이동
-            lm['x'] = nx
-            lm['y'] = ny
+            # 렌더링 조정된 좌표 기준으로 delta 계산 (어깨 위치 보정 반영)
+            render_lms = self._skeleton._adjust_landmarks_for_render(self._edit_landmarks)
+            adj_x, adj_y = render_lms[idx]['x'], render_lms[idx]['y']
+            dx, dy = nx - adj_x, ny - adj_y
+
+            # 1) 드래그 대상 관절 이동 (원본에 delta 적용)
+            lm['x'] = max(0.0, min(1.0, lm['x'] + dx))
+            lm['y'] = max(0.0, min(1.0, lm['y'] + dy))
 
             # 2) 자식 관절 연동 이동
             children = self._get_all_descendants(idx)
@@ -568,18 +573,21 @@ class InteractiveSkeletonWidget(QWidget):
         h = self._skeleton.height()
         margin = 20
 
+        # 렌더링용 랜드마크 (어깨 좌표 조정)
+        render_lms = self._skeleton._adjust_landmarks_for_render(landmarks)
+
         # 편집 모드에서 트랜스폼 적용
         if self._edit_mode:
             painter.setTransform(self._build_transform())
 
         # 연결선 그리기
-        self._skeleton._draw_connections(painter, w, h, margin, landmarks)
+        self._skeleton._draw_connections(painter, w, h, margin, render_lms)
 
         # 관절점 그리기 (편집 모드에서는 편집 가능 관절 강조)
         if self._edit_mode:
-            self._draw_joints_interactive(painter, w, h, margin, landmarks)
+            self._draw_joints_interactive(painter, w, h, margin, render_lms)
         else:
-            self._skeleton._draw_joints(painter, w, h, margin, landmarks)
+            self._skeleton._draw_joints(painter, w, h, margin, render_lms)
 
     def _draw_joints_interactive(self, painter: QPainter, w: int, h: int, margin: int, landmarks):
         """인터랙티브 모드 관절점 그리기 (편집 가능 관절 강조)"""
