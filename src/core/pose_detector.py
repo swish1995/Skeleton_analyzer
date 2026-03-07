@@ -6,7 +6,6 @@ from typing import Optional, List
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import urllib.request
 import os
 
 
@@ -36,6 +35,9 @@ class PoseDetector:
         },
     }
 
+    # 구버전 모델 파일명 (fallback용)
+    LEGACY_MODEL_FILENAME = "pose_landmarker.task"
+
     def __init__(
         self,
         model_type: str = 'lite',
@@ -60,22 +62,42 @@ class PoseDetector:
     def model_type(self) -> str:
         return self._model_type
 
+    @classmethod
+    def model_dir(cls) -> str:
+        return os.path.dirname(__file__)
+
     def _get_model_path(self) -> str:
         info = self.MODELS[self._model_type]
-        return os.path.join(os.path.dirname(__file__), info['filename'])
+        model_path = os.path.join(self.model_dir(), info['filename'])
+        # fallback: 새 이름이 없고 구버전 파일이 있으면 사용 (lite 한정)
+        if not os.path.exists(model_path) and self._model_type == 'lite':
+            legacy_path = os.path.join(self.model_dir(), self.LEGACY_MODEL_FILENAME)
+            if os.path.exists(legacy_path):
+                return legacy_path
+        return model_path
 
-    def _download_model(self):
-        """모델 파일 다운로드"""
-        model_path = self._get_model_path()
-        if not os.path.exists(model_path):
-            url = self.MODELS[self._model_type]['url']
-            urllib.request.urlretrieve(url, model_path)
+    @classmethod
+    def is_model_available(cls, model_type: str) -> bool:
+        """모델 파일이 로컬에 존재하는지 확인"""
+        if model_type not in cls.MODELS:
+            return False
+        info = cls.MODELS[model_type]
+        model_path = os.path.join(cls.model_dir(), info['filename'])
+        if os.path.exists(model_path):
+            return True
+        # lite fallback
+        if model_type == 'lite':
+            legacy_path = os.path.join(cls.model_dir(), cls.LEGACY_MODEL_FILENAME)
+            return os.path.exists(legacy_path)
+        return False
 
     def _initialize(self):
         """MediaPipe PoseLandmarker 초기화"""
-        self._download_model()
+        model_path = self._get_model_path()
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {model_path}")
 
-        base_options = python.BaseOptions(model_asset_path=self._get_model_path())
+        base_options = python.BaseOptions(model_asset_path=model_path)
         options = vision.PoseLandmarkerOptions(
             base_options=base_options,
             running_mode=vision.RunningMode.IMAGE,

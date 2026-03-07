@@ -35,8 +35,7 @@ class StatusWidget(QWidget):
     def __init__(self, config: Optional[Config] = None):
         super().__init__()
         self._config = config
-        model_type = config.get("detection.model_type", "lite") if config else "lite"
-        self._pose_detector = PoseDetector(model_type=model_type)
+        self._pose_detector = self._create_pose_detector()
         self._angle_calculator = AngleCalculator()
         self._image_saver = ImageSaver(config=config)
         self._current_timestamp = 0.0
@@ -570,6 +569,51 @@ class StatusWidget(QWidget):
         """설정 다이얼로그 열기"""
         dialog = SettingsDialog(self._config, self)
         dialog.exec()
+
+    def _create_pose_detector(self) -> PoseDetector:
+        """PoseDetector 생성 (모델 없으면 다운로드 다이얼로그 표시)"""
+        model_type = self._config.get("detection.model_type", "lite") if self._config else "lite"
+
+        if PoseDetector.is_model_available(model_type):
+            return PoseDetector(model_type=model_type)
+
+        # 모델이 없으면 다운로드 다이얼로그 표시
+        from .settings_dialog import ModelDownloadDialog
+        info = PoseDetector.MODELS[model_type]
+        import os, inspect
+        model_dir = os.path.dirname(inspect.getfile(PoseDetector))
+        model_path = os.path.join(model_dir, info['filename'])
+
+        dialog = ModelDownloadDialog(
+            model_type.upper(), info['url'], model_path, self
+        )
+        dialog.start()
+        dialog.exec()
+
+        if dialog.success:
+            return PoseDetector(model_type=model_type)
+
+        # 다운로드 실패 시 lite fallback 시도
+        if model_type != 'lite' and PoseDetector.is_model_available('lite'):
+            if self._config:
+                self._config.set("detection.model_type", "lite")
+                self._config.save()
+            return PoseDetector(model_type='lite')
+
+        # lite도 없으면 lite 다운로드
+        if not PoseDetector.is_model_available('lite'):
+            lite_info = PoseDetector.MODELS['lite']
+            lite_path = os.path.join(model_dir, lite_info['filename'])
+            dialog2 = ModelDownloadDialog(
+                'LITE', lite_info['url'], lite_path, self
+            )
+            dialog2.start()
+            dialog2.exec()
+
+        if self._config:
+            self._config.set("detection.model_type", "lite")
+            self._config.save()
+        return PoseDetector(model_type='lite')
 
     def release(self):
         """리소스 해제"""
