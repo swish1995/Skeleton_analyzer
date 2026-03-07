@@ -595,9 +595,12 @@
             <div class="toc-item"><span class="num">7.</span>데이터 캡처</div>
             <div class="toc-item"><span class="num">8.</span>인체공학 평가</div>
             <div class="toc-item"><span class="num">9.</span>스켈레톤 편집</div>
-            <div class="toc-item"><span class="num">10.</span>움직임 빈도 분석</div>
-            <div class="toc-item"><span class="num">11.</span>데이터 내보내기</div>
-            <div class="toc-item"><span class="num">12.</span>단축키 모음</div>
+            <div class="toc-item"><span class="num">10.</span>시뮬레이션 모드</div>
+            <div class="toc-item"><span class="num">11.</span>3D 뷰 회전</div>
+            <div class="toc-item"><span class="num">12.</span>감지 모델 설정</div>
+            <div class="toc-item"><span class="num">13.</span>움직임 빈도 분석</div>
+            <div class="toc-item"><span class="num">14.</span>데이터 내보내기</div>
+            <div class="toc-item"><span class="num">15.</span>단축키 모음</div>
         </div>
     </div>
 
@@ -1209,7 +1212,7 @@
                 </div>
                 <div class="step">
                     <div class="step-num">2</div>
-                    <div class="step-content">스켈레톤 시각화 패널에서 관절점을 <strong>클릭</strong>하면 자동으로 편집 모드에 진입하고 영상이 일시정지됩니다</div>
+                    <div class="step-content">스켈레톤 시각화 패널의 <strong>아무 영역을 클릭</strong>하면 자동으로 편집 모드에 진입하고 영상이 일시정지됩니다</div>
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
@@ -1233,16 +1236,24 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>관절 이동 (편집 자동 시작)</td>
+                        <td>편집 모드 진입</td>
+                        <td>스켈레톤 영역 <strong>아무 곳이나 좌클릭</strong> (자동 진입)</td>
+                    </tr>
+                    <tr>
+                        <td>관절 이동</td>
                         <td>편집 가능 관절을 <strong>좌클릭 드래그</strong></td>
                     </tr>
                     <tr>
+                        <td>뷰 회전</td>
+                        <td>빈 영역을 <strong>좌클릭 드래그</strong> 또는 <strong>방향패드</strong></td>
+                    </tr>
+                    <tr>
                         <td>화면 이동 (팬)</td>
-                        <td>편집 모드에서 빈 영역을 <strong>좌클릭 드래그</strong></td>
+                        <td><strong>우클릭 드래그</strong> 또는 <strong>휠 클릭 드래그</strong></td>
                     </tr>
                     <tr>
                         <td>확대/축소</td>
-                        <td>편집 모드에서 <strong>마우스 휠</strong> 또는 상단 <strong>+/-</strong> 버튼</td>
+                        <td><strong>마우스 휠</strong> 또는 상단 <strong>+/-</strong> 버튼</td>
                     </tr>
                 </tbody>
             </table>
@@ -1260,11 +1271,15 @@
                 <tbody>
                     <tr>
                         <td><strong>초기화</strong></td>
-                        <td>관절 위치를 편집 전 상태로 복원하고, 확대/축소/이동도 함께 초기화합니다</td>
+                        <td>관절 위치를 편집 전 상태로 복원하고, 확대/축소/이동/뷰 회전도 함께 초기화합니다</td>
                     </tr>
                     <tr>
                         <td><strong>+ / -</strong></td>
                         <td>확대 / 축소</td>
+                    </tr>
+                    <tr>
+                        <td><strong>캡처</strong></td>
+                        <td>시뮬레이션 모드에서만 표시됩니다. 현재 자세를 스프레드시트에 캡처합니다</td>
                     </tr>
                 </tbody>
             </table>
@@ -1296,7 +1311,7 @@
 
         <div class="tip-box">
             <span class="tip-icon">💡</span>
-            <span class="tip-text"><strong>팁:</strong> 관절을 클릭하면 자동으로 편집 모드에 진입하고, 동영상을 다시 재생하면 자동으로 편집 모드가 해제됩니다. 초기화 버튼을 누르면 관절 위치와 확대/축소가 모두 원래 상태로 돌아갑니다.</span>
+            <span class="tip-text"><strong>팁:</strong> 스켈레톤 영역 아무 곳이나 클릭하면 자동으로 편집 모드에 진입하고, 동영상을 다시 재생하면 자동으로 해제됩니다. 초기화 버튼을 누르면 관절 위치, 확대/축소, 뷰 회전이 모두 원래 상태로 돌아갑니다.</span>
         </div>
 
         <div class="warning-box">
@@ -1305,7 +1320,177 @@
         </div>
     </div>
 
-    <!-- 10. 움직임 빈도 분석 -->
+    <!-- 10. 시뮬레이션 모드 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🎭</span> 시뮬레이션 모드</h2>
+        <p>
+            영상 없이 <strong>기본 인체 포즈를 로드</strong>하여 관절을 자유롭게 편집하고
+            RULA/REBA/OWAS 점수를 확인할 수 있습니다.
+            특정 자세의 점수를 미리 확인하거나, 점수 계산 로직을 테스트할 때 유용합니다.
+        </p>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🚀</span> 시뮬레이션 시작하기</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">메뉴 <strong>파일 → 시뮬레이션</strong> 또는 툴바의 <strong>시뮬레이션</strong> 버튼을 클릭합니다 (<kbd>Ctrl</kbd>+<kbd>M</kbd>)</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">기본 정면 서있는 포즈가 로드되고 자동으로 편집 모드에 진입합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">관절을 드래그하여 원하는 자세를 만듭니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">컨트롤 바의 <strong>캡처</strong> 버튼으로 현재 자세를 스프레드시트에 저장합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">5</div>
+                    <div class="step-content">시뮬레이션 버튼을 다시 클릭하면 종료되고 이전 상태로 복원됩니다</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">💡</span> 참고 사항</h3>
+            <ul>
+                <li>시뮬레이션 모드 진입 시 현재 스켈레톤 상태가 <strong>자동 백업</strong>됩니다</li>
+                <li>시뮬레이션 종료 시 백업된 스켈레톤이 <strong>자동 복원</strong>됩니다</li>
+                <li>시뮬레이션 중에는 동영상 열기/저장 버튼이 비활성화됩니다</li>
+                <li>기본 포즈는 현실적인 3D 깊이값(z)을 포함합니다</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 11. 3D 뷰 회전 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🔄</span> 3D 뷰 회전</h2>
+        <p>
+            편집 모드에서 스켈레톤을 <strong>3D로 회전</strong>하여 다양한 각도에서 자세를 확인할 수 있습니다.
+            뷰 회전 시 관절 드래그도 회전된 시점에 맞게 자동 보정됩니다.
+        </p>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🖱️</span> 조작 방법</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">동작</th>
+                        <th>방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>뷰 회전 (마우스)</td>
+                        <td>빈 영역을 <strong>좌클릭 드래그</strong></td>
+                    </tr>
+                    <tr>
+                        <td>뷰 회전 (버튼)</td>
+                        <td>우측 하단 <strong>방향패드</strong>의 ◀ ▶ ▲ ▼ 버튼 (10° 단위)</td>
+                    </tr>
+                    <tr>
+                        <td>뷰 초기화</td>
+                        <td>컨트롤 바의 <strong>초기화</strong> 버튼</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">🎯</span> 뷰 회전과 관절 편집</h3>
+            <ul>
+                <li>뷰가 회전된 상태에서도 <strong>관절 클릭과 드래그가 정상 동작</strong>합니다</li>
+                <li>마우스 드래그 방향이 회전된 시점에 맞게 <strong>자동 보정</strong>됩니다 (예: 90° 회전 후 좌우 드래그 → 실제 z축 이동)</li>
+                <li>뷰 회전은 <strong>보기 전용</strong>으로, 실제 관절 좌표에는 영향을 주지 않습니다</li>
+                <li>회전 범위에 제한이 없어 360° 자유롭게 회전할 수 있습니다</li>
+            </ul>
+        </div>
+
+        <div class="tip-box">
+            <span class="tip-icon">💡</span>
+            <span class="tip-text"><strong>팁:</strong> 옆모습 확인이 필요할 때 좌우 방향 버튼으로 90° 회전하면 측면에서 자세를 확인할 수 있습니다. 뷰를 회전한 상태에서 관절을 드래그하면 깊이(앞/뒤) 방향으로도 자연스럽게 이동할 수 있습니다.</span>
+        </div>
+    </div>
+
+    <!-- 12. 감지 모델 설정 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🧠</span> 감지 모델 설정 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
+        <p>
+            포즈 감지에 사용되는 MediaPipe 모델을 변경할 수 있습니다.
+            모델에 따라 <strong>감지 속도와 정확도</strong>가 달라집니다.
+        </p>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">📋</span> 모델 비교</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">모델</th>
+                        <th>속도</th>
+                        <th>정확도</th>
+                        <th>파일 크기</th>
+                        <th>권장 사용</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lite</strong></td>
+                        <td>빠름</td>
+                        <td>보통</td>
+                        <td>~6 MB</td>
+                        <td>일반적인 사용, 빠른 분석</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Full</strong></td>
+                        <td>보통</td>
+                        <td>좋음</td>
+                        <td>~9 MB</td>
+                        <td>정확도가 중요한 분석</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Heavy</strong></td>
+                        <td>느림</td>
+                        <td>최고</td>
+                        <td>~31 MB</td>
+                        <td>최고 정확도가 필요한 경우</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title"><span class="sub-icon">⚙️</span> 변경 방법</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">메뉴 <strong>도구 → 설정</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>)에서 <strong>포즈 감지</strong> 그룹을 찾습니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">감지 모델 드롭다운에서 원하는 모델을 선택합니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content"><strong>확인</strong>을 클릭하면, 모델이 없는 경우 자동으로 다운로드가 시작됩니다</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">다운로드 완료 후 앱을 <strong>재시작</strong>하면 변경된 모델이 적용됩니다</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <span class="warning-icon">🔑</span>
+            <span class="warning-text"><strong>참고:</strong> 감지 모델 변경 기능은 라이센스 등록이 필요합니다. 무료 버전에서는 Lite 모델이 사용됩니다.</span>
+        </div>
+    </div>
+
+    <!-- 13. 움직임 빈도 분석 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">📊</span> 움직임 빈도 분석 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
         <p>
@@ -1466,7 +1651,7 @@
         </div>
     </div>
 
-    <!-- 10. 데이터 내보내기 -->
+    <!-- 14. 데이터 내보내기 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">📤</span> 데이터 내보내기 <span style="font-size: 16px; color: #52c41a;">🔑 등록 기능</span></h2>
 
@@ -1524,7 +1709,7 @@
         </div>
     </div>
 
-    <!-- 11. 단축키 모음 -->
+    <!-- 15. 단축키 모음 -->
     <div class="section">
         <h2 class="section-title"><span class="icon">⌨️</span> 단축키 모음</h2>
 
@@ -1547,6 +1732,10 @@
                     <div class="shortcut-item">
                         <span class="shortcut-action">다른 이름으로 저장 🔑</span>
                         <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-action">시뮬레이션</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>M</kbd></span>
                     </div>
                     <div class="shortcut-item">
                         <span class="shortcut-action">종료</span>
