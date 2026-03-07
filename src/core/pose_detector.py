@@ -237,7 +237,6 @@ class PoseDetector:
 
     def __del__(self):
         """소멸자"""
-        try:
-            self.release()
-        except:
-            pass
+        # GC 시점에서 mediapipe 라이브러리가 이미 언로드된 경우
+        # bus error 방지를 위해 landmarker 참조만 제거
+        self._landmarker = None
