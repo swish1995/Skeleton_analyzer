@@ -119,7 +119,7 @@ class InteractiveSkeletonWidget(QWidget):
             }
         """)
         ctrl_layout = QHBoxLayout(self._control_bar)
-        ctrl_layout.setContentsMargins(8, 2, 8, 0)
+        ctrl_layout.setContentsMargins(8, 2, 8, 4)
         ctrl_layout.setSpacing(4)
 
         icon_dir = Path(__file__).parent.parent / "resources" / "icons"
