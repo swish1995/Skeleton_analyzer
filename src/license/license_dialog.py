@@ -2,7 +2,7 @@
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QMessageBox, QFrame,
+    QLineEdit, QPushButton, QFrame,
     QApplication
 )
 from PyQt6.QtCore import Qt
@@ -11,6 +11,7 @@ from PyQt6.QtGui import QFont
 from .hardware_id import get_hardware_id
 from .license_manager import LicenseManager, LicenseMode
 from .license_validator import ValidationResult
+from src.ui.custom_dialog import CustomDialog
 
 
 class LicenseDialog(QDialog):
@@ -225,9 +226,8 @@ class LicenseDialog(QDialog):
         key = self._key_edit.text().strip()
 
         if self._manager.register(key):
-            QMessageBox.information(
-                self,
-                "등록 완료",
+            CustomDialog.info(
+                self, "등록 완료",
                 "라이센스가 성공적으로 등록되었습니다.\n모든 기능을 사용할 수 있습니다."
             )
             self._update_state()
@@ -247,4 +247,4 @@ class LicenseDialog(QDialog):
             else:
                 message = "라이센스 등록에 실패했습니다."
 
-            QMessageBox.warning(self, "등록 실패", message)
+            CustomDialog.warning(self, "등록 실패", message)

@@ -6,12 +6,13 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QLineEdit, QPushButton, QCheckBox,
     QFileDialog, QDialogButtonBox, QFormLayout, QComboBox,
-    QMessageBox, QProgressBar
+    QProgressBar
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from typing import TYPE_CHECKING
 
 from ..license import LicenseManager
+from .custom_dialog import CustomDialog
 
 if TYPE_CHECKING:
     from ..utils.config import Config
@@ -415,7 +416,7 @@ class SettingsDialog(QDialog):
             # 이미 다운로드됨
             self._config.set("detection.model_type", model_type)
             self._config.save()
-            QMessageBox.information(
+            CustomDialog.info(
                 self, "모델 변경",
                 f"감지 모델이 '{model_name}'로 변경되었습니다.\n재시작 후 적용됩니다."
             )

@@ -3,12 +3,13 @@ import time
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QProgressBar,
-    QPushButton, QHBoxLayout, QFrame, QMessageBox,
+    QPushButton, QHBoxLayout, QFrame,
 )
 from PyQt6.QtCore import Qt, QTimer
 
 from src.core.analysis_worker import AnalysisWorker
 from src.core.movement_analyzer import MovementAnalysisResult
+from src.ui.custom_dialog import CustomDialog
 
 
 class AnalysisProgressDialog(QDialog):
@@ -234,7 +235,7 @@ class AnalysisProgressDialog(QDialog):
             return
         self._finished = True
         self._title_label.setText("분석 오류!")
-        QMessageBox.critical(self, "분석 오류", f"분석 중 오류가 발생했습니다:\n{error_msg}")
+        CustomDialog.error(self, "분석 오류", f"분석 중 오류가 발생했습니다:\n{error_msg}")
         self.reject()
 
     def _on_worker_finished(self):
@@ -250,12 +251,10 @@ class AnalysisProgressDialog(QDialog):
 
     def _on_cancel(self):
         """취소 버튼 클릭 - 확인 모달"""
-        confirm = _ConfirmDialog(
-            title="분석 취소",
-            message="분석을 취소하시겠습니까?\n현재까지의 진행 상태가 저장됩니다.",
-            parent=self,
-        )
-        if confirm.exec() != QDialog.DialogCode.Accepted:
+        if not CustomDialog.ask(
+            self, "분석 취소",
+            "분석을 취소하시겠습니까?\n현재까지의 진행 상태가 저장됩니다."
+        ):
             return
 
         if self._worker and self._worker.isRunning():
@@ -292,94 +291,3 @@ class AnalysisProgressDialog(QDialog):
             event.ignore()
         else:
             super().closeEvent(event)
-
-
-class _ConfirmDialog(QDialog):
-    """앱 테마에 맞는 확인 다이얼로그"""
-
-    def __init__(self, title: str, message: str, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setFixedSize(340, 160)
-        self.setModal(True)
-        self.setWindowFlags(
-            self.windowFlags()
-            & ~Qt.WindowType.WindowCloseButtonHint
-            & ~Qt.WindowType.WindowContextHelpButtonHint
-        )
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 16)
-        layout.setSpacing(16)
-
-        # 메시지
-        msg_label = QLabel(message)
-        msg_label.setObjectName("confirmMessage")
-        msg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        msg_label.setWordWrap(True)
-        layout.addWidget(msg_label)
-
-        layout.addStretch()
-
-        # 버튼
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-
-        no_btn = QPushButton("아니오")
-        no_btn.setObjectName("confirmNoBtn")
-        no_btn.setFixedSize(90, 34)
-        no_btn.clicked.connect(self.reject)
-        no_btn.setDefault(True)
-        btn_layout.addWidget(no_btn)
-
-        yes_btn = QPushButton("예")
-        yes_btn.setObjectName("confirmYesBtn")
-        yes_btn.setFixedSize(90, 34)
-        yes_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(yes_btn)
-
-        btn_layout.addStretch()
-        layout.addLayout(btn_layout)
-
-        self._apply_style()
-
-    def _apply_style(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e1e;
-            }
-            QLabel#confirmMessage {
-                color: #e0e0e0;
-                font-size: 13px;
-            }
-            QPushButton#confirmNoBtn {
-                background-color: #3a3a3a;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                border-radius: 6px;
-                font-size: 13px;
-                padding: 6px 16px;
-            }
-            QPushButton#confirmNoBtn:hover {
-                background-color: #4a4a4a;
-                border-color: #5a5a5a;
-            }
-            QPushButton#confirmNoBtn:pressed {
-                background-color: #2a2a2a;
-            }
-            QPushButton#confirmYesBtn {
-                background-color: #4a9eff;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: bold;
-                padding: 6px 16px;
-            }
-            QPushButton#confirmYesBtn:hover {
-                background-color: #5aaeFF;
-            }
-            QPushButton#confirmYesBtn:pressed {
-                background-color: #3a8eef;
-            }
-        """)

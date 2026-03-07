@@ -8,7 +8,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QMenu, QMessageBox, QFileDialog,
+    QAbstractItemView, QMenu, QFileDialog,
     QSpinBox, QStyledItemDelegate, QLabel, QDialog,
     QComboBox, QDialogButtonBox, QFormLayout, QCheckBox,
 )
@@ -27,6 +27,7 @@ def _get_icon_path(icon_name: str) -> str:
 
 from ..core.capture_model import CaptureRecord, CaptureDataModel
 from ..utils.excel_tables import create_all_lookup_sheets
+from .custom_dialog import CustomDialog
 from ..utils.config import Config
 from ..core.logger import get_logger
 from ..license import LicenseManager
@@ -830,23 +831,17 @@ class CaptureSpreadsheetWidget(QWidget):
         # 자동 삭제 + 확인 설정인 경우
         elif auto_delete and confirm_delete:
             if has_images:
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("행 삭제")
-                msg_box.setText(f"행 {row + 1}을(를) 삭제하시겠습니까?\n\n연결된 이미지 파일도 함께 삭제됩니다.")
-                yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
-                no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
-                msg_box.exec()
-                if msg_box.clickedButton() != yes_btn:
+                if not CustomDialog.ask(
+                    self, "행 삭제",
+                    f"행 {row + 1}을(를) 삭제하시겠습니까?\n\n연결된 이미지 파일도 함께 삭제됩니다."
+                ):
                     return
                 delete_images = True
             else:
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("행 삭제")
-                msg_box.setText(f"행 {row + 1}을(를) 삭제하시겠습니까?")
-                yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
-                no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
-                msg_box.exec()
-                if msg_box.clickedButton() != yes_btn:
+                if not CustomDialog.ask(
+                    self, "행 삭제",
+                    f"행 {row + 1}을(를) 삭제하시겠습니까?"
+                ):
                     return
                 delete_images = False
         # 자동 삭제 안 함 설정인 경우 (기존 다이얼로그 사용)
@@ -894,71 +889,26 @@ class CaptureSpreadsheetWidget(QWidget):
 
         if not has_images:
             # 이미지가 없으면 단순 확인
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("행 삭제")
-            msg_box.setText(f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?")
-            yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
-            no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
-            msg_box.exec()
-            if msg_box.clickedButton() == yes_btn:
+            if CustomDialog.ask(self, "행 삭제", f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?"):
                 return False
             return None
 
         # 이미지가 있는 경우 옵션 다이얼로그
-        dialog = QDialog(self)
-        dialog.setWindowTitle("행 삭제")
-        dialog.setModal(True)
-
-        layout = QVBoxLayout(dialog)
-
-        # 설명
-        desc_label = QLabel(
+        result = CustomDialog.custom(
+            self, "행 삭제",
             f"'{time_str}' 캡처 데이터를 삭제하시겠습니까?\n\n"
             "이 캡처에 연결된 이미지 파일이 있습니다.\n"
-            "이미지 파일도 함께 삭제하시겠습니까?"
+            "이미지 파일도 함께 삭제하시겠습니까?",
+            buttons=[
+                ("취소", "cancel"),
+                ("데이터만 삭제", "data_only"),
+                ("이미지도 삭제", "with_images"),
+            ],
+            default_index=2, primary_index=2,
         )
-        layout.addWidget(desc_label)
-
-        # 버튼
-        button_box = QDialogButtonBox()
-        delete_with_images_btn = button_box.addButton(
-            "이미지도 삭제", QDialogButtonBox.ButtonRole.AcceptRole
-        )
-        delete_data_only_btn = button_box.addButton(
-            "데이터만 삭제", QDialogButtonBox.ButtonRole.ActionRole
-        )
-        cancel_btn = button_box.addButton(
-            "취소", QDialogButtonBox.ButtonRole.RejectRole
-        )
-
-        # 결과 저장용
-        result = {"delete_images": False, "cancelled": True}
-
-        def on_delete_with_images():
-            result["delete_images"] = True
-            result["cancelled"] = False
-            dialog.accept()
-
-        def on_delete_data_only():
-            result["delete_images"] = False
-            result["cancelled"] = False
-            dialog.accept()
-
-        def on_cancel():
-            result["cancelled"] = True
-            dialog.reject()
-
-        delete_with_images_btn.clicked.connect(on_delete_with_images)
-        delete_data_only_btn.clicked.connect(on_delete_data_only)
-        cancel_btn.clicked.connect(on_cancel)
-
-        layout.addWidget(button_box)
-
-        dialog.exec()
-
-        if result["cancelled"]:
+        if result == "cancel" or result is None:
             return None
-        return result["delete_images"]
+        return result == "with_images"
 
     def _clear_all(self):
         """전체 삭제"""
@@ -987,38 +937,33 @@ class CaptureSpreadsheetWidget(QWidget):
         else:
             message = f"모든 캡처 데이터({len(self._model)}개)를 삭제하시겠습니까?"
 
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("전체 삭제")
-        msg_box.setText(message)
-        yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
-        no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
-        msg_box.exec()
+        if not CustomDialog.ask(self, "전체 삭제", message):
+            return
 
-        if msg_box.clickedButton() == yes_btn:
-            # 이미지 삭제 (설정에 따라)
-            if auto_delete:
-                for record in self._model.get_all_records():
-                    frame_path = getattr(record, 'video_frame_path', None)
-                    skeleton_path = getattr(record, 'skeleton_image_path', None)
-                    if frame_path and os.path.exists(frame_path):
-                        try:
-                            os.remove(frame_path)
-                        except Exception:
-                            pass
-                    if skeleton_path and os.path.exists(skeleton_path):
-                        try:
-                            os.remove(skeleton_path)
-                        except Exception:
-                            pass
+        # 이미지 삭제 (설정에 따라)
+        if auto_delete:
+            for record in self._model.get_all_records():
+                frame_path = getattr(record, 'video_frame_path', None)
+                skeleton_path = getattr(record, 'skeleton_image_path', None)
+                if frame_path and os.path.exists(frame_path):
+                    try:
+                        os.remove(frame_path)
+                    except Exception:
+                        pass
+                if skeleton_path and os.path.exists(skeleton_path):
+                    try:
+                        os.remove(skeleton_path)
+                    except Exception:
+                        pass
 
-            self._model.clear()
-            self._table.setRowCount(0)
+        self._model.clear()
+        self._table.setRowCount(0)
 
     def _export_json(self):
         """JSON 내보내기"""
         # 라이센스 체크
         if not LicenseManager.instance().check_feature('json_export'):
-            QMessageBox.warning(
+            CustomDialog.warning(
                 self, "기능 제한",
                 "JSON 내보내기는 등록 버전에서 사용할 수 있습니다.\n"
                 "도움말 → 라이센스 등록 메뉴에서 등록해 주세요."
@@ -1026,7 +971,7 @@ class CaptureSpreadsheetWidget(QWidget):
             return
 
         if len(self._model) == 0:
-            QMessageBox.warning(self, "경고", "내보낼 데이터가 없습니다.")
+            CustomDialog.warning(self, "경고", "내보낼 데이터가 없습니다.")
             return
 
         default_filename = self._get_default_filename("json")
@@ -1040,15 +985,15 @@ class CaptureSpreadsheetWidget(QWidget):
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(self._model.to_json())
-                QMessageBox.information(self, "완료", f"JSON 파일이 저장되었습니다:\n{file_path}")
+                CustomDialog.info(self, "완료", f"JSON 파일이 저장되었습니다:\n{file_path}")
             except Exception as e:
-                QMessageBox.critical(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
+                CustomDialog.error(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
 
     def _export_excel(self):
         """Excel 내보내기"""
         # 라이센스 체크
         if not LicenseManager.instance().check_feature('excel_export'):
-            QMessageBox.warning(
+            CustomDialog.warning(
                 self, "기능 제한",
                 "Excel 내보내기는 등록 버전에서 사용할 수 있습니다.\n"
                 "도움말 → 라이센스 등록 메뉴에서 등록해 주세요."
@@ -1056,7 +1001,7 @@ class CaptureSpreadsheetWidget(QWidget):
             return
 
         if len(self._model) == 0:
-            QMessageBox.warning(self, "경고", "내보낼 데이터가 없습니다.")
+            CustomDialog.warning(self, "경고", "내보낼 데이터가 없습니다.")
             return
 
         try:
@@ -1065,10 +1010,9 @@ class CaptureSpreadsheetWidget(QWidget):
             from openpyxl.drawing.image import Image as XLImage
             from openpyxl.utils import get_column_letter
         except ImportError:
-            QMessageBox.critical(
-                self,
-                "오류",
-                "openpyxl 패키지가 설치되지 않았습니다.\npip install openpyxl 명령어로 설치해주세요.",
+            CustomDialog.error(
+                self, "오류",
+                "openpyxl 패키지가 설치되지 않았습니다.\npip install openpyxl 명령어로 설치해주세요."
             )
             return
 
@@ -1209,10 +1153,10 @@ class CaptureSpreadsheetWidget(QWidget):
                         wb[sheet_name].sheet_state = 'hidden'
 
             wb.save(file_path)
-            QMessageBox.information(self, "완료", f"Excel 파일이 저장되었습니다:\n{file_path}")
+            CustomDialog.info(self, "완료", f"Excel 파일이 저장되었습니다:\n{file_path}")
 
         except Exception as e:
-            QMessageBox.critical(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
+            CustomDialog.error(self, "오류", f"저장 중 오류 발생:\n{str(e)}")
 
     def _is_editable_field(self, field: str) -> bool:
         """필드가 수동 입력 가능한지 확인"""

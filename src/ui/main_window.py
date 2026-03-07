@@ -4,7 +4,7 @@ import platform
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QSplitter, QVBoxLayout,
-    QMenuBar, QMenu, QStatusBar, QFileDialog, QMessageBox,
+    QMenuBar, QMenu, QStatusBar, QFileDialog,
     QToolBar, QToolButton, QSlider, QLabel, QHBoxLayout
 )
 from PyQt6.QtCore import Qt, QSettings, QSize
@@ -17,6 +17,7 @@ from .settings_dialog import SettingsDialog
 from .help_dialog import HelpDialog
 from .analysis_progress_dialog import AnalysisProgressDialog
 from .loading_dialog import LoadingDialog
+from .custom_dialog import CustomDialog
 from ..utils.config import Config
 from ..core.project_manager import ProjectManager, ProjectLoadError, LoadResult
 from ..core.image_slide_player import ImageSlidePlayer
@@ -840,25 +841,16 @@ class MainWindow(QMainWindow):
             # 기존 캡처 데이터가 있는 경우 확인
             record_count = self.status_widget.spreadsheet_widget.get_record_count()
             if record_count > 0:
-                from PyQt6.QtWidgets import QStyle
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("기존 데이터 확인")
-                msg_box.setText(
+                result = CustomDialog.ask_save(
+                    self, "기존 데이터 확인",
                     f"현재 {record_count}개의 캡처 데이터가 있습니다.\n\n"
                     "새 동영상을 로드하면 기존 데이터가 삭제됩니다.\n"
-                    "계속하시겠습니까?"
+                    "계속하시겠습니까?",
+                    save_text="저장 후 진행", discard_text="삭제 후 진행"
                 )
-                icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-                msg_box.setIconPixmap(icon.pixmap(64, 64))
-                save_btn = msg_box.addButton("저장 후 진행", QMessageBox.ButtonRole.AcceptRole)
-                discard_btn = msg_box.addButton("삭제 후 진행", QMessageBox.ButtonRole.DestructiveRole)
-                cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-                msg_box.setDefaultButton(save_btn)
-                msg_box.exec()
-
-                if msg_box.clickedButton() == cancel_btn:
+                if result == CustomDialog.CANCEL:
                     return
-                elif msg_box.clickedButton() == save_btn:
+                elif result == CustomDialog.SAVE:
                     if not self._save_project():
                         return
 
@@ -885,10 +877,10 @@ class MainWindow(QMainWindow):
                 self.player_widget.setFocus()
             else:
                 self._logger.error(f"비디오 로드 실패: {file_path}")
-                QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
+                CustomDialog.warning(self, "오류", f"파일을 열 수 없습니다:\n{file_path}")
         elif dlg.error_msg:
             self._logger.error(f"비디오 로드 실패: {dlg.error_msg}")
-            QMessageBox.warning(self, "오류", f"파일을 열 수 없습니다:\n{dlg.error_msg}")
+            CustomDialog.warning(self, "오류", f"파일을 열 수 없습니다:\n{dlg.error_msg}")
 
     def _cleanup_capture_images(self, silent: bool = False):
         """
@@ -1034,25 +1026,16 @@ class MainWindow(QMainWindow):
         if not from_project_load:
             record_count = self.status_widget.spreadsheet_widget.get_record_count()
             if record_count > 0:
-                from PyQt6.QtWidgets import QStyle
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("기존 데이터 확인")
-                msg_box.setText(
+                result = CustomDialog.ask_save(
+                    self, "기존 데이터 확인",
                     f"현재 {record_count}개의 캡처 데이터가 있습니다.\n\n"
                     "새 이미지를 로드하면 기존 데이터가 삭제됩니다.\n"
-                    "계속하시겠습니까?"
+                    "계속하시겠습니까?",
+                    save_text="저장 후 진행", discard_text="삭제 후 진행"
                 )
-                icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-                msg_box.setIconPixmap(icon.pixmap(64, 64))
-                save_btn = msg_box.addButton("저장 후 진행", QMessageBox.ButtonRole.AcceptRole)
-                discard_btn = msg_box.addButton("삭제 후 진행", QMessageBox.ButtonRole.DestructiveRole)
-                cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-                msg_box.setDefaultButton(save_btn)
-                msg_box.exec()
-
-                if msg_box.clickedButton() == cancel_btn:
+                if result == CustomDialog.CANCEL:
                     return
-                elif msg_box.clickedButton() == save_btn:
+                elif result == CustomDialog.SAVE:
                     if not self._save_project():
                         return
 
@@ -1078,10 +1061,10 @@ class MainWindow(QMainWindow):
                 self.player_widget.setFocus()
             else:
                 self._logger.error(f"이미지 폴더 로드 실패: {folder_path}")
-                QMessageBox.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{folder_path}")
+                CustomDialog.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{folder_path}")
         elif dlg.error_msg:
             self._logger.error(f"이미지 폴더 로드 실패: {dlg.error_msg}")
-            QMessageBox.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{dlg.error_msg}")
+            CustomDialog.warning(self, "오류", f"이미지 폴더를 열 수 없습니다:\n{dlg.error_msg}")
 
     def _load_archive(self, archive_path: str, from_project_load: bool = False):
         """압축 파일 로드"""
@@ -1094,25 +1077,16 @@ class MainWindow(QMainWindow):
         if not from_project_load:
             record_count = self.status_widget.spreadsheet_widget.get_record_count()
             if record_count > 0:
-                from PyQt6.QtWidgets import QStyle
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("기존 데이터 확인")
-                msg_box.setText(
+                result = CustomDialog.ask_save(
+                    self, "기존 데이터 확인",
                     f"현재 {record_count}개의 캡처 데이터가 있습니다.\n\n"
                     "새 압축 파일을 로드하면 기존 데이터가 삭제됩니다.\n"
-                    "계속하시겠습니까?"
+                    "계속하시겠습니까?",
+                    save_text="저장 후 진행", discard_text="삭제 후 진행"
                 )
-                icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-                msg_box.setIconPixmap(icon.pixmap(64, 64))
-                save_btn = msg_box.addButton("저장 후 진행", QMessageBox.ButtonRole.AcceptRole)
-                discard_btn = msg_box.addButton("삭제 후 진행", QMessageBox.ButtonRole.DestructiveRole)
-                cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-                msg_box.setDefaultButton(save_btn)
-                msg_box.exec()
-
-                if msg_box.clickedButton() == cancel_btn:
+                if result == CustomDialog.CANCEL:
                     return
-                elif msg_box.clickedButton() == save_btn:
+                elif result == CustomDialog.SAVE:
                     if not self._save_project():
                         return
 
@@ -1140,10 +1114,10 @@ class MainWindow(QMainWindow):
                 self.player_widget.setFocus()
             else:
                 self._logger.error(f"압축 파일 로드 실패: {archive_path}")
-                QMessageBox.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{archive_path}")
+                CustomDialog.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{archive_path}")
         elif dlg.error_msg:
             self._logger.error(f"압축 파일 로드 실패: {dlg.error_msg}")
-            QMessageBox.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{dlg.error_msg}")
+            CustomDialog.warning(self, "오류", f"압축 파일을 열 수 없습니다:\n{dlg.error_msg}")
 
     def _on_sim_menu_triggered(self, checked: bool):
         """파일 메뉴 시뮬레이션 액션 핸들러"""
@@ -1282,48 +1256,27 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """창 닫기 이벤트"""
-        from PyQt6.QtWidgets import QStyle
-
         self._logger.info("앱 종료 요청")
 
         # 저장되지 않은 변경사항 확인
         if self._project_manager.is_dirty:
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("저장되지 않은 변경사항")
-            msg_box.setText(
+            result = CustomDialog.ask_save(
+                self, "저장되지 않은 변경사항",
                 "저장되지 않은 변경사항이 있습니다.\n\n"
                 "저장하지 않으면 캡처 이미지도 함께 삭제됩니다.\n"
                 "저장하시겠습니까?"
             )
-            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-            msg_box.setIconPixmap(icon.pixmap(64, 64))
-            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
-            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
-            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-            msg_box.setDefaultButton(save_btn)
-            msg_box.exec()
-
-            if msg_box.clickedButton() == cancel_btn:
+            if result == CustomDialog.CANCEL:
                 event.ignore()
                 return
-            elif msg_box.clickedButton() == save_btn:
+            elif result == CustomDialog.SAVE:
                 if not self._save_project():
                     event.ignore()
                     return
             # 저장 안 함: 저장 안 하고 종료 진행 (정리는 종료 시 일괄 처리)
 
         # 종료 확인 다이얼로그
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("종료 확인")
-        msg_box.setText("앱을 종료하시겠습니까?")
-        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-        msg_box.setIconPixmap(icon.pixmap(64, 64))
-        yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
-        no_btn = msg_box.addButton("아니오", QMessageBox.ButtonRole.NoRole)
-        msg_box.setDefaultButton(no_btn)
-        msg_box.exec()
-
-        if msg_box.clickedButton() != yes_btn:
+        if not CustomDialog.ask(self, "종료 확인", "앱을 종료하시겠습니까?"):
             self._logger.info("사용자가 종료 취소")
             event.ignore()
             return
@@ -1384,18 +1337,13 @@ class MainWindow(QMainWindow):
         """프로젝트 열기 다이얼로그"""
         # 저장되지 않은 변경사항 확인
         if self._project_manager.is_dirty:
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("저장되지 않은 변경사항")
-            msg_box.setText("저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?")
-            save_btn = msg_box.addButton("저장", QMessageBox.ButtonRole.AcceptRole)
-            discard_btn = msg_box.addButton("저장 안 함", QMessageBox.ButtonRole.DestructiveRole)
-            cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-            msg_box.setDefaultButton(save_btn)
-            msg_box.exec()
-
-            if msg_box.clickedButton() == cancel_btn:
+            result = CustomDialog.ask_save(
+                self, "저장되지 않은 변경사항",
+                "저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?"
+            )
+            if result == CustomDialog.CANCEL:
                 return
-            elif msg_box.clickedButton() == save_btn:
+            elif result == CustomDialog.SAVE:
                 if not self._save_project():
                     return
 
@@ -1450,24 +1398,14 @@ class MainWindow(QMainWindow):
             else:
                 # 동영상 모드 (기존 호환)
                 if info.video_missing:
-                    from PyQt6.QtWidgets import QStyle
-                    msg_box = QMessageBox(self)
-                    msg_box.setWindowTitle("동영상 파일 없음")
-                    msg_box.setText(
+                    if not CustomDialog.ask(
+                        self, "동영상 파일 없음",
                         f"동영상 파일을 찾을 수 없습니다:\n{info.video_path}\n\n"
                         f"복원 가능한 항목:\n"
                         f"• 캡처 데이터: {info.capture_count}개\n"
                         f"• 이미지: {info.image_count}개\n\n"
                         "동영상 없이 데이터만 복원하시겠습니까?"
-                    )
-                    icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion)
-                    msg_box.setIconPixmap(icon.pixmap(64, 64))
-                    yes_btn = msg_box.addButton("예", QMessageBox.ButtonRole.YesRole)
-                    cancel_btn = msg_box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
-                    msg_box.setDefaultButton(yes_btn)
-                    msg_box.exec()
-
-                    if msg_box.clickedButton() != yes_btn:
+                    ):
                         return
 
                 elif state['video_path']:
@@ -1501,30 +1439,24 @@ class MainWindow(QMainWindow):
             self._update_window_title()
             self._status_bar.showMessage(f"작업 로드됨: {file_path}")
             self._logger.info(f"작업 로드 완료: 캡처 {info.capture_count}개, 이미지 {info.image_count}개")
-            QMessageBox.information(self, "작업 불러오기", f"작업을 불러왔습니다.\n캡처 {info.capture_count}개, 이미지 {info.image_count}개")
+            CustomDialog.info(self, "작업 불러오기", f"작업을 불러왔습니다.\n캡처 {info.capture_count}개, 이미지 {info.image_count}개")
 
             self.player_widget.setFocus()
 
         except ProjectLoadError as e:
             self._logger.error(f"작업 로드 실패: {file_path}, 오류: {e}")
-            QMessageBox.critical(self, "작업 로드 오류", str(e))
+            CustomDialog.error(self, "작업 로드 오류", str(e))
 
     def _show_source_missing_dialog(self, source_path, source_type_label: str, info):
         """소스 경로 누락 시 안내 다이얼로그"""
-        from PyQt6.QtWidgets import QStyle
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle(f"{source_type_label} 없음")
-        msg_box.setText(
+        CustomDialog.info(
+            self, f"{source_type_label} 없음",
             f"{source_type_label}을 찾을 수 없습니다:\n{source_path}\n\n"
             f"복원 가능한 항목:\n"
             f"• 캡처 데이터: {info.capture_count}개\n"
             f"• 이미지: {info.image_count}개\n\n"
             f"{source_type_label} 없이 데이터만 복원합니다."
         )
-        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxInformation)
-        msg_box.setIconPixmap(icon.pixmap(64, 64))
-        msg_box.addButton("확인", QMessageBox.ButtonRole.AcceptRole)
-        msg_box.exec()
 
     def _sync_transform_menu(self):
         """변환 메뉴 열릴 때 체크 상태 동기화"""
@@ -1610,12 +1542,12 @@ class MainWindow(QMainWindow):
                 self._update_window_title()
                 self._status_bar.showMessage(f"작업 저장됨: {path}")
                 self._logger.info(f"작업 저장 완료: {path}")
-                QMessageBox.information(self, "작업 저장", f"작업이 저장되었습니다.\n{path}")
+                CustomDialog.info(self, "작업 저장", f"작업이 저장되었습니다.\n{path}")
                 return True
 
         except Exception as e:
             self._logger.error(f"작업 저장 실패: {path}, 오류: {e}")
-            QMessageBox.critical(self, "저장 오류", f"작업 저장 실패:\n{e}")
+            CustomDialog.error(self, "저장 오류", f"작업 저장 실패:\n{e}")
 
         return False
 

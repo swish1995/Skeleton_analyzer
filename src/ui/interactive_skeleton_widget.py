@@ -2,7 +2,8 @@
 import copy
 import math
 from pathlib import Path
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
+from src.ui.custom_dialog import CustomDialog
 from PyQt6.QtCore import Qt, pyqtSignal, QPointF, QEvent, QSize
 from PyQt6.QtGui import (
     QPainter, QPen, QBrush, QColor, QTransform, QCursor, QIcon,
@@ -445,7 +446,7 @@ class InteractiveSkeletonWidget(QWidget):
             return True
         # 라이센스 체크
         if not LicenseManager.instance().check_feature('skeleton_editor'):
-            QMessageBox.information(
+            CustomDialog.info(
                 self, "등록 기능",
                 "스켈레톤 편집 기능은 라이센스 등록이 필요합니다.\n\n"
                 "도움말 → 라이센스 등록 메뉴에서 등록할 수 있습니다."
