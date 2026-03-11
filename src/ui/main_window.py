@@ -1266,8 +1266,8 @@ class MainWindow(QMainWindow):
         """창 닫기 이벤트"""
         self._logger.info("앱 종료 요청")
 
-        # 저장되지 않은 변경사항 확인
-        if self._project_manager.is_dirty:
+        # 저장되지 않은 변경사항 확인 (무료 버전은 저장 불가이므로 건너뜀)
+        if self._project_manager.is_dirty and self._license_manager.is_licensed:
             result = CustomDialog.ask_save(
                 self, "저장되지 않은 변경사항",
                 "저장되지 않은 변경사항이 있습니다.\n\n"
