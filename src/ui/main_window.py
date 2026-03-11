@@ -1127,6 +1127,14 @@ class MainWindow(QMainWindow):
     def _toggle_simulation(self):
         """시뮬레이션 모드 토글"""
         checked = self._sim_btn.isChecked()
+
+        # 시뮬레이션 진입 시 라이선스 체크
+        if checked and not self._license_manager.check_feature('simulation'):
+            self._sim_btn.setChecked(False)
+            self._sim_action.setChecked(False)
+            self._show_license_dialog()
+            return
+
         self._sim_btn.setStyleSheet(self._get_toolbar_button_style('시뮬레이션', checked))
         self._sim_action.setChecked(checked)
 
@@ -1704,6 +1712,10 @@ class MainWindow(QMainWindow):
 
         # 플레이어 위젯 버튼도 동기화
         self.player_widget.set_folder_archive_enabled(is_licensed)
+
+        # 시뮬레이션 메뉴/버튼 - 라이센스 필요
+        self._sim_action.setEnabled(is_licensed)
+        self._sim_btn.setEnabled(is_licensed)
 
         # 툴바 버튼도 동기화
         self._open_btn.setEnabled(is_licensed)
