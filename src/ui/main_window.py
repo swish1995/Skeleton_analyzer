@@ -444,7 +444,7 @@ class MainWindow(QMainWindow):
         self._sim_btn.setToolTip("시뮬레이션 모드 (Ctrl+M)")
         self._sim_btn.setIcon(QIcon(self._get_icon_path("simulation")))
         self._sim_btn.setIconSize(QSize(14, 14))
-        self._sim_btn.setStyleSheet(self._get_toolbar_button_style('시뮬레이션', False))
+        self._sim_btn.setStyleSheet(self._get_toolbar_button_style('시뮬레이션', True))
         self._sim_btn.clicked.connect(self._toggle_simulation)
         self._toolbar.addWidget(self._sim_btn)
 
@@ -1135,12 +1135,13 @@ class MainWindow(QMainWindow):
             self._show_license_dialog()
             return
 
-        self._sim_btn.setStyleSheet(self._get_toolbar_button_style('시뮬레이션', checked))
         self._sim_action.setChecked(checked)
 
         if checked:
+            self._sim_btn.setText(" 기본 모드")
             self._enter_simulation()
         else:
+            self._sim_btn.setText(" 시뮬레이션")
             self._exit_simulation()
 
     def _enter_simulation(self):
