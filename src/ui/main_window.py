@@ -26,7 +26,7 @@ from ..license import LicenseManager, LicenseMode
 from ..license.license_dialog import LicenseDialog
 
 # 앱 이름 (환경변수로 변경 가능)
-APP_NAME = os.environ.get('IMAS_APP_NAME', 'IMAS')
+APP_NAME = os.environ.get('IMAS_APP_NAME', 'IMAS (Intelligent Musculoskeletal Analysis System)')
 
 
 class MainWindow(QMainWindow):

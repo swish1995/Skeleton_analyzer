@@ -1,4 +1,4 @@
-# IMAS 사용법
+# IMAS(Intelligent Musculoskeletal Analysis System) 사용법
 
 > 📅 마지막 갱신: 2026-02-23
 

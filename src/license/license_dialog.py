@@ -135,10 +135,14 @@ class LicenseDialog(QDialog):
         hw_desc.setStyleSheet("color: #666666; font-size: 12px;")
         layout.addWidget(hw_desc)
 
-        # 개발자 연락처
-        contact_label = QLabel("라이센스 문의: 백승욱(swish1995@gmail.com)")
+        # 연락처
+        contact_label = QLabel("라이센스 문의: 안전기술연구원 대표 김명희\n📞 031-8016-3437 / 📧 safety-engineer@naver.com")
         contact_label.setStyleSheet("color: #4a9eff; font-size: 12px; margin-top: 4px;")
         layout.addWidget(contact_label)
+
+        dev_label = QLabel("개발자: 백승욱(swish1995@gmail.com)")
+        dev_label.setStyleSheet("color: #888888; font-size: 11px; margin-top: 2px;")
+        layout.addWidget(dev_label)
 
         # 라이센스 키 입력 섹션
         key_label = QLabel("라이센스 키")
